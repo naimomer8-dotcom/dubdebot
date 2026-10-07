@@ -1,7 +1,7 @@
 import { after } from "next/server";
 import { db } from "@/lib/supabase";
 import { getSessionUserId } from "@/lib/session";
-import { gemini, CHAT_MODEL, embed } from "@/lib/gemini";
+import { gemini, CHAT_MODEL, embed, FAST_THINKING } from "@/lib/gemini";
 import { buildSystemPrompt, PROFILE_EXTRACT_PROMPT, ToolMode, TOOLS } from "@/lib/persona";
 
 export const runtime = "nodejs";
@@ -140,7 +140,7 @@ export async function POST(req: Request) {
         const response = await gemini().models.generateContentStream({
           model: CHAT_MODEL,
           contents,
-          config: { systemInstruction, temperature: 0.7, maxOutputTokens: 4096 },
+          config: { systemInstruction, maxOutputTokens: 8192, ...FAST_THINKING },
         });
         let pending = "";
         for await (const chunk of response) {
@@ -215,7 +215,7 @@ async function updateProfile(userId: string, current: Record<string, unknown>, t
     const res = await gemini().models.generateContent({
       model: CHAT_MODEL,
       contents: [{ role: "user", parts: [{ text: `${PROFILE_EXTRACT_PROMPT}\n\nפרופיל קיים: ${JSON.stringify(current)}\n\n${transcript}` }] }],
-      config: { responseMimeType: "application/json", temperature: 0 },
+      config: { responseMimeType: "application/json", ...FAST_THINKING },
     });
     const extracted = JSON.parse(res.text ?? "{}");
     if (extracted && typeof extracted === "object" && Object.keys(extracted).length) {

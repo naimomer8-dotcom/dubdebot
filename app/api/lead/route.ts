@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/supabase";
 import { getSessionUserId } from "@/lib/session";
-import { gemini, CHAT_MODEL } from "@/lib/gemini";
+import { gemini, CHAT_MODEL, FAST_THINKING } from "@/lib/gemini";
 import { LEAD_SUMMARY_PROMPT } from "@/lib/persona";
 import { cleanName, isEmail, normalizeIsraeliPhone } from "@/lib/validation";
 import { sendToMake } from "@/lib/make";
@@ -57,7 +57,7 @@ export async function POST(req: Request) {
       const res = await gemini().models.generateContent({
         model: CHAT_MODEL,
         contents: [{ role: "user", parts: [{ text: `${LEAD_SUMMARY_PROMPT}\n\nפרופיל: ${JSON.stringify(user.profile ?? {})}\n\nהשיחה:\n${transcript}` }] }],
-        config: { temperature: 0.2, maxOutputTokens: 800 },
+        config: { maxOutputTokens: 2000, ...FAST_THINKING },
       });
       summary = res.text?.trim() ?? "";
     } catch (e) {
