@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Mascot from "./Mascot";
+import Icon from "./Icon";
 
 export type MeetingType = "advisor" | "nir";
 const SLOTS = ["בהקדם", "בוקר", "צהריים", "ערב"];
@@ -58,32 +59,35 @@ export default function LeadModal({
   return (
     <div className="overlay" role="dialog" aria-modal="true" aria-label="תיאום פגישה" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal">
-        <button className="cta-x" onClick={onClose} aria-label="סגירה">✕</button>
+        <button className="icon-btn x-btn" onClick={onClose} aria-label="סגירה"><Icon name="close" size={18} /></button>
         {done ? (
           <div className="done-view">
             <Mascot size={130} mood="celebrate" />
-            <h3>סגרנו.</h3>
+            <h3 style={{ marginTop: 10 }}>סגרנו.</h3>
             <p className="sub">
               {type === "nir" ? "הצוות של ניר יחזור אליך לתאם את הפגישה איתו." : "אחד היועצים שלנו יחזור אליך לתאם פגישת אסטרטגיה."} הוא כבר
               מקבל את הסיכום של השיחה שלנו, אז לא תצטרך להתחיל מההתחלה.
             </p>
-            <button className="btn btn-gold" onClick={onClose}>חזרה לשיחה</button>
+            <button className="btn btn-primary" onClick={onClose}>חזרה לשיחה</button>
           </div>
         ) : (
           <>
-            <div style={{ display: "flex", gap: 14, alignItems: "center", marginBottom: 6 }}>
-              <Mascot size={64} mood="wink" />
-              <h3>בוא נקבע פגישה</h3>
+            <div style={{ display: "flex", gap: 14, alignItems: "center", marginBottom: 8 }}>
+              <Mascot size={58} mood="wink" />
+              <div>
+                <span className="eyebrow">פגישת אסטרטגיה</span>
+                <h3>בוא נשב על זה.</h3>
+              </div>
             </div>
-            <p className="sub">משאירים פרטים, ואנחנו חוזרים אליך לתאם.</p>
+            <p className="sub">משאירים פרטים, ואנחנו חוזרים אליך לתאם. הסיכום של השיחה כבר מגיע אלינו, לא תתחיל מאפס.</p>
             <form onSubmit={submit}>
               <div className="choice">
                 <button type="button" aria-pressed={type === "advisor"} onClick={() => setType("advisor")}>
-                  <b>🧭 פגישת אסטרטגיה</b>
-                  <span>עם אחד היועצים של הקבוצה</span>
+                  <Icon name="layers" size={20} /><b>פגישה עם יועץ</b>
+                  <span>אחד היועצים הבכירים של הקבוצה</span>
                 </button>
                 <button type="button" aria-pressed={type === "nir"} onClick={() => setType("nir")}>
-                  <b>🍒 פגישה עם ניר</b>
+                  <Icon name="crown" size={20} /><b>פגישה עם ניר</b>
                   <span>ניר דובדבני בעצמו</span>
                 </button>
               </div>
@@ -99,7 +103,7 @@ export default function LeadModal({
               </div>
               <div className="field">
                 <label>מתי נוח שנחזור?</label>
-                <div className="slots">
+                <div className="seg">
                   {SLOTS.map((s) => (
                     <button type="button" key={s} aria-pressed={slot === s} onClick={() => setSlot(s)}>{s}</button>
                   ))}
@@ -110,7 +114,7 @@ export default function LeadModal({
                 <textarea id="l-note" className="input" rows={2} value={note} onChange={(e) => setNote(e.target.value)} />
               </div>
               {errors.form && <span className="err">{errors.form}</span>}
-              <button className="btn btn-gold" type="submit" disabled={loading}>{loading ? "שולח…" : "תחזרו אליי"}</button>
+              <button className="btn btn-primary btn-lg" type="submit" disabled={loading}>{loading ? "שולח…" : "תחזרו אליי"}</button>
             </form>
           </>
         )}

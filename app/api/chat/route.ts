@@ -15,13 +15,41 @@ const CTA_COOLDOWN = 4; // assistant turns between CTAs
 const MAX_MSG_LEN = 4000;
 
 type Turn = { role: "user" | "assistant"; content: string; cta: boolean };
+type Attachment = { name: string; mime: string; data?: string; text?: string };
+
+const INLINE_MIME = /^(image\/(png|jpe?g|webp|heic|heif)|application\/pdf)$/;
+const MAX_INLINE_BYTES = 3_600_000; // stay under Vercel's 4.5MB body limit
+const MAX_TEXT_CHARS = 40_000;
+
+function parseAttachments(raw: unknown): Attachment[] {
+  if (!Array.isArray(raw)) return [];
+  let budget = MAX_INLINE_BYTES;
+  const out: Attachment[] = [];
+  for (const a of raw.slice(0, 5)) {
+    if (!a || typeof a !== "object") continue;
+    const o = a as Record<string, unknown>;
+    const name = String(o.name ?? "קובץ").slice(0, 120);
+    const mime = String(o.mime ?? "");
+    if (typeof o.text === "string" && o.text.trim()) {
+      out.push({ name, mime, text: o.text.slice(0, MAX_TEXT_CHARS) });
+    } else if (typeof o.data === "string" && INLINE_MIME.test(mime)) {
+      const bytes = Math.floor((o.data.length * 3) / 4);
+      if (bytes > budget) continue;
+      budget -= bytes;
+      out.push({ name, mime, data: o.data });
+    }
+  }
+  return out;
+}
 
 export async function POST(req: Request) {
   const userId = await getSessionUserId();
   if (!userId) return new Response("unauthorized", { status: 401 });
 
   const body = await req.json().catch(() => ({}));
-  const text = String(body.message ?? "").trim().slice(0, MAX_MSG_LEN);
+  const attachments = parseAttachments(body.attachments);
+  const voice = body.voice === true;
+  const text = (String(body.message ?? "").trim() || (attachments.length ? "תסתכל על מה שצירפתי ותגיד לי מה אתה רואה." : "")).slice(0, MAX_MSG_LEN);
   const requestedMode = String(body.mode ?? "chat") as ToolMode;
   const mode: ToolMode = TOOLS.some((t) => t.id === requestedMode) ? requestedMode : "chat";
   if (!text) return new Response("empty", { status: 400 });
@@ -86,9 +114,12 @@ export async function POST(req: Request) {
     role: "user",
     content: text,
     top_similarity: topSimilarity,
+    attachments: attachments.map((a) => ({ name: a.name, mime: a.mime, kind: a.data ? (a.mime === "application/pdf" ? "pdf" : "image") : "doc" })),
   });
 
   const systemInstruction = buildSystemPrompt({
+    voice,
+    hasAttachments: attachments.length > 0,
     mode: activeMode,
     userName: user.full_name,
     profile: (user.profile as Record<string, unknown>) ?? null,
@@ -98,7 +129,17 @@ export async function POST(req: Request) {
 
   const contents = [
     ...history.slice(-20).map((h) => ({ role: h.role === "assistant" ? "model" : "user", parts: [{ text: h.content }] })),
-    { role: "user", parts: [{ text }] },
+    {
+      role: "user",
+      parts: [
+        ...attachments.map((a) =>
+          a.data
+            ? { inlineData: { mimeType: a.mime, data: a.data } }
+            : { text: `📎 קובץ מצורף: ${a.name}\n"""\n${a.text}\n"""` }
+        ),
+        { text },
+      ],
+    },
   ];
 
   // ---- CTA rules (deterministic layer on top of the model's own tag) ----
@@ -140,7 +181,7 @@ export async function POST(req: Request) {
         const response = await gemini().models.generateContentStream({
           model: CHAT_MODEL,
           contents,
-          config: { systemInstruction, maxOutputTokens: 8192, ...FAST_THINKING },
+          config: { systemInstruction, maxOutputTokens: voice ? 1500 : 8192, ...FAST_THINKING },
         });
         let pending = "";
         for await (const chunk of response) {
@@ -166,7 +207,7 @@ export async function POST(req: Request) {
       const modelWantsCta = /\[\[CTA\]\]/.test(full);
       const clean = full.replace(CTA_TAG, "").trim();
       let trigger: string | null = null;
-      if (cooldownOk) {
+      if (cooldownOk && !voice) {
         if (modelWantsCta) trigger = "model";
         else if (PAIN_RE.test(text)) trigger = "pain_keyword";
         else if (userTurns >= 6 && convRef.cta_shown_count === 0) trigger = "depth";

@@ -1,49 +1,59 @@
 import { redirect } from "next/navigation";
 import { getSessionUserId } from "@/lib/session";
 import { db } from "@/lib/supabase";
-import ChatClient, { ChatMessage } from "@/components/ChatClient";
+import { loadShell } from "@/lib/data";
+import { TOOLS, ToolMode } from "@/lib/persona";
+import ChatClient, { ChatAttachment, ChatMessage } from "@/components/ChatClient";
 
 export const dynamic = "force-dynamic";
 
-export default async function ChatPage({ searchParams }: { searchParams: Promise<{ new?: string }> }) {
+export default async function ChatPage({ searchParams }: { searchParams: Promise<{ new?: string; c?: string; tool?: string; xray?: string }> }) {
   const userId = await getSessionUserId();
   if (!userId) redirect("/");
-
-  const supabase = db();
-  const { data: user } = await supabase.from("users").select("id, full_name, phone, email").eq("id", userId).maybeSingle();
-  if (!user) redirect("/");
+  const shell = await loadShell(userId);
+  if (!shell) redirect("/");
 
   const sp = await searchParams;
+  const supabase = db();
   let conversationId: string | null = null;
   let messages: ChatMessage[] = [];
+  const fresh = !!sp.new || !!sp.tool || !!sp.xray;
 
-  if (!sp.new) {
+  if (sp.c) {
+    const { data } = await supabase.from("conversations").select("id").eq("id", sp.c).eq("user_id", userId).maybeSingle();
+    conversationId = data?.id ?? null;
+  } else if (!fresh) {
     const weekAgo = new Date(Date.now() - 7 * 864e5).toISOString();
-    const { data: conv } = await supabase
-      .from("conversations")
-      .select("id")
-      .eq("user_id", userId)
-      .gte("updated_at", weekAgo)
-      .order("updated_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (conv) {
-      conversationId = conv.id;
-      const { data: rows } = await supabase
-        .from("messages")
-        .select("id, role, content")
-        .eq("conversation_id", conv.id)
-        .order("created_at", { ascending: true })
-        .limit(60);
-      messages = (rows ?? []).map((r) => ({ id: r.id, role: r.role as "user" | "assistant", content: r.content }));
-    }
+    const recent = shell.conversations.find((c) => c.updated_at >= weekAgo);
+    conversationId = recent?.id ?? null;
   }
+
+  if (conversationId) {
+    const [{ data: rows }, { data: saved }] = await Promise.all([
+      supabase.from("messages").select("id, role, content, attachments").eq("conversation_id", conversationId).order("created_at", { ascending: true }).limit(80),
+      supabase.from("deliverables").select("message_id").eq("user_id", userId),
+    ]);
+    const savedIds = new Set((saved ?? []).map((s) => s.message_id));
+    messages = (rows ?? []).map((r) => ({
+      id: r.id,
+      role: r.role as "user" | "assistant",
+      content: r.content,
+      saved: savedIds.has(r.id),
+      attachments: ((r.attachments as ChatAttachment[] | null) ?? []).map((a) => ({ name: a.name, kind: a.kind })),
+    }));
+  }
+
+  const tool = sp.tool && (TOOLS.some((t) => t.id === sp.tool) || ["call", "upload"].includes(sp.tool)) ? (sp.tool as ToolMode) : null;
 
   return (
     <ChatClient
-      user={{ firstName: user.full_name.split(" ")[0], fullName: user.full_name, phone: user.phone, email: user.email }}
+      user={shell.user}
+      conversations={shell.conversations}
+      leadSentInitially={shell.leadSent}
       initialConversationId={conversationId}
       initialMessages={messages}
+      initialTool={tool}
+      autoXray={!!sp.xray}
     />
   );
 }

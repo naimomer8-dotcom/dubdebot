@@ -1,7 +1,7 @@
 "use client";
 import { useEffect } from "react";
 
-/** Soft gold light that follows the pointer across the page. */
+/** Ambient light blobs + a soft champagne light that follows the pointer. */
 export default function Spotlight() {
   useEffect(() => {
     let raf = 0;
@@ -15,5 +15,10 @@ export default function Spotlight() {
     window.addEventListener("pointermove", on, { passive: true });
     return () => window.removeEventListener("pointermove", on);
   }, []);
-  return <div className="spotlight" aria-hidden="true" />;
+  return (
+    <>
+      <div className="ambient" aria-hidden="true" />
+      <div className="spot" aria-hidden="true" />
+    </>
+  );
 }

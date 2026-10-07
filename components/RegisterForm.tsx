@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Mascot, { Mood } from "./Mascot";
+import Icon from "./Icon";
+import PasswordField from "./PasswordField";
 
 const MARKETING_LABEL =
   "אני מסכים/ה לקבל מקבוצת דובדבני תוכן מקצועי, הזמנות והצעות שיווקיות במייל, SMS ווואטסאפ. אפשר להסיר בכל עת.";
@@ -13,7 +15,8 @@ const emailOk = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e.trim());
 export default function RegisterForm() {
   const router = useRouter();
   const [step, setStep] = useState(0);
-  const [form, setForm] = useState({ fullName: "", phone: "", email: "" });
+  const [form, setForm] = useState({ fullName: "", phone: "", email: "", password: "" });
+  const [exists, setExists] = useState(false);
   const [terms, setTerms] = useState(false);
   const [marketing, setMarketing] = useState(false); // never pre-checked
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -23,7 +26,7 @@ export default function RegisterForm() {
 
   useEffect(() => {
     try {
-      setCarried(!!sessionStorage.getItem("dd_forecast"));
+      setCarried(!!(sessionStorage.getItem("dd_forecast") || sessionStorage.getItem("dd_xray") || sessionStorage.getItem("dd_tool")));
     } catch {}
     const on = () => setCarried(true);
     window.addEventListener("dd:carried", on);
@@ -50,6 +53,8 @@ export default function RegisterForm() {
     if (step === 1) {
       if (!phoneOk(form.phone)) e.phone = "נייד ישראלי, 10 ספרות, מתחיל ב-05";
       if (!emailOk(form.email)) e.email = "המייל לא נראה תקין";
+      if (form.password.length < 8) e.password = "לפחות 8 תווים";
+      else if (!/\d/.test(form.password) || !/[A-Za-z\u0590-\u05FF]/.test(form.password)) e.password = "צריך לשלב אותיות ומספרים";
     }
     setErrors(e);
     if (Object.keys(e).length) return;
@@ -77,8 +82,9 @@ export default function RegisterForm() {
       if (!res.ok) {
         const errs = data.errors ?? { form: data.error ?? "משהו השתבש, נסה שוב" };
         setErrors(errs);
+        setExists(!!data.exists);
         if (errs.fullName) setStep(0);
-        else if (errs.phone || errs.email) setStep(1);
+        else if (errs.phone || errs.email || errs.password) setStep(1);
         setLoading(false);
         return;
       }
@@ -91,22 +97,20 @@ export default function RegisterForm() {
 
   const titles = [
     { t: "איך קוראים לך?", s: "30 שניות ואתה בפנים. בלי כרטיס אשראי." },
-    { t: `נעים מאוד, ${first || "חבר"}.`, s: "לאן לשלוח לך את התוכניות והתחזיות שנבנה?" },
+    { t: `נעים מאוד, ${first || "חבר"}.`, s: "הפרטים להתחברות. עם המייל והסיסמה האלה נכנסים מכל מכשיר." },
     { t: "עוד שנייה ואתה בפנים", s: "שני אישורים קצרים, ודובדבוט נפתח." },
   ];
 
   return (
-    <div className="stepper">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
-        <div className="progress" style={{ flex: 1 }} aria-label={`שלב ${step + 1} מתוך 3`}>
-          {[0, 1, 2].map((i) => <span key={i} className={i <= step ? "done" : ""} />)}
-        </div>
+    <div className="stepper glass edge">
+      <div className="progress" aria-label={`שלב ${step + 1} מתוך 3`}>
+        {[0, 1, 2].map((i) => <span key={i} className={i <= step ? "done" : ""} />)}
       </div>
-      <div style={{ display: "flex", gap: 16, alignItems: "center", marginBottom: 6 }}>
-        <Mascot size={74} mood={mood} />
+      <div className="step-head">
+        <Mascot size={64} mood={mood} />
         <div>
           <h3 className="step-title">{titles[step].t}</h3>
-          <p className="step-sub" style={{ margin: 0 }}>{titles[step].s}</p>
+          <p className="step-sub">{titles[step].s}</p>
         </div>
       </div>
 
@@ -117,7 +121,6 @@ export default function RegisterForm() {
           else submit();
         }}
         noValidate
-        style={{ marginTop: 18 }}
       >
         {step === 0 && (
           <div className="step" key="s0">
@@ -128,7 +131,7 @@ export default function RegisterForm() {
               {errors.fullName && <span className="err">{errors.fullName}</span>}
             </div>
             <div className="step-actions">
-              <button className="btn btn-gold" type="submit">המשך</button>
+              <button className="btn btn-primary" type="submit">המשך <Icon name="arrow" size={18} className="ico-move" /></button>
             </div>
           </div>
         )}
@@ -146,17 +149,19 @@ export default function RegisterForm() {
               <input id="email" className="input" type="email" dir="ltr" autoComplete="email" value={form.email}
                 onChange={(e) => set("email", e.target.value)} aria-invalid={!!errors.email} placeholder="you@business.co.il" style={{ textAlign: "right" }} />
               {errors.email && <span className="err">{errors.email}</span>}
+              {exists && <span className="err"><a href={`/login?email=${encodeURIComponent(form.email)}`}>להתחברות</a> · <a href={`/login?forgot=1&email=${encodeURIComponent(form.email)}`}>שחזור סיסמה</a></span>}
             </div>
+            <PasswordField id="new-password" label="בחר סיסמה" value={form.password} onChange={(v) => set("password", v)} error={errors.password} meter autoComplete="new-password" />
             <div className="step-actions">
-              <button className="btn btn-gold" type="submit">המשך</button>
-              <button type="button" className="back" onClick={() => setStep(0)}>חזרה</button>
+              <button className="btn btn-primary" type="submit">המשך <Icon name="arrow" size={18} className="ico-move" /></button>
+              <button type="button" className="btn btn-ghost btn-sm" onClick={() => setStep(0)}>חזרה</button>
             </div>
           </div>
         )}
 
         {step === 2 && (
           <div className="step" key="s2">
-            {carried && <div className="carried">📈 התחזית שבנית מחכה לך בפנים. דובדבוט יפרק אותה ברגע שתיכנס.</div>}
+            {carried && <div className="carried"><Icon name="chart" size={18} /> מה שהתחלת מחכה לך בפנים. דובדבוט ימשיך משם ברגע שתיכנס.</div>}
             <label className="check">
               <input type="checkbox" checked={terms} onChange={(e) => { setTerms(e.target.checked); setErrors({}); }} />
               <span>
@@ -170,15 +175,16 @@ export default function RegisterForm() {
             </label>
             {errors.form && <span className="err">{errors.form}</span>}
             <div className="step-actions">
-              <button className="btn btn-gold" type="submit" disabled={loading} style={{ flex: 1 }}>
+              <button className="btn btn-primary" type="submit" disabled={loading} style={{ flex: 1 }}>
                 {loading ? "פותח לך את דובדבוט…" : "פתח לי את דובדבוט"}
               </button>
-              <button type="button" className="back" onClick={() => setStep(1)}>חזרה</button>
+              <button type="button" className="btn btn-ghost btn-sm" onClick={() => setStep(1)}>חזרה</button>
             </div>
             <p className="legal-note">ההסכמה לדיוור אינה תנאי לשימוש. הפרטים נשמרים אצל קבוצת דובדבני לפי מדיניות הפרטיות.</p>
           </div>
         )}
       </form>
+      <p className="auth-alt" style={{ marginTop: 18 }}>כבר רשום? <a href="/login">התחברות</a></p>
     </div>
   );
 }

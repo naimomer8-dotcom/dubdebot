@@ -46,7 +46,7 @@ export default function ForecastStudio({
   const mood = s.breakEven === -1 || inp.margin < 35 ? "curious" : s.netMargin > 0.2 ? "celebrate" : "idle";
 
   return (
-    <div className="studio">
+    <div className="studio glass edge">
       <div className="studio-controls">
         {SLIDERS.map((d) => {
           const val = inp[d.key];
@@ -93,21 +93,21 @@ export default function ForecastStudio({
           <svg className="chart" viewBox={`0 0 ${W} ${H}`} onMouseLeave={() => setHover(null)} role="img" aria-label="גרף הכנסות ורווח ל-12 חודשים">
             <defs>
               <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#f1d9a4" />
-                <stop offset="100%" stopColor="#a6884f" stopOpacity=".55" />
+                <stop offset="0%" stopColor="#f6e6c2" />
+                <stop offset="100%" stopColor="#8c6f42" stopOpacity=".35" />
               </linearGradient>
             </defs>
             <line className="zero" x1={PAD_L} x2={W - PAD_R} y1={y(0)} y2={y(0)} />
             {s.months.map((m, i) => (
               <g key={i} onMouseEnter={() => setHover(i)}>
                 <rect x={r1(x(i) - slot / 2)} y={0} width={r1(slot)} height={H} fill="transparent" />
-                <rect className="bar" x={r1(x(i) - barW / 2)} y={y(m.revenue)} width={barW} height={Math.max(1, r1(y(0) - y(m.revenue)))} rx={5} opacity={hover === null || hover === i ? 1 : 0.4} />
+                <rect className="bar" x={r1(x(i) - barW / 2)} y={y(m.revenue)} width={barW} height={Math.max(1, r1(y(0) - y(m.revenue)))} rx={4} opacity={hover === null || hover === i ? 1 : 0.4} />
                 <text x={x(i)} y={H - 8} textAnchor="middle">{m.label}</text>
               </g>
             ))}
             <path className="profit-line" d={line} />
             {s.months.map((m, i) => (
-              <circle key={i} cx={x(i)} cy={y(m.profit)} r={hover === i ? 5.5 : 3} fill={m.profit < 0 ? "#ff7b86" : "#efe6d2"} />
+              <circle key={i} cx={x(i)} cy={y(m.profit)} r={hover === i ? 5.5 : 3} fill={m.profit < 0 ? "#ff8d8d" : "#fff4dc"} />
             ))}
             {s.breakEven > 0 && <circle className="be-dot" cx={x(s.breakEven)} cy={y(s.months[s.breakEven].profit)} r={8} />}
           </svg>
@@ -118,14 +118,14 @@ export default function ForecastStudio({
             </div>
           )}
         </div>
-        <div style={{ display: "flex", gap: 18, fontSize: 14, color: "var(--muted)" }}>
-          <span><span style={{ display: "inline-block", width: 12, height: 12, borderRadius: 3, background: "var(--gold)", verticalAlign: -1 }} /> הכנסות</span>
-          <span><span style={{ display: "inline-block", width: 14, height: 3, background: "var(--cream)", verticalAlign: 3 }} /> רווח נקי</span>
-          <span><span style={{ display: "inline-block", width: 10, height: 10, borderRadius: 9, background: "var(--cherry)", verticalAlign: -1 }} /> נקודת איזון</span>
+        <div className="legend">
+          <span><i style={{ width: 10, height: 10, borderRadius: 3, background: "var(--gold)" }} />הכנסות</span>
+          <span><i style={{ width: 14, height: 2, background: "#fff4dc" }} />רווח נקי</span>
+          <span><i style={{ width: 9, height: 9, borderRadius: 9, background: "var(--cherry)" }} />נקודת איזון</span>
         </div>
 
         <div className="verdict" aria-live="polite">
-          <Mascot size={58} mood={mood} />
+          <Mascot size={52} mood={mood} track={false} />
           <p>
             <b>{v.bold}</b>
             {v.rest}
@@ -133,7 +133,7 @@ export default function ForecastStudio({
         </div>
 
         <div className="studio-cta">
-          <button className="btn btn-gold" onClick={() => onCta(inp)}>{ctaLabel}</button>
+          <button className="btn btn-primary" onClick={() => onCta(inp)}>{ctaLabel}</button>
           {ctaNote && <small>{ctaNote}</small>}
         </div>
       </div>

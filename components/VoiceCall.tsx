@@ -1,0 +1,439 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import Mascot from "./Mascot";
+import Icon from "./Icon";
+
+type Phase = "connecting" | "listening" | "thinking" | "speaking" | "paused" | "error";
+type SpeechRec = {
+  lang: string; interimResults: boolean; continuous: boolean; maxAlternatives: number;
+  start: () => void; stop: () => void; abort: () => void;
+  onresult: ((e: { results: ArrayLike<{ isFinal: boolean; 0: { transcript: string } }> }) => void) | null;
+  onend: (() => void) | null; onerror: ((e: { error: string }) => void) | null;
+};
+
+const META_SEP = "\u0000DDMETA";
+const LABEL: Record<Phase, string> = {
+  connecting: "מתחבר…",
+  listening: "אני מקשיב",
+  thinking: "חושב על זה…",
+  speaking: "ניר מדבר",
+  paused: "בהמתנה",
+  error: "משהו השתבש",
+};
+
+/**
+ * Full-screen voice call with the cherry: speech-to-text → Dubdebot (voice mode) → TTS, hands-free loop.
+ * Sentences are voiced as soon as they stream in, and the mascot's mouth follows the audio level.
+ */
+export default function VoiceCall({
+  conversationId,
+  firstName,
+  onTurn,
+  onClose,
+}: {
+  conversationId: string | null;
+  firstName: string;
+  onTurn: (user: string, assistant: string, meta: { conversationId?: string; messageId?: string }) => void;
+  onClose: () => void;
+}) {
+  const [phase, setPhase] = useState<Phase>("connecting");
+  const [you, setYou] = useState("");
+  const [bot, setBot] = useState("");
+  const [level, setLevel] = useState(0);
+  const [muted, setMuted] = useState(false);
+  const [seconds, setSeconds] = useState(0);
+
+  const ctxRef = useRef<AudioContext | null>(null);
+  const micRef = useRef<MediaStream | null>(null);
+  const micAnalyser = useRef<AnalyserNode | null>(null);
+  const outAnalyser = useRef<AnalyserNode | null>(null);
+  const recRef = useRef<SpeechRec | null>(null);
+  const mediaRec = useRef<MediaRecorder | null>(null);
+  const queue = useRef<Promise<ArrayBuffer | null>[]>([]);
+  const playing = useRef(false);
+  const streamDone = useRef(false);
+  const currentSrc = useRef<AudioBufferSourceNode | null>(null);
+  const convId = useRef(conversationId);
+  const alive = useRef(true);
+  const phaseRef = useRef<Phase>("connecting");
+  const ttsOk = useRef(true);
+  const abortRef = useRef<AbortController | null>(null);
+
+  const go = (p: Phase) => {
+    phaseRef.current = p;
+    setPhase(p);
+  };
+
+  // ---------- level meter (mic while listening, playback while speaking) ----------
+  useEffect(() => {
+    let raf = 0;
+    const buf = new Uint8Array(1024);
+    const tick = () => {
+      const an = phaseRef.current === "speaking" ? outAnalyser.current : phaseRef.current === "listening" ? micAnalyser.current : null;
+      let v = 0;
+      if (an) {
+        an.getByteTimeDomainData(buf);
+        let sum = 0;
+        for (let i = 0; i < an.fftSize && i < buf.length; i++) {
+          const x = (buf[i] - 128) / 128;
+          sum += x * x;
+        }
+        v = Math.min(1, Math.sqrt(sum / Math.min(an.fftSize, buf.length)) * 4.2);
+      } else if (phaseRef.current === "speaking" && !ttsOk.current) {
+        v = 0.35 + 0.35 * Math.sin(performance.now() / 90) * Math.sin(performance.now() / 230);
+      }
+      setLevel((l) => l * 0.55 + v * 0.45);
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  useEffect(() => {
+    const t = setInterval(() => setSeconds((s) => s + 1), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  // ---------- speaking ----------
+  const fetchTts = useCallback(async (text: string): Promise<ArrayBuffer | null> => {
+    if (!ttsOk.current) return null;
+    try {
+      const r = await fetch("/api/tts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }) });
+      if (r.status === 503) {
+        ttsOk.current = false;
+        return null;
+      }
+      if (!r.ok) return null;
+      return await r.arrayBuffer();
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const speakBrowser = (text: string) =>
+    new Promise<void>((resolve) => {
+      const synth = window.speechSynthesis;
+      if (!synth) return resolve();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = "he-IL";
+      const v = synth.getVoices().find((x) => x.lang?.startsWith("he"));
+      if (v) u.voice = v;
+      u.rate = 1.04;
+      u.onend = () => resolve();
+      u.onerror = () => resolve();
+      synth.speak(u);
+    });
+
+  const sentences = useRef<string[]>([]);
+
+  const pump = useCallback(async () => {
+    if (playing.current) return;
+    playing.current = true;
+    while (alive.current && (queue.current.length || !streamDone.current)) {
+      if (!queue.current.length) {
+        await new Promise((r) => setTimeout(r, 60));
+        continue;
+      }
+      const job = queue.current.shift()!;
+      const text = sentences.current.shift() ?? "";
+      go("speaking");
+      const buf = await job;
+      if (!alive.current) break;
+      if (buf && ctxRef.current) {
+        try {
+          const audio = await ctxRef.current.decodeAudioData(buf.slice(0));
+          await new Promise<void>((resolve) => {
+            const src = ctxRef.current!.createBufferSource();
+            src.buffer = audio;
+            src.connect(outAnalyser.current!);
+            src.onended = () => resolve();
+            currentSrc.current = src;
+            src.start();
+          });
+        } catch {
+          await speakBrowser(text);
+        }
+      } else if (text) {
+        await speakBrowser(text);
+      }
+    }
+    playing.current = false;
+    currentSrc.current = null;
+    if (alive.current && phaseRef.current === "speaking") startListening();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const enqueue = useCallback(
+    (s: string) => {
+      const clean = s.replace(/[*#_`>|]/g, "").trim();
+      if (clean.length < 2) return;
+      sentences.current.push(clean);
+      queue.current.push(fetchTts(clean));
+      pump();
+    },
+    [fetchTts, pump]
+  );
+
+  const stopSpeaking = () => {
+    abortRef.current?.abort();
+    try {
+      currentSrc.current?.stop();
+    } catch {}
+    window.speechSynthesis?.cancel();
+    queue.current = [];
+    sentences.current = [];
+    streamDone.current = true;
+  };
+
+  // ---------- thinking ----------
+  const ask = useCallback(
+    async (text: string) => {
+      go("thinking");
+      setBot("");
+      streamDone.current = false;
+      const ac = new AbortController();
+      abortRef.current = ac;
+      let raw = "";
+      let spoken = 0;
+      try {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: text, voice: true, mode: "chat", conversationId: convId.current }),
+          signal: ac.signal,
+        });
+        if (!res.ok || !res.body) throw new Error("bad");
+        const reader = res.body.getReader();
+        const dec = new TextDecoder();
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          raw += dec.decode(value, { stream: true });
+          const visible = raw.split(META_SEP)[0];
+          setBot(visible);
+          // voice each finished sentence immediately
+          const re = /[^.!?…\n]+[.!?…\n]+/g;
+          re.lastIndex = spoken;
+          let m: RegExpExecArray | null;
+          while ((m = re.exec(visible))) {
+            enqueue(m[0]);
+            spoken = re.lastIndex;
+          }
+        }
+        const [visible, metaRaw] = raw.split(META_SEP);
+        if (visible.slice(spoken).trim()) enqueue(visible.slice(spoken));
+        let meta: { conversationId?: string; messageId?: string } = {};
+        try {
+          meta = metaRaw ? JSON.parse(metaRaw) : {};
+        } catch {}
+        if (meta.conversationId) convId.current = meta.conversationId;
+        onTurn(text, visible.trim(), meta);
+      } catch (e) {
+        if ((e as Error).name === "AbortError") return;
+        enqueue("אופס, נתקעתי רגע. תגיד שוב?");
+      } finally {
+        streamDone.current = true;
+      }
+    },
+    [enqueue, onTurn]
+  );
+
+  // ---------- listening ----------
+  const startListening = useCallback(() => {
+    if (!alive.current) return;
+    setYou("");
+    go("listening");
+    const w = window as unknown as { SpeechRecognition?: new () => SpeechRec; webkitSpeechRecognition?: new () => SpeechRec };
+    const Ctor = w.SpeechRecognition || w.webkitSpeechRecognition;
+    if (Ctor) {
+      const rec = new Ctor();
+      rec.lang = "he-IL";
+      rec.interimResults = true;
+      rec.continuous = false;
+      rec.maxAlternatives = 1;
+      let finalText = "";
+      rec.onresult = (e) => {
+        let t = "";
+        finalText = "";
+        for (let i = 0; i < e.results.length; i++) {
+          t += e.results[i][0].transcript;
+          if (e.results[i].isFinal) finalText += e.results[i][0].transcript;
+        }
+        setYou(t);
+        if (!finalText) finalText = t;
+      };
+      rec.onerror = () => {};
+      rec.onend = () => {
+        recRef.current = null;
+        if (!alive.current || phaseRef.current !== "listening") return;
+        const t = finalText.trim();
+        if (t) ask(t);
+        else go("paused");
+      };
+      recRef.current = rec;
+      try {
+        rec.start();
+      } catch {
+        go("paused");
+      }
+      return;
+    }
+    // fallback: record + simple voice-activity detection → server transcription
+    const stream = micRef.current;
+    if (!stream || typeof MediaRecorder === "undefined") return go("error");
+    const mr = new MediaRecorder(stream);
+    const chunks: Blob[] = [];
+    mr.ondataavailable = (e) => e.data.size && chunks.push(e.data);
+    mr.onstop = async () => {
+      mediaRec.current = null;
+      if (!alive.current || phaseRef.current !== "listening") return;
+      const blob = new Blob(chunks, { type: mr.mimeType });
+      if (blob.size < 2500) return go("paused");
+      go("thinking");
+      const bytes = new Uint8Array(await blob.arrayBuffer());
+      let bin = "";
+      for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+      const data = btoa(bin);
+      const r = await fetch("/api/stt", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ audio: data, mime: mr.mimeType }) }).catch(() => null);
+      const j = r && r.ok ? await r.json().catch(() => ({})) : {};
+      const t = String(j.text ?? "").trim();
+      if (!t) return go("paused");
+      setYou(t);
+      ask(t);
+    };
+    mediaRec.current = mr;
+    mr.start(250);
+    const buf = new Uint8Array(1024);
+    let heard = false;
+    let quietSince = performance.now();
+    const started = performance.now();
+    const vad = () => {
+      if (mediaRec.current !== mr) return;
+      const an = micAnalyser.current;
+      if (an) {
+        an.getByteTimeDomainData(buf);
+        let sum = 0;
+        for (let i = 0; i < buf.length; i++) sum += ((buf[i] - 128) / 128) ** 2;
+        const rms = Math.sqrt(sum / buf.length);
+        const now = performance.now();
+        if (rms > 0.035) {
+          heard = true;
+          quietSince = now;
+        }
+        if ((heard && now - quietSince > 1300) || now - started > 25000 || (!heard && now - started > 9000)) {
+          mr.stop();
+          return;
+        }
+      }
+      requestAnimationFrame(vad);
+    };
+    requestAnimationFrame(vad);
+  }, [ask]);
+
+  // ---------- lifecycle ----------
+  useEffect(() => {
+    alive.current = true;
+    fetch("/api/event", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "call_started", conversationId, meta: {} }) }).catch(() => {});
+    (async () => {
+      try {
+        const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        const ctx = new AC();
+        ctxRef.current = ctx;
+        const out = ctx.createAnalyser();
+        out.fftSize = 1024;
+        out.connect(ctx.destination);
+        outAnalyser.current = out;
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+        micRef.current = stream;
+        const mic = ctx.createAnalyser();
+        mic.fftSize = 1024;
+        ctx.createMediaStreamSource(stream).connect(mic);
+        micAnalyser.current = mic;
+        // greeting
+        streamDone.current = false;
+        setBot(`היי ${firstName}, כאן ניר. ספר לי, מה הכי בוער לך בעסק עכשיו?`);
+        enqueue(`היי ${firstName}, כאן ניר. ספר לי, מה הכי בוער לך בעסק עכשיו?`);
+        streamDone.current = true;
+      } catch {
+        go("error");
+      }
+    })();
+    return () => {
+      alive.current = false;
+      stopSpeaking();
+      recRef.current?.abort();
+      if (mediaRec.current?.state === "recording") mediaRec.current.stop();
+      micRef.current?.getTracks().forEach((t) => t.stop());
+      ctxRef.current?.close().catch(() => {});
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const on = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", on);
+    return () => window.removeEventListener("keydown", on);
+  }, [onClose]);
+
+  function mainAction() {
+    ctxRef.current?.resume();
+    if (phase === "speaking" || phase === "thinking") {
+      stopSpeaking();
+      startListening();
+    } else if (phase === "listening") {
+      recRef.current?.stop();
+      if (mediaRec.current?.state === "recording") mediaRec.current.stop();
+    } else {
+      startListening();
+    }
+  }
+
+  function toggleMute() {
+    const m = !muted;
+    setMuted(m);
+    if (outAnalyser.current && ctxRef.current) {
+      outAnalyser.current.disconnect();
+      if (!m) outAnalyser.current.connect(ctxRef.current.destination);
+    }
+  }
+
+  const mm = String(Math.floor(seconds / 60)).padStart(2, "0");
+  const ss = String(seconds % 60).padStart(2, "0");
+
+  return (
+    <div className="call" role="dialog" aria-modal="true" aria-label="שיחה קולית עם דובדבוט">
+      <div className="call-head">
+        <div>
+          <b>שיחה עם ניר</b>
+          <small className="num">{mm}:{ss} · דובדבוט קולי</small>
+        </div>
+        <span className="badge"><span className="dot-live" /> בשיחה</span>
+      </div>
+
+      <div className="call-center">
+        <div className={`orb ${phase === "listening" ? "listening" : ""}`} style={{ ["--lvl" as string]: level.toFixed(3) }}>
+          <span className="halo" /><span className="halo" /><span className="halo" />
+          <span className="core" />
+          <Mascot size={210} mood={phase === "thinking" ? "thinking" : phase === "listening" ? "curious" : "idle"} level={phase === "speaking" ? level : undefined} track={false} />
+        </div>
+        <div className="call-state" aria-live="polite">{LABEL[phase]}</div>
+        <p className={`call-caption ${phase === "listening" ? "you" : ""}`}>
+          {phase === "listening" ? you || "דבר חופשי, אני כאן." : phase === "error" ? "צריך הרשאה למיקרופון כדי לדבר. אפשר לאשר בדפדפן ולנסות שוב." : phase === "paused" ? "לחץ על הכפתור כשאתה מוכן לדבר." : bot.slice(-220)}
+        </p>
+      </div>
+
+      <div className="call-controls">
+        <button className={`cbtn ${muted ? "off" : ""}`} onClick={toggleMute} aria-label={muted ? "הפעלת שמע" : "השתקה"}>
+          <Icon name={muted ? "mute" : "sound"} size={24} />
+        </button>
+        <button className={`cbtn main ${phase === "listening" ? "live" : ""}`} onClick={mainAction} aria-label="דיבור">
+          <Icon name={phase === "listening" ? "stop" : "mic"} size={30} />
+        </button>
+        <button className="cbtn end" onClick={onClose} aria-label="סיום שיחה">
+          <Icon name="phone" size={24} />
+        </button>
+      </div>
+    </div>
+  );
+}

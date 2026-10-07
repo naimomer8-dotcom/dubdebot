@@ -3,7 +3,7 @@ import { db } from "@/lib/supabase";
 import { getSessionUserId } from "@/lib/session";
 
 export const runtime = "nodejs";
-const ALLOWED = new Set(["cta_clicked", "cta_dismissed", "tool_opened"]);
+const ALLOWED = new Set(["cta_clicked", "cta_dismissed", "tool_opened", "file_attached", "xray_shared", "call_started"]);
 
 export async function POST(req: Request) {
   const userId = await getSessionUserId();

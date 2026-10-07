@@ -12,11 +12,14 @@ export default function Mascot({
   mood = "idle",
   track = true,
   className = "",
+  level,
 }: {
   size?: number;
   mood?: Mood;
   track?: boolean;
   className?: string;
+  /** 0..1 audio level – drives the mouth for lip-sync during voice calls */
+  level?: number;
 }) {
   const uid = useId().replace(/:/g, "");
   const ref = useRef<SVGSVGElement>(null);
@@ -60,7 +63,7 @@ export default function Mascot({
       viewBox="0 0 200 200"
       role="img"
       aria-label="דובדבוט"
-      className={`mascot mascot--${mood} ${className}`}
+      className={`mascot mascot--${level !== undefined ? "lipsync" : mood} ${className}`}
     >
       <defs>
         <radialGradient id={`${uid}-body`} cx="36%" cy="30%" r="78%">
@@ -139,8 +142,8 @@ export default function Mascot({
         <ellipse cx="142" cy="138" rx="9" ry="5" fill="#ff8d98" opacity=".33" />
 
         {/* mouth */}
-        <g className="mascot__mouth">
-          {mood === "talking" ? (
+        <g className="mascot__mouth" style={level !== undefined ? { transform: `scaleY(${(0.18 + Math.min(1, level) * 1.0).toFixed(3)})` } : undefined}>
+          {mood === "talking" || level !== undefined ? (
             <>
               <path d="M85 142 C 91 160, 109 160, 115 142 Z" fill="#22000a" />
               <path d="M92 151 C 96 156, 104 156, 108 151" fill="#ff6371" />

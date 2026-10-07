@@ -16,9 +16,13 @@ export default function Preview() {
   ];
   return (
     <ChatClient
-      user={{ firstName: "מיכל", fullName: "מיכל כהן", phone: "0501234567", email: "michal@example.com" }}
+      user={{ id: "preview", firstName: "מיכל", fullName: "מיכל כהן", phone: "0501234567", email: "michal@example.com" }}
+      conversations={[{ id: "c1", title: "איך מעלים מחירים בסטודיו", mode: "chat", updated_at: "" }, { id: "c2", title: "תחזית ל-2027", mode: "forecast", updated_at: "" }]}
+      leadSentInitially={false}
       initialConversationId={null}
       initialMessages={messages}
+      initialTool={null}
+      autoXray={false}
     />
   );
 }
