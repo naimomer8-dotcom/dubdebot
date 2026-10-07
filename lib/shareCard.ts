@@ -17,10 +17,10 @@ export async function renderShareCard(opts: {
   if (!ctx) return null;
   try {
     await Promise.all([
-      document.fonts.load('300 300px "Frank Ruhl Libre"'),
-      document.fonts.load('400 80px "Frank Ruhl Libre"'),
-      document.fonts.load('400 40px "Heebo"'),
-      document.fonts.load('500 40px "Heebo"'),
+      document.fonts.load('700 300px "Karantina"'),
+      document.fonts.load('400 80px "Karantina"'),
+      document.fonts.load('400 40px "Assistant"'),
+      document.fonts.load('500 40px "Assistant"'),
     ]);
   } catch {}
   ctx.direction = "rtl";
@@ -53,28 +53,28 @@ export async function renderShareCard(opts: {
   // header
   ctx.textAlign = "right";
   ctx.fillStyle = "#e2c68e";
-  ctx.font = '500 34px "Heebo"';
+  ctx.font = '500 34px "Assistant"';
   (ctx as unknown as { letterSpacing: string }).letterSpacing = "6px";
   ctx.fillText("הרנטגן העסקי שלי", W - 110, 170);
   (ctx as unknown as { letterSpacing: string }).letterSpacing = "0px";
   ctx.fillStyle = "#f4eee3";
-  ctx.font = '400 74px "Frank Ruhl Libre"';
+  ctx.font = '700 104px "Karantina"';
   ctx.fillText("הנה איפה העסק שלי עומד.", W - 110, 270);
 
   // score
   ctx.textAlign = "center";
   ctx.fillStyle = gold;
-  ctx.font = '300 330px "Frank Ruhl Libre"';
+  ctx.font = '700 420px "Karantina"';
   ctx.fillText(String(opts.total), W / 2, 640);
   ctx.fillStyle = "#7f786c";
-  ctx.font = '400 38px "Heebo"';
+  ctx.font = '400 38px "Assistant"';
   ctx.fillText("מתוך 100", W / 2, 710);
 
   ctx.fillStyle = "#f4eee3";
-  ctx.font = '400 88px "Frank Ruhl Libre"';
+  ctx.font = '700 128px "Karantina"';
   ctx.fillText(opts.archetype, W / 2, 850);
   ctx.fillStyle = "#bcb3a3";
-  ctx.font = '300 40px "Heebo"';
+  ctx.font = '400 40px "Assistant"';
   ctx.fillText(opts.line, W / 2, 920);
 
   // radar
@@ -107,7 +107,7 @@ export async function renderShareCard(opts: {
   ctx.strokeStyle = "#e2c68e";
   ctx.lineWidth = 4;
   ctx.stroke();
-  ctx.font = '500 34px "Heebo"';
+  ctx.font = '500 34px "Assistant"';
   ctx.fillStyle = "#f4eee3";
   AXES.forEach((a, i) => {
     const [x, y] = pt(i, R + 62);
@@ -129,10 +129,10 @@ export async function renderShareCard(opts: {
   // footer
   ctx.textAlign = "right";
   ctx.fillStyle = "#f4eee3";
-  ctx.font = '400 46px "Frank Ruhl Libre"';
+  ctx.font = '700 66px "Karantina"';
   ctx.fillText("כמה העסק שלך מקבל?", W - 110, 1715);
   ctx.fillStyle = "#e2c68e";
-  ctx.font = '500 34px "Heebo"';
+  ctx.font = '500 34px "Assistant"';
   ctx.fillText("דובדבוט · רנטגן עסקי ב-3 דקות", W - 110, 1772);
 
   return new Promise((res) => c.toBlob((b) => res(b), "image/png"));

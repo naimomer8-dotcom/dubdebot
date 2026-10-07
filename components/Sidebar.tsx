@@ -57,7 +57,10 @@ export default function Sidebar({
           <Icon name="chat" size={18} /> שיחה עם דובדבוט
         </Link>
         <Link className="side-link" href="/xray">
-          <Icon name="scan" size={18} /> רנטגן עסקי <span className="new-tag">חדש</span>
+          <Icon name="scan" size={18} /> רנטגן עסקי
+        </Link>
+        <Link className="side-link" href="/scan">
+          <Icon name="radar" size={18} /> סריקת רשתות <span className="new-tag">חדש</span>
         </Link>
         <Link className="side-link" href="/vault" aria-current={active === "vault"}>
           <Icon name="vault" size={18} /> התיק העסקי שלי

@@ -16,8 +16,8 @@ export async function POST(req: Request) {
   }
   if (Object.keys(answers).length < QUESTIONS.length) return NextResponse.json({ error: "incomplete" }, { status: 400 });
 
-  const { scores, total } = score(answers);
   const userId = await getSessionUserId();
+  const { scores, total } = score(answers);
   const supabase = db();
   const { data, error } = await supabase
     .from("xray_results")
@@ -28,9 +28,7 @@ export async function POST(req: Request) {
     console.error(error);
     return NextResponse.json({ ok: false }, { status: 500 });
   }
-  if (userId) {
-    await supabase.from("events").insert({ user_id: userId, type: "xray_completed", meta: { total } });
-  }
+  if (userId) await supabase.from("events").insert({ user_id: userId, type: "xray_completed", meta: { total } });
   return NextResponse.json({ ok: true, id: data.id, scores, total });
 }
 

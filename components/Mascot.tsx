@@ -82,14 +82,43 @@ export default function Mascot({
         </radialGradient>
       </defs>
 
-      <ellipse cx="100" cy="190" rx="52" ry="7" fill={g("shadow")} />
+      <ellipse cx="92" cy="190" rx="78" ry="7" fill={g("shadow")} />
 
       <g className="mascot__bob">
-        {/* stem + leaf */}
-        <path d="M100 60 C 101 40, 111 22, 133 11" stroke={g("gold")} strokeWidth="5.5" strokeLinecap="round" fill="none" />
-        <path d="M119 21 C 138 7, 164 12, 172 26 C 155 37, 131 37, 119 21 Z" fill={g("gold")} />
-        <path d="M121 22 C 138 21, 154 24, 170 26" stroke="#6b5226" strokeWidth="1.3" fill="none" opacity=".55" />
+        {/* shared stems + leaf – a pair of cherries */}
+        <path d="M112 74 C 110 52, 100 30, 93 15" stroke={g("gold")} strokeWidth="4.6" strokeLinecap="round" fill="none" />
+        <path d="M50 92 C 56 62, 74 34, 93 15" stroke={g("gold")} strokeWidth="4.2" strokeLinecap="round" fill="none" />
+        <path d="M93 15 C 112 0, 140 4, 150 18 C 132 30, 106 30, 93 15 Z" fill={g("gold")} />
+        <path d="M96 16 C 112 15, 130 17, 147 19" stroke="#6b5226" strokeWidth="1.2" fill="none" opacity=".55" />
 
+        {/* second cherry (behind) */}
+        <g className="mascot__twin">
+          <path d="M50 92 C 30 84, 10 98, 10 124 C 10 150, 28 168, 50 168 C 72 168, 90 150, 90 124 C 90 98, 70 84, 50 92 Z" fill={g("body")} stroke={g("gold")} strokeWidth="1.8" />
+          <path d="M50 92 C 70 84, 90 98, 90 124 C 90 150, 72 168, 50 168" fill="#000" opacity=".18" />
+          <ellipse cx="30" cy="112" rx="6.5" ry="12" fill="#fff" opacity=".2" transform="rotate(-24 30 112)" />
+          <g className="mascot__lids2">
+            {mood === "celebrate" || mood === "wink" ? (
+              <>
+                <path d="M23 128 C 26 123, 32 123, 35 128" stroke="#22000a" strokeWidth="3" strokeLinecap="round" fill="none" />
+                <path d="M42 128 C 45 123, 51 123, 54 128" stroke="#22000a" strokeWidth="3" strokeLinecap="round" fill="none" />
+              </>
+            ) : (
+              <>
+                <ellipse cx="29" cy="127" rx="5.4" ry="6.6" fill="#fff9ee" />
+                <ellipse cx="48" cy="127" rx="5.4" ry="6.6" fill="#fff9ee" />
+                <g className="mascot__pupil" style={{ transform: `translate(${(p.x * 0.55).toFixed(2)}px, ${(p.y * 0.55).toFixed(2)}px)` }}>
+                  <circle cx="29" cy="128" r="3" fill="#14000a" />
+                  <circle cx="48" cy="128" r="3" fill="#14000a" />
+                </g>
+              </>
+            )}
+          </g>
+          <path d="M31 141 C 35 147, 42 147, 46 141" stroke="#22000a" strokeWidth="2.8" strokeLinecap="round" fill="none" />
+          <ellipse cx="20" cy="139" rx="5" ry="3" fill="#ff8d98" opacity=".3" />
+        </g>
+
+        {/* main cherry */}
+        <g transform="translate(30 22) scale(0.82)">
         {/* body */}
         <path
           d="M100 62 C 72 50, 32 64, 32 113 C 32 154, 64 184, 100 184 C 136 184, 168 154, 168 113 C 168 64, 128 50, 100 62 Z"
@@ -170,6 +199,7 @@ export default function Mascot({
             <circle cx="186" cy="38" r="7.5"><animate attributeName="opacity" values=".2;1;.2" dur="1.2s" begin=".4s" repeatCount="indefinite" /></circle>
           </g>
         )}
+        </g>
       </g>
     </svg>
   );

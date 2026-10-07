@@ -3,7 +3,7 @@ export type IconName =
   | "chart" | "map" | "target" | "flask" | "shield" | "spark" | "scan" | "vault" | "phone" | "mic" | "clip"
   | "send" | "plus" | "close" | "copy" | "check" | "thumbUp" | "thumbDown" | "download" | "bookmark" | "arrow"
   | "arrowLeft" | "chat" | "user" | "calendar" | "share" | "image" | "file" | "menu" | "stop" | "wave" | "crown"
-  | "bolt" | "layers" | "clock" | "lock" | "trash" | "sound" | "mute" | "home" | "list" | "eye" | "logout" | "mail";
+  | "bolt" | "layers" | "clock" | "lock" | "trash" | "sound" | "mute" | "home" | "list" | "eye" | "logout" | "mail" | "radar" | "link" | "alert";
 
 const P: Record<IconName, React.ReactNode> = {
   chart: <><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></>,
@@ -49,6 +49,9 @@ const P: Record<IconName, React.ReactNode> = {
   eye: <><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" /></>,
   logout: <><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l-5-5 5-5M5 12h11" /></>,
   mail: <><rect x="3" y="5" width="18" height="14" rx="2.5" /><path d="m4 7 8 6 8-6" /></>,
+  radar: <><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5" /><path d="M12 12 18.5 5.5" /><circle cx="12" cy="12" r="1.2" fill="currentColor" /></>,
+  link: <><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1" /><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" /></>,
+  alert: <><path d="M12 3 2 20h20L12 3Z" /><path d="M12 10v4M12 17v.5" /></>,
   list: <><path d="M9 6h11M9 12h11M9 18h11" /><circle cx="4.5" cy="6" r="1" /><circle cx="4.5" cy="12" r="1" /><circle cx="4.5" cy="18" r="1" /></>,
 };
 

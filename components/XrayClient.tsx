@@ -23,6 +23,15 @@ export default function XrayClient({ loggedIn }: { loggedIn: boolean }) {
   const [cardBusy, setCardBusy] = useState(false);
   const mascotRef = useRef<HTMLDivElement>(null);
 
+  // answer to Q1 picked on the landing page
+  useEffect(() => {
+    const v = Number(new URLSearchParams(window.location.search).get("q1"));
+    if (Number.isInteger(v) && v >= 0 && v <= 3) {
+      setAnswers({ [QUESTIONS[0].id]: v });
+      setIdx(1);
+    }
+  }, []);
+
   const q = QUESTIONS[idx];
   const axis = q ? AXES.find((a) => a.id === q.axis)! : null;
   const result = useMemo(() => (done ? score(answers) : null), [done, answers]);
@@ -110,7 +119,7 @@ export default function XrayClient({ loggedIn }: { loggedIn: boolean }) {
 
   function getPlan() {
     if (loggedIn) router.push("/chat?xray=1");
-    else router.push("/#signup");
+    else router.push("/?from=xray#signup");
   }
 
   const mood: Mood = done ? "celebrate" : leaving ? "thinking" : idx > 8 ? "wink" : "curious";
@@ -199,7 +208,7 @@ export default function XrayClient({ loggedIn }: { loggedIn: boolean }) {
                   <p>הצד החזק שלך: {ins.strongLine}. עכשיו בוא נתקן את מה שמאט אותך.</p>
                 </div>
                 <button className="btn btn-primary btn-lg" onClick={getPlan}>
-                  {loggedIn ? "תוכנית 30 יום מדובדבוט" : "קבל תוכנית 30 יום – חינם"} <Icon name="arrow" size={18} className="ico-move" />
+                  {loggedIn ? "תוכנית 30 יום מדובדבוט" : "לקבל תוכנית 30 יום – חינם"} <Icon name="arrow" size={18} className="ico-move" />
                 </button>
               </section>
 

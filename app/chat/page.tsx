@@ -43,7 +43,7 @@ export default async function ChatPage({ searchParams }: { searchParams: Promise
     }));
   }
 
-  const tool = sp.tool && (TOOLS.some((t) => t.id === sp.tool) || ["call", "upload"].includes(sp.tool)) ? (sp.tool as ToolMode) : null;
+  const tool = sp.tool && (TOOLS.some((t) => t.id === sp.tool) || ["call", "upload", "scan", "xray"].includes(sp.tool)) ? (sp.tool as ToolMode) : null;
 
   return (
     <ChatClient

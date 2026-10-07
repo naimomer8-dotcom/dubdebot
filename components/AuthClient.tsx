@@ -11,7 +11,7 @@ import { Brand, GroupLogo } from "./BrandBar";
 
 type Mode = "login" | "forgot" | "sent" | "reset" | "done";
 
-export default function AuthClient({ initialMode, email: initialEmail = "", token = "" }: { initialMode: Mode; email?: string; token?: string }) {
+export default function AuthClient({ initialMode, email: initialEmail = "", token = "", next = "/chat" }: { initialMode: Mode; email?: string; token?: string; next?: string }) {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>(initialMode);
   const [email, setEmail] = useState(initialEmail);
@@ -32,7 +32,7 @@ export default function AuthClient({ initialMode, email: initialEmail = "", toke
   async function login(e: React.FormEvent) {
     e.preventDefault();
     const { ok, j } = await post("/api/auth/login", { email, password });
-    if (ok) return router.push("/chat");
+    if (ok) return router.push(next);
     setErrors({ form: j.error ?? "משהו השתבש" });
     if (j.needsReset) setMode("forgot");
   }

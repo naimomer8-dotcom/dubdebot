@@ -220,7 +220,7 @@ export default function ChatClient({
       const fc = sessionStorage.getItem("dd_forecast");
       const xr = sessionStorage.getItem("dd_xray");
       const xrId = sessionStorage.getItem("dd_xray_id");
-      const tool = sessionStorage.getItem("dd_tool") as ToolMode | "call" | "upload" | "vault" | null;
+      const tool = sessionStorage.getItem("dd_tool") as ToolMode | "call" | "upload" | "vault" | "scan" | "xray" | null;
       sessionStorage.removeItem("dd_forecast");
       sessionStorage.removeItem("dd_tool");
       if (xrId) {
@@ -238,7 +238,16 @@ export default function ChatClient({
         send(toPrompt(JSON.parse(fc) as ForecastInput), "forecast");
         return;
       }
+      const pr = sessionStorage.getItem("dd_prompt");
+      if (pr) {
+        sessionStorage.removeItem("dd_prompt");
+        send(pr, "workplan");
+        setMode("workplan");
+        return;
+      }
       const t = initialTool ?? tool;
+      if (t === "scan") return void (window.location.href = "/scan");
+      if (t === "xray") return void (window.location.href = "/xray");
       if (t === "call") setCall(true);
       else if (t === "upload") fileRef.current?.click();
       else if (t === "vault") window.location.href = "/vault";
@@ -401,6 +410,7 @@ export default function ChatClient({
                     {user.firstName}, <span className="gold">מה בונים היום?</span>
                   </h2>
                   <p>22 שנה אני רואה עסקים נתקעים באותם מקומות. ספר לי מה קורה אצלך, שלח לי דוח או צילום – או תתחיל מאחד מאלה.</p>
+                  <div className="welcome-label">שאלות שבעלי עסקים שואלים אותי</div>
                   <div className="starter-grid">
                     {QUICK_STARTS.map((q) => (
                       <button key={q.b} className="starter" onClick={() => send(q.t)}>
@@ -410,13 +420,11 @@ export default function ChatClient({
                       </button>
                     ))}
                   </div>
-                  <div className="quick-tools">
-                    <a className="qt" href="/xray"><Icon name="scan" size={16} /> רנטגן עסקי</a>
-                    <button className="qt" onClick={() => setCall(true)}><Icon name="phone" size={16} /> שיחה קולית</button>
-                    <button className="qt" onClick={() => fileRef.current?.click()}><Icon name="clip" size={16} /> לשלוח מסמך</button>
-                    {TOOLS.filter((t) => t.id !== "chat").map((t) => (
-                      <button key={t.id} className="qt" onClick={() => startTool(t.id)}><Icon name={t.icon} size={16} /> {t.title}</button>
-                    ))}
+                  <div className="welcome-label">או כלי מהיר</div>
+                  <div className="power-row">
+                    <a className="power" href="/xray"><Icon name="scan" size={22} /><span>רנטגן עסקי<small>3 דקות · ציון ופרופיל</small></span></a>
+                    <a className="power" href="/scan"><Icon name="radar" size={22} /><span>סריקת רשתות<small>איפה אתה נכשל שיווקית</small></span></a>
+                    <button className="power" onClick={() => setCall(true)}><Icon name="phone" size={22} /><span>שיחה קולית<small>לדבר עם הדובדבן</small></span></button>
                   </div>
                 </div>
               )}
@@ -499,13 +507,6 @@ export default function ChatClient({
                 </div>
               ))}
 
-              {messages.length > 0 && !busy && (
-                <div className="quick-tools" style={{ marginTop: 0 }}>
-                  {TOOLS.filter((t) => t.id !== "chat" && t.id !== mode).map((t) => (
-                    <button key={t.id} className="qt" onClick={() => startTool(t.id)}><Icon name={t.icon} size={16} /> {t.title}</button>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
 
@@ -653,11 +654,11 @@ function printDeliverable(elementId: string) {
   const w = window.open("", "_blank");
   if (!w || !el) return;
   w.document.write(`<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><title>דובדבוט – קבוצת דובדבני</title>
-  <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;500&family=Heebo:wght@300;400;600&display=swap" rel="stylesheet">
-  <style>body{font-family:Heebo,Arial,sans-serif;max-width:760px;margin:48px auto;padding:0 28px;color:#16130e;line-height:1.75;font-weight:300}
+  <link href="https://fonts.googleapis.com/css2?family=Karantina:wght@700&family=Assistant:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>body{font-family:Assistant,Arial,sans-serif;max-width:760px;margin:48px auto;padding:0 28px;color:#16130e;line-height:1.75;font-weight:300}
   header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1px solid #c9a46a;padding-bottom:14px;margin-bottom:34px}
-  header b{font-family:'Frank Ruhl Libre';font-size:34px;font-weight:500}header span{font-size:12px;letter-spacing:.14em;color:#8c6f42}
-  h1,h2,h3{font-family:'Frank Ruhl Libre';font-weight:500;color:#16130e;font-size:24px;margin:24px 0 8px}strong{font-weight:600}
+  header b{font-family:Karantina;font-size:44px;font-weight:700}header span{font-size:12px;letter-spacing:.14em;color:#8c6f42}
+  h1,h2,h3{font-family:Karantina;font-weight:700;color:#16130e;font-size:32px;margin:24px 0 8px}strong{font-weight:600}
   table{border-collapse:collapse;width:100%;margin:12px 0;font-size:13.5px}th,td{border-bottom:1px solid #e6dcc8;padding:8px 10px;text-align:right}th{color:#8c6f42;font-weight:600}
   footer{margin-top:48px;font-size:11px;color:#8a8275;border-top:1px solid #e6dcc8;padding-top:12px}</style></head>
   <body><header><b>דובדבוט</b><span>DUVDEVANI GROUP · RND.ORG.IL</span></header>${el.innerHTML}
