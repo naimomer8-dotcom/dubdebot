@@ -8,6 +8,7 @@ import Spotlight from "./Spotlight";
 import Radar from "./Radar";
 import { QUESTIONS } from "@/lib/xray";
 import RegisterForm from "./RegisterForm";
+import NirPhoto from "./NirPhoto";
 import Icon, { IconName } from "./Icon";
 import { useReveal } from "./useReveal";
 
@@ -172,7 +173,7 @@ export default function Landing() {
         <section className="section vision-sec">
           <div className="wrap">
             <div className="vision reveal">
-              <Mascot size={110} mood="wink" />
+              <div className="vision-photo"><NirPhoto size={132} /><Mascot size={72} mood="wink" track={false} /></div>
               <blockquote className="h-display">״החזון שלי: שלא יהיה עסק בישראל <span className="gold">שאין לו דובדבוט.</span>״</blockquote>
               <cite>ניר דובדבני · מייסד קבוצת דובדבני</cite>
               <button className="btn btn-primary btn-lg" onClick={() => goSignup()}>לפתוח את דובדבוט בחינם <Icon name="arrow" size={18} className="ico-move" /></button>

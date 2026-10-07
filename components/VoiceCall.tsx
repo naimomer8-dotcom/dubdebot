@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Mascot from "./Mascot";
+import NirPhoto from "./NirPhoto";
 import Icon from "./Icon";
 
 type Phase = "connecting" | "listening" | "thinking" | "speaking" | "paused" | "error";
@@ -404,9 +405,12 @@ export default function VoiceCall({
   return (
     <div className="call" role="dialog" aria-modal="true" aria-label="שיחה קולית עם דובדבוט">
       <div className="call-head">
-        <div>
+        <div className="nir-tag">
+          <NirPhoto size={46} />
+          <span>
           <b>שיחה עם ניר</b>
           <small className="num">{mm}:{ss} · דובדבוט קולי</small>
+          </span>
         </div>
         <span className="badge"><span className="dot-live" /> בשיחה</span>
       </div>

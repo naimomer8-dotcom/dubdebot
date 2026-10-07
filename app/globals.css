@@ -784,3 +784,15 @@ img, svg { display: block; }
 @media (max-width: 640px) { .xr-teaser-copy { padding: 26px 20px; } .xr-teaser-visual { padding: 24px; } }
 .nav-logo { height: 30px; margin-inline-end: 8px; }
 @media (max-width: 640px) { .nav-logo { display: none; } }
+/* Nir portrait */
+.nir-photo { border-radius: 50%; object-fit: cover; flex-shrink: 0; box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--gold-2), 0 18px 40px -14px rgba(0,0,0,.8); background: #2a2a2d; }
+.nir-photo.full { border-radius: var(--r-xl); box-shadow: 0 0 0 1px var(--hair-2), 0 40px 80px -30px rgba(0,0,0,.9); }
+.nir-tag { display: flex; align-items: center; gap: 12px; }
+.nir-tag b { display: block; font-weight: 700; font-size: 16px; line-height: 1.2; }
+.nir-tag small { display: block; color: var(--text-3); font-size: 13.5px; }
+.cta-photo { position: relative; }
+.cta-photo .mascot { position: absolute; bottom: -10px; left: -18px; }
+.vision-photo { position: relative; margin-bottom: 6px; }
+.vision-photo .mascot { position: absolute; bottom: -14px; left: -30px; }
+.choice .nir-photo { margin-bottom: 8px; }
+.meet-card .nir-tag { margin-bottom: 10px; }

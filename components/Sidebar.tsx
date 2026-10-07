@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import NirPhoto from "./NirPhoto";
 import Icon from "./Icon";
 import { Brand, GroupLogo } from "./BrandBar";
 import { TOOLS, ToolMode } from "@/lib/persona";
@@ -90,7 +91,10 @@ export default function Sidebar({
         <div className="side-foot">
           {!leadSent && (
             <div className="meet-card">
-              <b>לשבת עם ניר</b>
+              <div className="nir-tag">
+                <NirPhoto size={44} />
+                <span><b style={{ fontFamily: "var(--display)", fontSize: 28, lineHeight: 0.9, marginBottom: 2 }}>לשבת עם ניר</b><small>22 שנה בליווי עסקים</small></span>
+              </div>
               <p>פגישת אסטרטגיה אישית עם ניר או עם אחד היועצים הבכירים.</p>
               <button className="btn btn-primary btn-sm btn-block" onClick={() => { onClose(); onMeet(); }}>
                 <Icon name="calendar" size={16} /> לתאם פגישה

@@ -6,6 +6,7 @@ import remarkGfm from "remark-gfm";
 import Mascot, { Mood } from "./Mascot";
 import Spotlight from "./Spotlight";
 import Sidebar from "./Sidebar";
+import NirPhoto from "./NirPhoto";
 import Icon from "./Icon";
 import LeadModal, { MeetingType } from "./LeadModal";
 import ForecastStudio from "./ForecastStudio";
@@ -492,7 +493,7 @@ export default function ChatClient({
                       >
                         <Icon name="close" size={16} />
                       </button>
-                      <div className="cta-mascot"><Mascot size={92} mood="wink" /></div>
+                      <div className="cta-mascot cta-photo"><NirPhoto size={104} /><Mascot size={52} mood="wink" track={false} /></div>
                       <div>
                         <span className="eyebrow">הצעד הבא</span>
                         <h4 style={{ marginTop: 10 }}>זה בדיוק הרגע לשבת על זה ביחד.</h4>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Mascot from "./Mascot";
+import NirPhoto from "./NirPhoto";
 import Icon from "./Icon";
 
 export type MeetingType = "advisor" | "nir";
@@ -62,7 +63,7 @@ export default function LeadModal({
         <button className="icon-btn x-btn" onClick={onClose} aria-label="סגירה"><Icon name="close" size={18} /></button>
         {done ? (
           <div className="done-view">
-            <Mascot size={130} mood="celebrate" />
+            {type === "nir" ? <div className="vision-photo"><NirPhoto size={120} /><Mascot size={64} mood="celebrate" track={false} /></div> : <Mascot size={130} mood="celebrate" />}
             <h3 style={{ marginTop: 10 }}>סגרנו.</h3>
             <p className="sub">
               {type === "nir" ? "הצוות של ניר יחזור אליך לתאם את הפגישה איתו." : "אחד היועצים שלנו יחזור אליך לתאם פגישת אסטרטגיה."} הוא כבר
@@ -73,9 +74,9 @@ export default function LeadModal({
         ) : (
           <>
             <div style={{ display: "flex", gap: 14, alignItems: "center", marginBottom: 8 }}>
-              <Mascot size={58} mood="wink" />
+              {type === "nir" ? <NirPhoto size={62} /> : <Mascot size={58} mood="wink" />}
               <div>
-                <span className="eyebrow">פגישת אסטרטגיה</span>
+                <span className="eyebrow">{type === "nir" ? "פגישה עם ניר דובדבני" : "פגישת אסטרטגיה"}</span>
                 <h3>בוא נשב על זה.</h3>
               </div>
             </div>
@@ -87,7 +88,7 @@ export default function LeadModal({
                   <span>אחד היועצים הבכירים של הקבוצה</span>
                 </button>
                 <button type="button" aria-pressed={type === "nir"} onClick={() => setType("nir")}>
-                  <Icon name="crown" size={20} /><b>פגישה עם ניר</b>
+                  <NirPhoto size={40} /><b>פגישה עם ניר</b>
                   <span>ניר דובדבני בעצמו</span>
                 </button>
               </div>
