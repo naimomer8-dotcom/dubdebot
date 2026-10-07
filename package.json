@@ -1,0 +1,32 @@
+{
+  "name": "dubdebot",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "ingest:drive": "tsx scripts/ingest-drive.ts",
+    "ingest:youtube": "tsx scripts/ingest-youtube.ts"
+  },
+  "dependencies": {
+    "@google/genai": "^1.20.0",
+    "@supabase/supabase-js": "^2.57.0",
+    "next": "15.5.4",
+    "react": "19.1.1",
+    "react-dom": "19.1.1",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "dotenv": "^17.2.0",
+    "mammoth": "^1.13.0",
+    "pdf-parse": "^1.1.1",
+    "tsx": "^4.20.0",
+    "typescript": "^5",
+    "youtube-transcript": "^1.2.1"
+  }
+}
