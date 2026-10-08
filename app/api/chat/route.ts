@@ -75,7 +75,7 @@ export async function POST(req: Request) {
     try {
       const qEmb = await embed(query, "RETRIEVAL_QUERY");
       const [k, g] = await Promise.all([
-        supabase.rpc("match_knowledge", { query_embedding: qEmb, match_count: voice ? 3 : 4, min_similarity: 0.45 }),
+        supabase.rpc("match_knowledge", { query_embedding: qEmb, match_count: voice ? 3 : 4, min_similarity: 0.6 }),
         supabase.rpc("match_golden", { query_embedding: qEmb, match_count: 2, min_similarity: 0.75 }),
       ]);
       knowledge = (k.data ?? []) as typeof knowledge;
@@ -151,7 +151,8 @@ export async function POST(req: Request) {
     userName: user.full_name,
     // a bare greeting gets no stored profile, so the bot doesn't jump to old assumptions
     profile: text.replace(/[^\p{L}]/gu, "").length < 8 ? null : ((user.profile as Record<string, unknown>) ?? null),
-    knowledge: knowledge.map((k) => ({ source: k.source, content: k.content })),
+    // cost saver: only the most relevant ~700 characters of each passage go to the model
+    knowledge: knowledge.map((k) => ({ source: k.source, content: k.content.length > 700 ? k.content.slice(0, 700) + "…" : k.content })),
     goldenAnswers: golden,
     financials: trivial ? "" : toPrompt(((finRows ?? []) as FinRow[]).slice().reverse()),
   });

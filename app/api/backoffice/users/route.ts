@@ -11,11 +11,15 @@ export async function GET() {
   const admin = await getAdmin();
   if (!admin) return json({ error: "unauthorized" }, 401);
   const supabase = db();
-  const [{ data: users }, { data: convs }, { data: leads }] = await Promise.all([
+  const [{ data: users }, { data: convs }, { data: leads }, { data: usage }] = await Promise.all([
     supabase.from("users").select("id, full_name, email, phone, created_at, plan, access_until, paid_at, paid_by, renewal_requested_at, admin_note, profile").order("created_at", { ascending: false }).limit(2000),
     supabase.from("conversations").select("user_id, updated_at").order("updated_at", { ascending: false }).limit(20000),
     supabase.from("leads").select("id, user_id, meeting_type, full_name, phone, email, note, created_at, status").order("created_at", { ascending: false }).limit(500),
+    supabase.from("user_usage_30d").select("user_id, answers, tokens_in, tokens_out, answers_today"),
   ]);
+  // Flash-Lite list prices (USD per 1M tokens) → shekels at ~3.7
+  const use = new Map((usage ?? []).map((u) => [u.user_id, u]));
+  const costIls = (i: number, o: number) => Math.round(((i * 0.25 + o * 1.5) / 1e6) * 3.7 * 100) / 100;
   const stats = new Map<string, { n: number; last: string }>();
   for (const c of convs ?? []) {
     const s = stats.get(c.user_id);
@@ -41,6 +45,9 @@ export async function GET() {
       note: u.admin_note,
       business: [profile.business_type, profile.business_name].filter(Boolean).join(" · ") || null,
       conversations: st?.n ?? 0,
+      answers30: use.get(u.id)?.answers ?? 0,
+      answersToday: use.get(u.id)?.answers_today ?? 0,
+      cost30: costIls(Number(use.get(u.id)?.tokens_in ?? 0), Number(use.get(u.id)?.tokens_out ?? 0)),
       lastActive: st?.last ?? null,
     };
   });

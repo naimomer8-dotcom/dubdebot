@@ -9,6 +9,7 @@ type Row = {
   status: "trial" | "paid" | "expired"; accessUntil: string; daysLeft: number;
   paidAt: string | null; paidBy: string | null; renewalRequestedAt: string | null; note: string | null;
   business: string | null; conversations: number; lastActive: string | null;
+  answers30: number; answersToday: number; cost30: number;
 };
 type Lead = { id: string; user_id: string | null; meeting_type: string; full_name: string; phone: string; email: string | null; note: string | null; created_at: string; status: string };
 type Tab = "requests" | "all" | "trial" | "paid" | "expired" | "leads";
@@ -100,6 +101,10 @@ export default function AdminDashboard({ adminName }: { adminName: string }) {
         ))}
       </section>
 
+      <p className="muted" style={{ margin: "0 0 14px", fontSize: 14 }}>
+        עלות AI משוערת ב-30 הימים האחרונים (טקסט, בלי קול): ₪{rows.reduce((a, r) => a + r.cost30, 0).toFixed(2)} · {rows.reduce((a, r) => a + r.answers30, 0)} תשובות
+      </p>
+
       <div className="adm-bar">
         <div className="adm-tabs" role="tablist">
           {TABS.map(([k, l]) => (
@@ -149,6 +154,7 @@ export default function AdminDashboard({ adminName }: { adminName: string }) {
                 <span className={`pill ${r.status}`}>{STATUS[r.status]}</span>
                 <span>{r.status === "expired" ? `הסתיים ${d(r.accessUntil)}` : `עד ${d(r.accessUntil)} · ${r.daysLeft} ימים`}</span>
                 <span className="muted">נרשם {d(r.createdAt)} · {r.conversations} שיחות · פעיל לאחרונה {d(r.lastActive)}</span>
+                <span className={r.cost30 >= 10 ? "adm-req" : "muted"}>שימוש 30 יום: {r.answers30} תשובות ({r.answersToday} היום) · עלות AI משוערת ₪{r.cost30.toFixed(2)}</span>
                 {r.paidAt && <span className="muted">שולם {d(r.paidAt)}{r.paidBy ? ` · סומן ע״י ${r.paidBy}` : ""}</span>}
                 {r.renewalRequestedAt && <span className="adm-req"><Icon name="bolt" size={14} /> ביקש להמשיך ב-{d(r.renewalRequestedAt)}</span>}
               </div>
