@@ -1,12 +1,13 @@
-import { getSessionUserId } from "@/lib/session";
+import { guard } from "@/lib/guard";
 import { synthesize } from "@/lib/tts";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
 export async function POST(req: Request) {
-  const userId = await getSessionUserId();
-  if (!userId) return new Response("unauthorized", { status: 401 });
+  const gate = await guard("tts", 500, 60);
+  if (gate instanceof Response) return gate;
+  const userId = gate;
   const { text } = await req.json().catch(() => ({}));
   const clean = String(text ?? "").replace(/[*#_`>|]/g, "").trim().slice(0, 900);
   if (!clean) return new Response("empty", { status: 400 });

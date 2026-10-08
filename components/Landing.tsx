@@ -20,7 +20,7 @@ const FEATURES: { id: string; icon: IconName; title: string; desc: string }[] = 
   { id: "forecast", icon: "chart", title: "סטודיו תחזית", desc: "מזיזים מספרים ורואים את העסק שנה קדימה. הכנסות, רווח ונקודת איזון." },
   { id: "workplan", icon: "map", title: "תוכנית עבודה", desc: "מצב A, מצב B, וטבלת ביצוע של מה עושים ביום ראשון." },
   { id: "sales_script", icon: "target", title: "תסריט מכירה", desc: "שיחה שסוגרת, עם מענה מוכן להתנגדויות הנפוצות." },
-  { id: "call", icon: "phone", title: "שיחה קולית ומסמכים", desc: "מדברים עם הדובדבן כמו בטלפון, או שולחים לו דוח ואקסל לניתוח." },
+  { id: "call", icon: "phone", title: "שיחה קולית ומסמכים", desc: "מדברים עם ניר כמו בטלפון, או שולחים לו דוח ואקסל לניתוח." },
   { id: "vault", icon: "vault", title: "התיק העסקי", desc: "כל התוכניות והמשימות שלך במקום אחד, עם מסלול התקדמות." },
 ];
 
@@ -80,10 +80,14 @@ export default function Landing() {
               <span className="line"><span className="gold">בכיס.</span></span>
             </h1>
             <p className="lead">22 שנה של ליווי עסקים והשיטה המלאה של ניר דובדבני – בתוך יועץ אחד שמכיר את העסק שלך, בונה איתך תוכניות ומדבר איתך תכלס.</p>
+            <div className="hero-mcta">
+              <button className="btn btn-primary btn-lg" onClick={() => goSignup()}>להתחיל 30 יום במתנה <Icon name="arrow" size={18} className="ico-move" /></button>
+              <a className="btn btn-glass btn-lg" href="/xray">רנטגן עסקי · 3 דקות</a>
+            </div>
             <ul className="hero-points">
               <li><Icon name="check" size={18} /> מבוסס על 4 הספרים והשיטה של ניר</li>
               <li><Icon name="check" size={18} /> תוצרים אמיתיים: תחזית, תוכנית, תסריט</li>
-              <li><Icon name="check" size={18} /> חינם. בלי כרטיס אשראי</li>
+              <li><Icon name="check" size={18} /> 30 יום במתנה. בלי כרטיס אשראי</li>
             </ul>
             <div className="hero-proof">
               <div><b>22</b><span>שנות ליווי</span></div>
@@ -159,7 +163,7 @@ export default function Landing() {
               {[
                 ["נרשמים בחצי דקה", "שם, נייד, מייל וסיסמה. מעכשיו נכנסים מכל מכשיר."],
                 ["מספרים על העסק", "בכתב, בקול, או שולחים דוח. דובדבוט לומד את העסק וזוכר אותו."],
-                ["מקבלים תוצר, ומתקדמים", "תחזית, תוכנית ותסריט – נשמרים בתיק העסקי עם משימות לביצוע."],
+                ["מקבלים תוצר, ומתקדמים", "תחזית, תוכנית ותסריט – נשמרים בתיק העסקי עם משימות לביצוע. 30 הימים הראשונים עלינו."],
               ].map(([t, d], i) => (
                 <div className="step3 reveal" key={t} style={{ transitionDelay: `${i * 80}ms` }}>
                   <span className="step3-n">0{i + 1}</span>
@@ -178,7 +182,7 @@ export default function Landing() {
               <div className="vision-photo"><NirPose pose="welcome" width={340} /><Mascot size={72} mood="wink" track={false} /></div>
               <blockquote className="h-display">״החזון שלי: שלא יהיה עסק בישראל <span className="gold">שאין לו דובדבוט.</span>״</blockquote>
               <cite>ניר דובדבני · מייסד קבוצת דובדבני</cite>
-              <button className="btn btn-primary btn-lg" onClick={() => goSignup()}>לפתוח את דובדבוט בחינם <Icon name="arrow" size={18} className="ico-move" /></button>
+              <button className="btn btn-primary btn-lg" onClick={() => goSignup()}>להתחיל 30 יום במתנה <Icon name="arrow" size={18} className="ico-move" /></button>
             </div>
           </div>
         </section>
@@ -201,7 +205,7 @@ export default function Landing() {
 
         {showSticky && (
           <button className="btn btn-primary mobile-cta" onClick={() => goSignup()}>
-            הרשמה חינם <Icon name="arrow" size={18} />
+            30 יום במתנה <Icon name="arrow" size={18} />
           </button>
         )}
       </div>

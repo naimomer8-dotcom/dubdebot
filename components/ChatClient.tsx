@@ -8,6 +8,7 @@ import Spotlight from "./Spotlight";
 import Sidebar from "./Sidebar";
 import NirPhoto from "./NirPhoto";
 import NirPose from "./NirPose";
+import AccessBar from "./AccessBar";
 import Icon from "./Icon";
 import LeadModal, { MeetingType } from "./LeadModal";
 import ForecastStudio from "./ForecastStudio";
@@ -94,7 +95,9 @@ export default function ChatClient({
   const booted = useRef(false);
 
   useEffect(() => {
-    if (stick.current) scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: streaming ? "auto" : "smooth" });
+    // empty chat: stay at the top so the welcome is visible; otherwise follow the conversation
+    if (!messages.length) scrollRef.current?.scrollTo({ top: 0 });
+    else if (stick.current) scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: streaming ? "auto" : "smooth" });
   }, [messages, busy, streaming]);
 
   useEffect(() => {
@@ -165,6 +168,8 @@ export default function ChatClient({
         return;
       }
       if (res.status === 413) return fail("הקבצים כבדים מדי. נסה פחות קבצים או קובץ קטן יותר.");
+      if (res.status === 402) return window.location.reload();
+      if (res.status === 429) return fail("יותר מדי הודעות בזמן קצר. תן לזה כמה דקות ונמשיך.");
       if (!res.ok || !res.body) return fail("משהו נתקע אצלי. שלח שוב את ההודעה.");
 
       const hc = res.headers.get("X-Conversation-Id");
@@ -174,17 +179,30 @@ export default function ChatClient({
       const dec = new TextDecoder();
       let raw = "";
       setStreaming(true);
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        raw += dec.decode(value, { stream: true });
+      let frame = 0;
+      const paint = () => {
+        frame = 0;
         const visible = raw.split(META_SEP)[0];
         setMessages((m) => {
           const c = [...m];
           c[c.length - 1] = { ...c[c.length - 1], content: visible };
           return c;
         });
+      };
+      try {
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          raw += dec.decode(value, { stream: true });
+          // repaint at most once per frame – long answers stay smooth
+          if (!frame) frame = requestAnimationFrame(paint);
+        }
+      } catch {
+        if (frame) cancelAnimationFrame(frame);
+        const partial = raw.split(META_SEP)[0].trim();
+        return fail(partial ? partial + "\n\n_(החיבור נקטע באמצע. תכתוב \"תמשיך\" ואמשיך.)_" : "החיבור נקטע. שלח שוב את ההודעה.");
       }
+      if (frame) cancelAnimationFrame(frame);
       const [visible, metaRaw] = raw.split(META_SEP);
       let meta: { conversationId?: string; messageId?: string; cta?: string | null } = {};
       try {
@@ -374,6 +392,7 @@ export default function ChatClient({
           onClose={() => setSide(false)}
         />
 
+        <AccessBar user={user} />
         <main className="main">
           <header className="topbar">
             <div className="who">
@@ -427,7 +446,7 @@ export default function ChatClient({
                   <div className="power-row">
                     <a className="power" href="/xray"><Icon name="scan" size={22} /><span>רנטגן עסקי<small>3 דקות · ציון ופרופיל</small></span></a>
                     <a className="power" href="/scan"><Icon name="radar" size={22} /><span>סריקת רשתות<small>איפה אתה נכשל שיווקית</small></span></a>
-                    <button className="power" onClick={() => setCall(true)}><Icon name="phone" size={22} /><span>שיחה קולית<small>לדבר עם הדובדבן</small></span></button>
+                    <button className="power" onClick={() => setCall(true)}><Icon name="phone" size={22} /><span>שיחה קולית עם ניר<small>מדברים, כמו בטלפון</small></span></button>
                   </div>
                 </div>
               )}

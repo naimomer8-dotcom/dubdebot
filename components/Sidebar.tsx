@@ -68,7 +68,7 @@ export default function Sidebar({
         </Link>
         {onCall && (
           <button className="side-link" onClick={() => { onClose(); onCall(); }}>
-            <Icon name="phone" size={18} /> שיחה קולית
+            <Icon name="phone" size={18} /> שיחה קולית עם ניר
           </button>
         )}
 
@@ -105,7 +105,9 @@ export default function Sidebar({
             <span className="avatar">{user.firstName.slice(0, 1)}</span>
             <span style={{ minWidth: 0, flex: 1 }}>
               <b>{user.fullName}</b>
-              <small>{user.email}</small>
+              <small className={`plan-line ${user.access.daysLeft <= 7 ? "warn" : ""}`}>
+                {user.access.plan === "paid" ? "מנוי שנתי" : "מנוי מתנה"} · {user.access.daysLeft <= 1 ? "יום אחרון" : `עוד ${user.access.daysLeft} ימים`}
+              </small>
             </span>
             <button className="icon-btn" onClick={() => setMenu(!menu)} aria-label="חשבון" aria-expanded={menu}><Icon name="logout" size={18} /></button>
             {menu && (

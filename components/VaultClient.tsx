@@ -14,6 +14,7 @@ import Confetti from "./Confetti";
 import { AXES, ARCHETYPES, Scores, insights } from "@/lib/xray";
 import { TOOLS } from "@/lib/persona";
 import NirPose from "./NirPose";
+import AccessBar from "./AccessBar";
 import type { ConvItem, ShellUser } from "@/lib/data";
 
 type Xray = { id: string; scores: Scores; total: number; archetype: string | null; created_at: string };
@@ -112,6 +113,7 @@ export default function VaultClient({
       <Spotlight />
       <div className="app">
         <Sidebar active="vault" conversations={conversations} user={user} leadSent={leadSent} onMeet={() => setMeet(true)} open={side} onClose={() => setSide(false)} />
+        <AccessBar user={user} />
         <main className="main" style={{ gridTemplateRows: "auto 1fr" }}>
           <header className="topbar">
             <div className="who">

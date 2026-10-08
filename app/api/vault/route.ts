@@ -1,7 +1,7 @@
+import { guard } from "@/lib/guard";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/supabase";
-import { getSessionUserId } from "@/lib/session";
-import { gemini, CHAT_MODEL, FAST_THINKING } from "@/lib/gemini";
+import { gemini, FAST_MODEL, LITE_THINKING } from "@/lib/gemini";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -12,8 +12,9 @@ const EXTRACT = `קיבלת תוצר שדובדבוט (יועץ עסקי) כתב
 
 /** Save an assistant message to the user's business vault, and pull its action items into tasks. */
 export async function POST(req: Request) {
-  const userId = await getSessionUserId();
-  if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const gate = await guard("vault", 40, 60);
+  if (gate instanceof Response) return gate;
+  const userId = gate;
   const { messageId } = await req.json().catch(() => ({}));
   if (typeof messageId !== "string") return NextResponse.json({ error: "bad id" }, { status: 400 });
 
@@ -33,9 +34,9 @@ export async function POST(req: Request) {
   let tasks: { text: string; priority: string }[] = [];
   try {
     const res = await gemini().models.generateContent({
-      model: CHAT_MODEL,
+      model: FAST_MODEL,
       contents: [{ role: "user", parts: [{ text: `${EXTRACT}\n\nהתוצר:\n${msg.content.slice(0, 14000)}` }] }],
-      config: { responseMimeType: "application/json", maxOutputTokens: 2000, ...FAST_THINKING },
+      config: { responseMimeType: "application/json", maxOutputTokens: 2000, ...LITE_THINKING },
     });
     const j = JSON.parse(res.text ?? "{}");
     if (typeof j.title === "string" && j.title.trim()) title = j.title.trim().slice(0, 80);
@@ -63,8 +64,9 @@ export async function POST(req: Request) {
 }
 
 export async function DELETE(req: Request) {
-  const userId = await getSessionUserId();
-  if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const gate = await guard("vault", 40, 60);
+  if (gate instanceof Response) return gate;
+  const userId = gate;
   const { id } = await req.json().catch(() => ({}));
   if (typeof id !== "string") return NextResponse.json({ error: "bad id" }, { status: 400 });
   await db().from("deliverables").delete().eq("id", id).eq("user_id", userId);

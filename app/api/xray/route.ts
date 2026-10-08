@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/supabase";
 import { getSessionUserId } from "@/lib/session";
 import { QUESTIONS, archetype, score } from "@/lib/xray";
+import { clientIp, hit, limited } from "@/lib/ratelimit";
 
 export const runtime = "nodejs";
 
@@ -17,6 +18,9 @@ export async function POST(req: Request) {
   if (Object.keys(answers).length < QUESTIONS.length) return NextResponse.json({ error: "incomplete" }, { status: 400 });
 
   const userId = await getSessionUserId();
+  const ipKey = `ip:${clientIp(req)}`;
+  if (!userId && (await limited(ipKey, "xray", 30, 60))) return NextResponse.json({ error: "too many" }, { status: 429 });
+  if (!userId) void hit(ipKey, "xray").catch(() => {});
   const { scores, total } = score(answers);
   const supabase = db();
   const { data, error } = await supabase

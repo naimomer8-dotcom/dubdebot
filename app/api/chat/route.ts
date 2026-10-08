@@ -1,6 +1,6 @@
+import { guard } from "@/lib/guard";
 import { after } from "next/server";
 import { db } from "@/lib/supabase";
-import { getSessionUserId } from "@/lib/session";
 import { gemini, embed, pickModel, FAST_MODEL, LITE_THINKING } from "@/lib/gemini";
 import { buildSystemPrompt, PROFILE_EXTRACT_PROMPT, ToolMode, TOOLS } from "@/lib/persona";
 
@@ -43,8 +43,9 @@ function parseAttachments(raw: unknown): Attachment[] {
 }
 
 export async function POST(req: Request) {
-  const userId = await getSessionUserId();
-  if (!userId) return new Response("unauthorized", { status: 401 });
+  const gate = await guard("chat", 80, 60);
+  if (gate instanceof Response) return gate;
+  const userId = gate;
 
   const body = await req.json().catch(() => ({}));
   const attachments = parseAttachments(body.attachments);
@@ -191,6 +192,15 @@ export async function POST(req: Request) {
 
   const stream = new ReadableStream({
     async start(controller) {
+      let closed = false;
+      const send = (t: string) => {
+        if (closed || !t) return;
+        try {
+          controller.enqueue(encoder.encode(t));
+        } catch {
+          closed = true;
+        }
+      };
       let full = "";
       let usage: unknown = null;
       try {
@@ -206,32 +216,36 @@ export async function POST(req: Request) {
           if (!t) continue;
           full += t;
           // hold back a small tail so a split "[[CTA]]" tag never reaches the client
-          pending += t;
-          const safe = pending.length > 10 ? pending.slice(0, -10) : "";
-          if (safe) {
-            controller.enqueue(encoder.encode(safe.replace(CTA_TAG, "")));
-            pending = pending.slice(safe.length);
+          pending = (pending + t).replace(CTA_TAG, "");
+          let cut = pending.length - 10;
+          if (cut > 0) {
+            // never split a surrogate pair (emoji) – that turns into "��" on the client
+            const c = pending.charCodeAt(cut - 1);
+            if (c >= 0xd800 && c <= 0xdbff) cut--;
+            send(pending.slice(0, cut));
+            pending = pending.slice(cut);
           }
         }
-        controller.enqueue(encoder.encode(pending.replace(CTA_TAG, "")));
+        send(pending.replace(CTA_TAG, ""));
       } catch (e) {
         console.error("gemini error", e);
-        const fallback = "משהו נתקע אצלי רגע 🙈 תנסה לשלוח שוב.";
-        full = fallback;
-        controller.enqueue(encoder.encode(fallback));
+        const fallback = full ? "\n\n(נקטעתי באמצע – תכתוב לי \"תמשיך\" ואמשיך מאיפה שעצרתי.)" : "משהו נתקע אצלי רגע. תנסה לשלוח שוב.";
+        full += fallback;
+        send(fallback);
       }
 
       const modelWantsCta = /\[\[CTA\]\]/.test(full);
       const clean = full.replace(CTA_TAG, "").trim();
       let trigger: string | null = null;
       if (cooldownOk && !voice) {
-        if (modelWantsCta) trigger = "model";
-        else if (PAIN_RE.test(text)) trigger = "pain_keyword";
+        // not on the first answer – earn the right to offer a meeting first
+        if (modelWantsCta && userTurns >= 3) trigger = "model";
+        else if (PAIN_RE.test(text) && userTurns >= 3) trigger = "pain_keyword";
         else if (userTurns >= 6 && convRef.cta_shown_count === 0) trigger = "depth";
       }
 
       await saveUserMsg;
-      const { data: saved } = await supabase
+      const { data: saved, error: saveErr } = await supabase
         .from("messages")
         .insert({
           conversation_id: conversationId,
@@ -244,11 +258,14 @@ export async function POST(req: Request) {
         })
         .select("id")
         .single();
+      if (saveErr) console.error("assistant save failed", saveErr.message);
 
-      controller.enqueue(
-        encoder.encode(META_SEP + JSON.stringify({ conversationId, messageId: saved?.id ?? null, cta: trigger }))
-      );
-      controller.close();
+      send(META_SEP + JSON.stringify({ conversationId, messageId: saved?.id ?? null, cta: trigger }));
+      if (!closed) {
+        try {
+          controller.close();
+        } catch {}
+      }
 
       resolveDone(trigger);
     },
@@ -278,8 +295,14 @@ async function updateProfile(userId: string, current: Record<string, unknown>, t
       contents: [{ role: "user", parts: [{ text: `${PROFILE_EXTRACT_PROMPT}\n\nפרופיל קיים: ${JSON.stringify(current)}\n\n${transcript}` }] }],
       config: { responseMimeType: "application/json", ...LITE_THINKING },
     });
-    const extracted = JSON.parse(res.text ?? "{}");
-    if (extracted && typeof extracted === "object" && Object.keys(extracted).length) {
+    const raw = JSON.parse(res.text ?? "{}") as Record<string, unknown>;
+    const KEYS = ["business_type", "business_name", "years_active", "monthly_revenue", "employees", "main_channel", "avg_deal_price", "main_pain", "goal", "city"];
+    const extracted: Record<string, string> = {};
+    for (const k of KEYS) {
+      const v = raw?.[k];
+      if ((typeof v === "string" || typeof v === "number") && String(v).trim()) extracted[k] = String(v).trim().slice(0, 160);
+    }
+    if (Object.keys(extracted).length) {
       await db().from("users").update({ profile: { ...current, ...extracted } }).eq("id", userId);
     }
   } catch (e) {

@@ -61,6 +61,10 @@ export default function VoiceCall({
   const phaseRef = useRef<Phase>("connecting");
   const ttsOk = useRef(true);
   const abortRef = useRef<AbortController | null>(null);
+  const gen = useRef(0); // bumped on barge-in so stale audio never plays
+  const useRecorder = useRef(false); // SpeechRecognition unavailable/blocked → record + server STT
+  const mutedRef = useRef(false);
+  const pendingHello = useRef<(() => void) | null>(null);
 
   const go = (p: Phase) => {
     phaseRef.current = p;
@@ -116,7 +120,7 @@ export default function VoiceCall({
   const speakBrowser = (text: string) =>
     new Promise<void>((resolve) => {
       const synth = window.speechSynthesis;
-      if (!synth) return resolve();
+      if (!synth || mutedRef.current) return resolve();
       const u = new SpeechSynthesisUtterance(text);
       u.lang = "he-IL";
       const v = synth.getVoices().find((x) => x.lang?.startsWith("he"));
@@ -139,9 +143,12 @@ export default function VoiceCall({
       }
       const job = queue.current.shift()!;
       const text = sentences.current.shift() ?? "";
+      const g = gen.current;
       go("speaking");
       const buf = await job;
       if (!alive.current) break;
+      if (g !== gen.current) continue; // user interrupted while this sentence was loading
+      if (ctxRef.current && ctxRef.current.state !== "running") await ctxRef.current.resume().catch(() => {});
       if (buf && ctxRef.current) {
         try {
           const audio = await ctxRef.current.decodeAudioData(buf.slice(0));
@@ -178,6 +185,7 @@ export default function VoiceCall({
   );
 
   const stopSpeaking = () => {
+    gen.current++;
     abortRef.current?.abort();
     try {
       currentSrc.current?.stop();
@@ -205,6 +213,7 @@ export default function VoiceCall({
           body: JSON.stringify({ message: text, voice: true, mode: "chat", conversationId: convId.current }),
           signal: ac.signal,
         });
+        if (res.status === 402) return window.location.reload();
         if (!res.ok || !res.body) throw new Error("bad");
         const reader = res.body.getReader();
         const dec = new TextDecoder();
@@ -244,8 +253,13 @@ export default function VoiceCall({
         enqueue("אופס, נתקעתי רגע. תגיד שוב?");
       } finally {
         streamDone.current = true;
+        // nothing was voiced (empty answer) → don't hang in "thinking"
+        setTimeout(() => {
+          if (alive.current && !playing.current && phaseRef.current === "thinking") startListening();
+        }, 50);
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [enqueue, onTurn]
   );
 
@@ -256,7 +270,7 @@ export default function VoiceCall({
     go("listening");
     const w = window as unknown as { SpeechRecognition?: new () => SpeechRec; webkitSpeechRecognition?: new () => SpeechRec };
     const Ctor = w.SpeechRecognition || w.webkitSpeechRecognition;
-    if (Ctor) {
+    if (Ctor && !useRecorder.current) {
       const rec = new Ctor();
       rec.lang = "he-IL";
       rec.interimResults = true;
@@ -281,13 +295,18 @@ export default function VoiceCall({
         setYou(t);
         if (!finalText) finalText = t;
       };
-      rec.onerror = () => {};
+      rec.onerror = (ev: unknown) => {
+        const err = (ev as { error?: string })?.error ?? "";
+        // Siri/dictation off on iOS, blocked, or no Hebrew → switch to recording + server transcription
+        if (["not-allowed", "service-not-allowed", "language-not-supported", "audio-capture"].includes(err)) useRecorder.current = true;
+      };
       rec.onend = () => {
         if (hush) clearTimeout(hush);
         recRef.current = null;
         if (!alive.current || phaseRef.current !== "listening") return;
         const t = finalText.trim();
         if (t) ask(t);
+        else if (useRecorder.current) startListening();
         else go("paused");
       };
       recRef.current = rec;
@@ -301,7 +320,8 @@ export default function VoiceCall({
     // fallback: record + simple voice-activity detection → server transcription
     const stream = micRef.current;
     if (!stream || typeof MediaRecorder === "undefined") return go("error");
-    const mr = new MediaRecorder(stream);
+    const mime = ["audio/webm;codecs=opus", "audio/ogg;codecs=opus", "audio/mp4", "audio/webm"].find((m) => MediaRecorder.isTypeSupported?.(m));
+    const mr = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
     const chunks: Blob[] = [];
     mr.ondataavailable = (e) => e.data.size && chunks.push(e.data);
     mr.onstop = async () => {
@@ -371,6 +391,7 @@ export default function VoiceCall({
         micAnalyser.current = mic;
         // greeting
         streamDone.current = false;
+        if (ctx.state !== "running") await ctx.resume().catch(() => {});
         const hello = "היי, כאן ניר. ספר לי, מה הכי בוער לך בעסק עכשיו?";
         setBot(`היי ${firstName}, כאן ניר. ספר לי, מה הכי בוער לך בעסק עכשיו?`);
         // pre-recorded greeting plays instantly; live TTS only if the file is missing
@@ -378,8 +399,16 @@ export default function VoiceCall({
           .then((r) => (r.ok ? r.arrayBuffer() : null))
           .catch(() => null)
           .then((b) => b ?? fetchTts(hello));
-        enqueue(hello, pre);
-        streamDone.current = true;
+        const playHello = () => {
+          enqueue(hello, pre);
+          streamDone.current = true;
+        };
+        if (ctx.state === "running") playHello();
+        else {
+          // iOS without a user gesture: wait for one tap
+          pendingHello.current = playHello;
+          go("paused");
+        }
       } catch {
         go("error");
       }
@@ -403,6 +432,12 @@ export default function VoiceCall({
 
   function mainAction() {
     ctxRef.current?.resume();
+    if (pendingHello.current) {
+      const f = pendingHello.current;
+      pendingHello.current = null;
+      f();
+      return;
+    }
     if (phase === "speaking" || phase === "thinking") {
       stopSpeaking();
       startListening();
@@ -417,6 +452,8 @@ export default function VoiceCall({
   function toggleMute() {
     const m = !muted;
     setMuted(m);
+    mutedRef.current = m;
+    if (m) window.speechSynthesis?.cancel();
     if (outAnalyser.current && ctxRef.current) {
       outAnalyser.current.disconnect();
       if (!m) outAnalyser.current.connect(ctxRef.current.destination);
@@ -453,15 +490,24 @@ export default function VoiceCall({
       </div>
 
       <div className="call-controls">
-        <button className={`cbtn ${muted ? "off" : ""}`} onClick={toggleMute} aria-label={muted ? "הפעלת שמע" : "השתקה"}>
-          <Icon name={muted ? "mute" : "sound"} size={24} />
-        </button>
-        <button className={`cbtn main ${phase === "listening" ? "live" : ""}`} onClick={mainAction} aria-label="דיבור">
-          <Icon name={phase === "listening" ? "stop" : "mic"} size={30} />
-        </button>
-        <button className="cbtn end" onClick={onClose} aria-label="סיום שיחה">
-          <Icon name="phone" size={24} />
-        </button>
+        <div className="cctl">
+          <button className={`cbtn ${muted ? "off" : ""}`} onClick={toggleMute} aria-label={muted ? "הפעלת שמע" : "השתקה"}>
+            <Icon name={muted ? "mute" : "sound"} size={24} />
+          </button>
+          <small>{muted ? "מושתק" : "רמקול"}</small>
+        </div>
+        <div className="cctl">
+          <button className={`cbtn main ${phase === "listening" ? "live" : ""}`} onClick={mainAction} aria-label={phase === "listening" ? "סיימתי לדבר" : phase === "speaking" ? "לקטוע ולדבר" : "לדבר"}>
+            <Icon name={phase === "listening" ? "stop" : "mic"} size={30} />
+          </button>
+          <small>{phase === "listening" ? "סיימתי" : phase === "speaking" || phase === "thinking" ? "לקטוע" : "לדבר"}</small>
+        </div>
+        <div className="cctl">
+          <button className="cbtn end" onClick={onClose} aria-label="סיום שיחה">
+            <Icon name="phone" size={24} />
+          </button>
+          <small>סיום</small>
+        </div>
       </div>
     </div>
   );

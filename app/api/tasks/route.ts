@@ -1,12 +1,13 @@
+import { guard } from "@/lib/guard";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/supabase";
-import { getSessionUserId } from "@/lib/session";
 
 export const runtime = "nodejs";
 
 export async function PATCH(req: Request) {
-  const userId = await getSessionUserId();
-  if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const gate = await guard("tasks", 300, 60);
+  if (gate instanceof Response) return gate;
+  const userId = gate;
   const { id, done } = await req.json().catch(() => ({}));
   if (typeof id !== "string") return NextResponse.json({ error: "bad id" }, { status: 400 });
   await db().from("tasks").update({ done: !!done, done_at: done ? new Date().toISOString() : null }).eq("id", id).eq("user_id", userId);
@@ -14,8 +15,9 @@ export async function PATCH(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const userId = await getSessionUserId();
-  if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const gate = await guard("tasks", 300, 60);
+  if (gate instanceof Response) return gate;
+  const userId = gate;
   const { text } = await req.json().catch(() => ({}));
   const t = String(text ?? "").trim().slice(0, 200);
   if (!t) return NextResponse.json({ error: "empty" }, { status: 400 });
@@ -24,8 +26,9 @@ export async function POST(req: Request) {
 }
 
 export async function DELETE(req: Request) {
-  const userId = await getSessionUserId();
-  if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const gate = await guard("tasks", 300, 60);
+  if (gate instanceof Response) return gate;
+  const userId = gate;
   const { id } = await req.json().catch(() => ({}));
   if (typeof id !== "string") return NextResponse.json({ error: "bad id" }, { status: 400 });
   await db().from("tasks").delete().eq("id", id).eq("user_id", userId);

@@ -78,7 +78,7 @@ export async function renderShareCard(opts: {
   ctx.fillText(opts.line, W / 2, 920);
 
   // radar
-  const C = { x: W / 2, y: 1330 }, R = 250, n = AXES.length;
+  const C = { x: W / 2, y: 1290 }, R = 240, n = AXES.length;
   const pt = (i: number, r: number) => {
     const a = -Math.PI / 2 + (i * 2 * Math.PI) / n;
     return [C.x + r * Math.cos(a), C.y + r * Math.sin(a)];
@@ -130,12 +130,12 @@ export async function renderShareCard(opts: {
   ctx.textAlign = "right";
   ctx.fillStyle = "#f4eee3";
   ctx.font = '700 66px "Karantina"';
-  ctx.fillText("כמה העסק שלך מקבל?", W - 110, 1715);
+  ctx.fillText("מה הציון של העסק שלך?", W - 110, 1735);
   ctx.fillStyle = "#e2c68e";
   ctx.font = '500 34px "Assistant"';
-  ctx.fillText("דובדבוט · רנטגן עסקי ב-3 דקות", W - 110, 1772);
+  ctx.fillText("דובדבוט · רנטגן עסקי ב-3 דקות", W - 110, 1795);
 
-  return new Promise((res) => c.toBlob((b) => res(b), "image/png"));
+  return new Promise((res) => c.toBlob((b) => res(b), "image/jpeg", 0.88));
 }
 
 function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {

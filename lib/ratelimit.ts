@@ -11,4 +11,4 @@ export async function hit(key: string, kind: string) {
   await db().from("auth_attempts").insert({ key, kind });
 }
 
-export const clientIp = (req: Request) => req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+export const clientIp = (req: Request) => req.headers.get("x-real-ip")?.trim() || req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";

@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/supabase";
 import { getSessionUserId } from "@/lib/session";
-import { gemini, CHAT_MODEL, FAST_THINKING } from "@/lib/gemini";
+import { gemini, FAST_MODEL, LITE_THINKING } from "@/lib/gemini";
 import { LEAD_SUMMARY_PROMPT } from "@/lib/persona";
 import { cleanName, isEmail, normalizeIsraeliPhone } from "@/lib/validation";
 import { sendToMake } from "@/lib/make";
+import { hit, limited } from "@/lib/ratelimit";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -13,6 +14,8 @@ export async function POST(req: Request) {
   const userId = await getSessionUserId();
   if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
+  if (await limited(`u:${userId}`, "lead", 6, 60 * 24)) return NextResponse.json({ error: "כבר קיבלנו ממך כמה פניות היום – נחזור אליך בהקדם." }, { status: 429 });
+  void hit(`u:${userId}`, "lead").catch(() => {});
   const body = await req.json().catch(() => ({}));
   const meetingType = body.meetingType === "nir" ? "nir" : "advisor";
   const fullName = cleanName(String(body.fullName ?? ""));
@@ -55,9 +58,9 @@ export async function POST(req: Request) {
   if (transcript) {
     try {
       const res = await gemini().models.generateContent({
-        model: CHAT_MODEL,
+        model: FAST_MODEL,
         contents: [{ role: "user", parts: [{ text: `${LEAD_SUMMARY_PROMPT}\n\nפרופיל: ${JSON.stringify(user.profile ?? {})}\n\nהשיחה:\n${transcript}` }] }],
-        config: { maxOutputTokens: 2000, ...FAST_THINKING },
+        config: { maxOutputTokens: 2000, ...LITE_THINKING },
       });
       summary = res.text?.trim() ?? "";
     } catch (e) {

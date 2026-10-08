@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { getSessionUserId } from "@/lib/session";
 import { db } from "@/lib/supabase";
 import { loadShell } from "@/lib/data";
+import ExpiredScreen from "@/components/ExpiredScreen";
 import VaultClient from "@/components/VaultClient";
 import type { Scores } from "@/lib/xray";
 
@@ -14,6 +15,7 @@ export default async function VaultPage() {
   if (!userId) redirect("/");
   const shell = await loadShell(userId);
   if (!shell) redirect("/");
+  if (shell.user.access.status === "expired") return <ExpiredScreen user={shell.user} />;
   const supabase = db();
   const [{ data: u }, { data: xr }, { data: deliverables }, { data: tasks }] = await Promise.all([
     supabase.from("users").select("profile").eq("id", userId).single(),

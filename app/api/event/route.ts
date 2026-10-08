@@ -13,9 +13,9 @@ export async function POST(req: Request) {
   if (!ALLOWED.has(type)) return NextResponse.json({ error: "bad type" }, { status: 400 });
   await db().from("events").insert({
     user_id: userId,
-    conversation_id: body.conversationId ?? null,
+    conversation_id: typeof body.conversationId === "string" && /^[0-9a-f-]{36}$/.test(body.conversationId) ? body.conversationId : null,
     type,
-    meta: typeof body.meta === "object" && body.meta ? body.meta : {},
+    meta: typeof body.meta === "object" && body.meta && JSON.stringify(body.meta).length < 2000 ? body.meta : {},
   });
   return NextResponse.json({ ok: true });
 }

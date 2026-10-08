@@ -1,6 +1,6 @@
+import { requireActive } from "@/lib/session";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/supabase";
-import { getSessionUserId } from "@/lib/session";
 import { hit, limited } from "@/lib/ratelimit";
 import { PLATFORM_LABEL, normalizeUrl, reportToMarkdown, runScan } from "@/lib/scan";
 
@@ -9,8 +9,9 @@ export const maxDuration = 120;
 
 /** Social / website marketing scan → report JSON, saved to the user's vault with quick wins as tasks. */
 export async function POST(req: Request) {
-  const userId = await getSessionUserId();
-  if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const gate = await requireActive();
+  if (gate instanceof Response) return gate;
+  const userId = gate.userId;
   const body = await req.json().catch(() => ({}));
   const url = normalizeUrl(String(body.url ?? ""));
   if (!url) return NextResponse.json({ error: "הקישור לא נראה תקין. הדבק קישור מלא לפרופיל או לאתר." }, { status: 400 });

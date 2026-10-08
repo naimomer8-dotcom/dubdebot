@@ -61,6 +61,7 @@ export default function ScanClient() {
       body: JSON.stringify({ url, shots: shots.map((s) => ({ mime: s.mime, data: s.data })) }),
     }).catch(() => null);
     const j = r ? await r.json().catch(() => ({})) : { error: "אין חיבור כרגע. נסה שוב." };
+    if (r?.status === 402) return window.location.reload();
     if (!r || !r.ok) {
       setError(j.error ?? "משהו השתבש. נסה שוב.");
       setPhase("start");
@@ -145,7 +146,7 @@ export default function ScanClient() {
                   </li>
                 ))}
               </ul>
-              <p className="muted" style={{ margin: 0 }}>זה לוקח בערך 30 שניות.</p>
+              <p className="muted" style={{ margin: 0 }}>זה לוקח פחות מדקה.</p>
             </div>
           )}
 

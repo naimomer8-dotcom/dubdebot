@@ -58,25 +58,86 @@ export function detectPlatform(u: URL): Platform {
 const decode = (s: string) =>
   s.replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;|&#x27;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)));
 
+/** True only if every address the host resolves to is public (blocks DNS tricks like 127.0.0.1.nip.io). */
+async function isPublicHost(host: string): Promise<boolean> {
+  try {
+    const { lookup } = await import("dns/promises");
+    const addrs = await lookup(host, { all: true });
+    if (!addrs.length) return false;
+    return addrs.every(({ address: a, family }) => {
+      if (family === 6) {
+        const x = a.toLowerCase();
+        if (x.startsWith("::ffff:")) return isPublicV4(x.slice(7));
+        return !(x === "::1" || x === "::" || x.startsWith("fc") || x.startsWith("fd") || x.startsWith("fe80"));
+      }
+      return isPublicV4(a);
+    });
+  } catch {
+    return false;
+  }
+}
+function isPublicV4(a: string) {
+  const [p, q] = a.split(".").map(Number);
+  if (p === 10 || p === 127 || p === 0 || p >= 224) return false;
+  if (p === 169 && q === 254) return false;
+  if (p === 172 && q >= 16 && q <= 31) return false;
+  if (p === 192 && q === 168) return false;
+  if (p === 100 && q >= 64 && q <= 127) return false;
+  return true;
+}
+
 /** Best-effort public metadata. Social networks often hide data behind a login – the model also reads the page itself. */
 export async function fetchPublic(u: URL): Promise<{ meta: Record<string, string>; text: string }> {
   const meta: Record<string, string> = {};
   let text = "";
   try {
     const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 8000);
-    const res = await fetch(u.toString(), {
-      signal: ctrl.signal,
-      redirect: "follow",
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36",
-        "Accept-Language": "he-IL,he;q=0.9,en;q=0.8",
-      },
-    });
-    clearTimeout(t);
+    const t = setTimeout(() => ctrl.abort(), 9000);
+    let res: Response | null = null;
+    let target = u;
+    // follow at most 3 redirects manually, re-checking every hop against private networks
+    for (let hop = 0; hop < 4; hop++) {
+      if (!(await isPublicHost(target.hostname))) break;
+      const r = await fetch(target.toString(), {
+        signal: ctrl.signal,
+        redirect: "manual",
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36",
+          "Accept-Language": "he-IL,he;q=0.9,en;q=0.8",
+        },
+      });
+      const loc = r.headers.get("location");
+      if (r.status >= 300 && r.status < 400 && loc) {
+        const next = normalizeUrl(new URL(loc, target).toString());
+        if (!next) break;
+        target = next;
+        continue;
+      }
+      res = r;
+      break;
+    }
+    if (!res) {
+      clearTimeout(t);
+      return { meta, text };
+    }
     const ct = res.headers.get("content-type") ?? "";
-    if (!ct.includes("text/html")) return { meta, text };
-    const html = (await res.text()).slice(0, 1_500_000);
+    if (!ct.includes("text/html") || !res.body) {
+      clearTimeout(t);
+      return { meta, text };
+    }
+    // read at most 1.5MB, still under the abort timer
+    const reader = res.body.getReader();
+    const chunks: Uint8Array[] = [];
+    let size = 0;
+    while (size < 1_500_000) {
+      const { value, done } = await reader.read();
+      if (done || !value) break;
+      chunks.push(value);
+      size += value.length;
+    }
+    reader.cancel().catch(() => {});
+    clearTimeout(t);
+    const html = new TextDecoder().decode(Buffer.concat(chunks.map((c) => Buffer.from(c))));
     for (const m of html.matchAll(/<meta[^>]+(?:property|name)=["']([^"']+)["'][^>]*content=["']([^"']*)["'][^>]*>/gi)) {
       const k = m[1].toLowerCase();
       if (/^(og:|twitter:|description$|keywords$)/.test(k) && !meta[k]) meta[k] = decode(m[2]).slice(0, 600);

@@ -27,7 +27,8 @@ export default function XrayClient({ loggedIn }: { loggedIn: boolean }) {
 
   // answer to Q1 picked on the landing page
   useEffect(() => {
-    const v = Number(new URLSearchParams(window.location.search).get("q1"));
+    const raw = new URLSearchParams(window.location.search).get("q1");
+    const v = raw === null || raw === "" ? NaN : Number(raw);
     if (Number.isInteger(v) && v >= 0 && v <= 3) {
       setAnswers({ [QUESTIONS[0].id]: v });
       setIdx(1);
@@ -98,10 +99,14 @@ export default function XrayClient({ loggedIn }: { loggedIn: boolean }) {
     });
   }, [result, arch, card, cardBusy]);
 
+  useEffect(() => () => {
+    if (card) URL.revokeObjectURL(card.url);
+  }, [card]);
+
   async function share() {
     if (!card) return;
-    const file = new File([card.blob], "dubdebot-xray.png", { type: "image/png" });
-    const text = `עשיתי רנטגן עסקי בדובדבוט. יצאתי "${arch?.name}" עם ${result?.total}/100. כמה העסק שלך מקבל? ${location.origin}/xray`;
+    const file = new File([card.blob], "dubdebot-xray.jpg", { type: card.blob.type || "image/jpeg" });
+    const text = `עשיתי רנטגן עסקי בדובדבוט. יצאתי "${arch?.name}" עם ${result?.total}/100. מה הציון של העסק שלך? ${location.origin}/xray`;
     const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
     if (nav.canShare?.({ files: [file] })) {
       await nav.share({ files: [file], text }).catch(() => {});
@@ -115,7 +120,7 @@ export default function XrayClient({ loggedIn }: { loggedIn: boolean }) {
     if (!card) return;
     const a = document.createElement("a");
     a.href = card.url;
-    a.download = "dubdebot-xray.png";
+    a.download = "dubdebot-xray.jpg";
     a.click();
   }
 
@@ -164,7 +169,7 @@ export default function XrayClient({ loggedIn }: { loggedIn: boolean }) {
                 {idx > 0 ? (
                   <button className="btn btn-ghost btn-sm" onClick={() => setIdx(idx - 1)}><Icon name="arrowLeft" size={16} /> הקודמת</button>
                 ) : <span />}
-                <span>אפשר גם במקלדת: 1–4</span>
+                <span className="kbd-hint">אפשר גם במקלדת: 1–4</span>
               </div>
             </div>
           )}
