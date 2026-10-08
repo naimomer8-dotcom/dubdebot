@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
-import { createClonedVoice, nirVoice, speakCloned, CLONE_MODEL } from "@/lib/voiceClone";
+import { createClonedVoice, nirVoice, speakCloned, probeCloned, CLONE_MODEL } from "@/lib/voiceClone";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -17,6 +17,8 @@ export async function GET(req: Request) {
   if (!authed(req)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const u = new URL(req.url);
   const test = u.searchParams.get("test");
+  const via = u.searchParams.get("via");
+  if (test && via) return NextResponse.json(await probeCloned(test.slice(0, 300), via, u.searchParams.get("model") || CLONE_MODEL));
   if (test) {
     const t0 = Date.now();
     const out = await speakCloned(test.slice(0, 300), u.searchParams.get("style") || undefined, u.searchParams.get("model") || undefined);

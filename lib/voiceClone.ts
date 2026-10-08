@@ -72,3 +72,48 @@ export async function speakCloned(text: string, style?: string, modelOverride?: 
   if (!a?.data) return null;
   return { audio: Buffer.from(a.data, "base64"), mime: a.mime_type ?? a.mimeType ?? "" };
 }
+
+/** Experimental latency probes for the cloned voice (admin only). */
+export async function probeCloned(text: string, via: string, model: string) {
+  const v = await nirVoice();
+  if (!v) return { error: "no voice" };
+  const t0 = Date.now();
+  if (via === "gc") {
+    const r = await fetch(`${BASE}/models/${model}:generateContent`, {
+      method: "POST",
+      headers: { "x-goog-api-key": key(), "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ role: "user", parts: [{ text }] }],
+        generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: v.id } } } },
+      }),
+    });
+    const j = await r.text();
+    return { via, status: r.status, ms: Date.now() - t0, head: j.slice(0, 300) };
+  }
+  // streaming interactions: time to first byte and to first audio chunk
+  const r = await fetch(`${BASE}/interactions?alt=sse`, {
+    method: "POST",
+    headers: { "x-goog-api-key": key(), "Content-Type": "application/json", Accept: "text/event-stream" },
+    body: JSON.stringify({
+      model,
+      stream: true,
+      input: [{ type: "user_input", content: [{ type: "text", text }] }],
+      generation_config: { speech_config: [{ voice: v.id }] },
+      response_format: { type: "audio" },
+    }),
+  });
+  const ttfb = Date.now() - t0;
+  let firstAudio = -1;
+  let buf = "";
+  const reader = r.body?.getReader();
+  const dec = new TextDecoder();
+  let events = 0;
+  while (reader) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, { stream: true });
+    events++;
+    if (firstAudio < 0 && /"data"\s*:\s*"[A-Za-z0-9+/]{100}/.test(buf)) firstAudio = Date.now() - t0;
+  }
+  return { via, status: r.status, ttfb, firstAudio, total: Date.now() - t0, events, head: buf.slice(0, 400) };
+}
