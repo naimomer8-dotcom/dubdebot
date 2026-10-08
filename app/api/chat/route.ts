@@ -2,6 +2,7 @@ import { guard } from "@/lib/guard";
 import { after } from "next/server";
 import { db } from "@/lib/supabase";
 import { gemini, embed, pickModel, FAST_MODEL, LITE_THINKING } from "@/lib/gemini";
+import { toPrompt, type FinRow } from "@/lib/financials";
 import { buildSystemPrompt, PROFILE_EXTRACT_PROMPT, ToolMode, TOOLS } from "@/lib/persona";
 
 export const runtime = "nodejs";
@@ -82,7 +83,7 @@ export async function POST(req: Request) {
   // ---- user + conversation, in parallel ----
   let conversationId: string | null = body.conversationId ?? null;
   let conv: { id: string; mode: string; cta_shown_count: number; lead_submitted: boolean } | null = null;
-  const [{ data: user }, convRes] = await Promise.all([
+  const [{ data: user }, convRes, { data: finRows }] = await Promise.all([
     supabase.from("users").select("id, full_name, profile").eq("id", userId).single(),
     conversationId
       ? supabase
@@ -92,6 +93,7 @@ export async function POST(req: Request) {
           .eq("user_id", userId)
           .maybeSingle()
       : Promise.resolve({ data: null }),
+    supabase.from("financials").select("period, data").eq("user_id", userId).order("period", { ascending: false }).limit(3),
   ]);
   if (!user) return new Response("unauthorized", { status: 401 });
   conv = convRes.data;
@@ -142,6 +144,7 @@ export async function POST(req: Request) {
     profile: text.replace(/[^\p{L}]/gu, "").length < 8 ? null : ((user.profile as Record<string, unknown>) ?? null),
     knowledge: knowledge.map((k) => ({ source: k.source, content: k.content })),
     goldenAnswers: golden,
+    financials: toPrompt(((finRows ?? []) as FinRow[]).slice().reverse()),
   });
 
   const route = pickModel({ voice, mode: activeMode, hasAttachments: attachments.length > 0, textLength: text.length });
@@ -213,7 +216,7 @@ export async function POST(req: Request) {
         const response = await gemini().models.generateContentStream({
           model: route.model,
           contents,
-          config: { systemInstruction, maxOutputTokens: voice ? 400 : ["workplan", "forecast", "sales_script", "feasibility", "campaign"].includes(activeMode) ? 8192 : 2500, ...route.thinking },
+          config: { systemInstruction, maxOutputTokens: voice ? 400 : ["workplan", "forecast", "sales_script", "feasibility", "campaign", "financials", "payslip"].includes(activeMode) ? 8192 : 2500, ...route.thinking },
         });
         let pending = "";
         for await (const chunk of response) {

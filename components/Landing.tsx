@@ -20,7 +20,7 @@ const FEATURES: { id: string; icon: IconName; title: string; desc: string }[] = 
   { id: "forecast", icon: "chart", title: "סטודיו תחזית", desc: "מזיזים מספרים ורואים את העסק שנה קדימה. הכנסות, רווח ונקודת איזון." },
   { id: "workplan", icon: "map", title: "תוכנית עבודה", desc: "מצב A, מצב B, וטבלת ביצוע של מה עושים ביום ראשון." },
   { id: "sales_script", icon: "target", title: "תסריט מכירה", desc: "שיחה שסוגרת, עם מענה מוכן להתנגדויות הנפוצות." },
-  { id: "call", icon: "phone", title: "שיחה קולית ומסמכים", desc: "מדברים עם ניר כמו בטלפון, או שולחים לו דוח ואקסל לניתוח." },
+  { id: "call", icon: "phone", title: "שיחה קולית ומסמכים", desc: "מדברים עם ניר כמו בטלפון, או שולחים לו דוח כספי ותלוש שכר לניתוח." },
   { id: "vault", icon: "vault", title: "התיק העסקי", desc: "כל התוכניות והמשימות שלך במקום אחד, עם מסלול התקדמות." },
 ];
 

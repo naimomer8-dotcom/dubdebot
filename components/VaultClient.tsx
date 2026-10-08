@@ -15,6 +15,8 @@ import { AXES, ARCHETYPES, Scores, insights } from "@/lib/xray";
 import { TOOLS } from "@/lib/persona";
 import NirPose from "./NirPose";
 import AccessBar from "./AccessBar";
+import FinancialsCard from "./FinancialsCard";
+import type { FinRow } from "@/lib/financials";
 import type { ConvItem, ShellUser } from "@/lib/data";
 
 type Xray = { id: string; scores: Scores; total: number; archetype: string | null; created_at: string };
@@ -44,6 +46,7 @@ export default function VaultClient({
   xrays,
   deliverables: initialDeliverables,
   tasks: initialTasks,
+  financials = [],
 }: {
   user: ShellUser;
   conversations: ConvItem[];
@@ -52,6 +55,7 @@ export default function VaultClient({
   xrays: Xray[];
   deliverables: Deliverable[];
   tasks: Task[];
+  financials?: FinRow[];
 }) {
   const [side, setSide] = useState(false);
   const [tasks, setTasks] = useState(initialTasks);
@@ -149,6 +153,8 @@ export default function VaultClient({
                   ))}
                 </div>
               </section>
+
+              <FinancialsCard initial={financials} />
 
               <div className="vgrid">
                 {/* x-ray */}

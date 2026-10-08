@@ -932,3 +932,29 @@ img, svg { display: block; }
 @media (max-width: 900px) { .access-bar { top: 66px; bottom: auto; } .access-bar .ab-long { display: none; } .access-bar .ab-short { display: inline; } }
 @media (max-width: 900px) { .hero-mcta > .btn { justify-self: stretch; display: flex; } }
 .cbtn { position: relative; } .cbtn > .ico, .cbtn > svg { position: absolute; inset: 0; margin: auto; }
+
+/* ---------- my financials (vault) ---------- */
+.fin { display: flex; flex-direction: column; gap: 16px; }
+.fin-top { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+.fin-month { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--text-3); }
+.fin-month input { width: 180px; }
+.fin-months { display: flex; gap: 6px; flex-wrap: wrap; }
+.fin-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.fin-kpi { padding: 14px 16px; border: 1px solid var(--hair); border-radius: var(--r-lg); background: var(--surface); display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.fin-kpi span { font-size: 13px; color: var(--text-3); }
+.fin-kpi b { font-family: var(--display); font-size: 34px; line-height: 1; }
+.fin-kpi b.neg { color: var(--cherry-hi); }
+.fin-kpi small { font-size: 12.5px; color: var(--text-3); }
+.fin-kpi em { font-style: normal; font-weight: 700; }
+.fin-kpi em.up { color: #9fd6b0; }
+.fin-kpi em.down { color: var(--cherry-hi); }
+.fin-form { display: grid; gap: 14px; }
+.fin-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.fin-grid .field span { font-size: 13px; color: var(--text-2); display: flex; gap: 6px; align-items: center; }
+.fin-sep { font-style: normal; font-size: 11px; color: var(--gold); border: 1px solid var(--gold-2); border-radius: 999px; padding: 0 6px; }
+.fin-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+@media (max-width: 900px) {
+  .fin-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .fin-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .fin-month input { width: 100%; }
+}

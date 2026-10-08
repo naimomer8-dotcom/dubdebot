@@ -39,6 +39,6 @@ export function pickModel(opts:{voice:boolean;mode:string;hasAttachments:boolean
   if (process.env.ROUTING === "strong") return { model: CHAT_MODEL, thinking: FAST_THINKING, tier: "strong" as const };
   // Regular chat + voice always run on Flash-Lite (fast and cheap).
   // Only document analysis and the heavy number tools use the strong model.
-  const heavy = !opts.voice && (opts.hasAttachments || opts.mode === "forecast" || opts.mode === "workplan");
+  const heavy = !opts.voice && (opts.hasAttachments || opts.mode === "forecast" || opts.mode === "workplan" || opts.mode === "financials" || opts.mode === "payslip");
   return heavy ? { model: CHAT_MODEL, thinking: FAST_THINKING, tier: "strong" as const } : { model: FAST_MODEL, thinking: LITE_THINKING, tier: "fast" as const };
 }

@@ -45,3 +45,16 @@ create table if not exists admin_audit (
 alter table admin_audit enable row level security;
 
 create index if not exists auth_attempts_key_idx on auth_attempts(key, kind, created_at desc);
+
+-- ---------- financial data the user enters (P&L / balance basics) ----------
+create table if not exists financials (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references users(id) on delete cascade,
+  period text not null check (period ~ '^\d{4}-\d{2}$'),
+  data jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (user_id, period)
+);
+alter table financials enable row level security;
+create index if not exists financials_user_idx on financials(user_id, period desc);

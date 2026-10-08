@@ -229,6 +229,14 @@ export default function ChatClient({
       return;
     }
     const t = TOOLS.find((x) => x.id === id)!;
+    if (t.upload) {
+      // document tools: open the file picker, keep the mode, and guide the user
+      setInput("");
+      setToast({ text: t.upload });
+      fileRef.current?.click();
+      taRef.current?.focus();
+      return;
+    }
     if (t.starter) send(t.starter, id);
     else taRef.current?.focus();
   }
