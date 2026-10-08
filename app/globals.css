@@ -930,3 +930,4 @@ img, svg { display: block; }
 .access-bar .ab-short { display: none; }
 @media (min-width: 901px) { .access-bar { left: calc((100vw - var(--side-w)) / 2); } }
 @media (max-width: 900px) { .access-bar { top: 66px; bottom: auto; } .access-bar .ab-long { display: none; } .access-bar .ab-short { display: inline; } }
+@media (max-width: 900px) { .hero-mcta > .btn { justify-self: stretch; display: flex; } }
