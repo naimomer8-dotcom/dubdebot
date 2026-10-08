@@ -18,7 +18,8 @@ export async function createClonedVoice(source: Audio, consent: Audio, model = C
     headers: { "x-goog-api-key": key(), "Content-Type": "application/json" },
     body: JSON.stringify({
       store: true,
-      voice: { model, type: "replicated", display_name: "Nir Duvdevani", replicated: { source_audio: source, consent_audio: consent } },
+      // creation uses Google's default replication model; `model` is only used later for synthesis
+      voice: { type: "replicated", display_name: "Nir Duvdevani", replicated: { source_audio: source, consent_audio: consent } },
     }),
   });
   const j = await r.json().catch(() => ({}));
