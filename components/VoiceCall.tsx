@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Mascot from "./Mascot";
 import NirPhoto from "./NirPhoto";
+import NirTalker from "./NirTalker";
 import Icon from "./Icon";
 
 type Phase = "connecting" | "listening" | "thinking" | "speaking" | "paused" | "error";
@@ -442,7 +443,8 @@ export default function VoiceCall({
         <div className={`orb ${phase === "listening" ? "listening" : ""}`} style={{ ["--lvl" as string]: level.toFixed(3) }}>
           <span className="halo" /><span className="halo" /><span className="halo" />
           <span className="core" />
-          <Mascot size={210} mood={phase === "thinking" ? "thinking" : phase === "listening" ? "curious" : "idle"} level={phase === "speaking" ? level : undefined} track={false} />
+          <NirTalker size={230} level={level} state={phase === "speaking" ? "speaking" : phase === "listening" ? "listening" : phase === "thinking" ? "thinking" : "idle"} />
+          <span className="talker-cherry"><Mascot size={72} mood={phase === "thinking" ? "thinking" : phase === "listening" ? "curious" : "idle"} level={phase === "speaking" ? level : undefined} track={false} /></span>
         </div>
         <div className="call-state" aria-live="polite">{LABEL[phase]}</div>
         <p className={`call-caption ${phase === "listening" ? "you" : ""}`}>

@@ -821,3 +821,19 @@ img, svg { display: block; }
   .hero-form { margin-top: 128px; }
   .vision-photo .mascot { left: -6px; }
 }
+
+/* ---------- talking Nir (voice call) ---------- */
+.talker { position: relative; border-radius: 50%; overflow: hidden; box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--gold-2), 0 30px 70px -20px rgba(0,0,0,.9); background: #6b6b6e; isolation: isolate; }
+.talker-head { position: absolute; inset: 0; transform-origin: 50% 85%; animation: talkerBreath 5.5s ease-in-out infinite; }
+.talker-head img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; user-select: none; pointer-events: none; }
+.talker-jaw { -webkit-mask-image: url(/nir/talk-jaw-mask.png); mask-image: url(/nir/talk-jaw-mask.png); -webkit-mask-size: 100% 100%; mask-size: 100% 100%; transform: translateY(calc(var(--open) * 2.1%)) scaleY(calc(1 + var(--open) * .012)); transform-origin: 50% 74%; transition: transform 70ms linear; will-change: transform; }
+.talker--speaking .talker-head { animation: talkerTalk 2.6s ease-in-out infinite; }
+.talker--listening .talker-head { animation: talkerListen 3.2s ease-in-out infinite; }
+.talker--thinking .talker-head { animation: talkerThink 2.4s ease-in-out infinite; }
+@keyframes talkerBreath { 0%,100% { transform: scale(1) } 50% { transform: scale(1.012) } }
+@keyframes talkerTalk { 0%,100% { transform: rotate(0) translateY(0) } 30% { transform: rotate(-.7deg) translateY(-.4%) } 65% { transform: rotate(.5deg) translateY(.2%) } }
+@keyframes talkerListen { 0%,100% { transform: rotate(0) } 50% { transform: rotate(1.2deg) translateY(.5%) } }
+@keyframes talkerThink { 0%,100% { transform: rotate(-1deg) } 50% { transform: rotate(-2deg) translateY(-.4%) } }
+.call .orb .talker { position: relative; z-index: 2; }
+.call .orb .talker-cherry { position: absolute; z-index: 3; bottom: 12%; left: 8%; }
+@media (prefers-reduced-motion: reduce) { .talker-head { animation: none !important; } }
