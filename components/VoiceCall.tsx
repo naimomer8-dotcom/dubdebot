@@ -29,10 +29,10 @@ const LABEL: Record<Phase, string> = {
  * Sentences are voiced as soon as they stream in, and the mascot's mouth follows the audio level.
  */
 const FILLERS: [string, string][] = [
-  ["f1", "אוקיי, שנייה."],
+  ["f1", "אוקיי, שנייה אחת."],
   ["f2", "תקשיב, זה טוב."],
   ["f3", "שאלה טובה. רגע."],
-  ["f4", "הבנתי אותך."],
+  ["f4", "הבנתי. תן לי רגע."],
 ];
 
 export default function VoiceCall({
@@ -417,8 +417,8 @@ export default function VoiceCall({
         // greeting
         streamDone.current = false;
         if (ctx.state !== "running") await ctx.resume().catch(() => {});
-        const hello = "היי, כאן ניר. ספר לי, מה הכי בוער לך בעסק עכשיו?";
-        setBot(`היי ${firstName}, כאן ניר. ספר לי, מה הכי בוער לך בעסק עכשיו?`);
+        const hello = "שלום, זה ניר. ספר לי, מה הכי בוער לך בעסק עכשיו?";
+        setBot(`שלום ${firstName}, זה ניר. ספר לי, מה הכי בוער לך בעסק עכשיו?`);
         // pre-recorded greeting plays instantly; live TTS only if the file is missing
         const pre = fetch("/voice/greeting.wav")
           .then((r) => (r.ok ? r.arrayBuffer() : null))
