@@ -153,7 +153,7 @@ export async function POST(req: Request) {
     profile: text.replace(/[^\p{L}]/gu, "").length < 8 ? null : ((user.profile as Record<string, unknown>) ?? null),
     knowledge: knowledge.map((k) => ({ source: k.source, content: k.content })),
     goldenAnswers: golden,
-    financials: toPrompt(((finRows ?? []) as FinRow[]).slice().reverse()),
+    financials: trivial ? "" : toPrompt(((finRows ?? []) as FinRow[]).slice().reverse()),
   });
 
   const route = pickModel({ voice, mode: activeMode, hasAttachments: attachments.length > 0, textLength: text.length });

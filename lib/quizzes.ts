@@ -100,7 +100,7 @@ export function scoreSales(answers: Record<string, number>) {
   const scores = Object.fromEntries(SALES_AXES.map((a) => [a.id, sums[a.id] ? Math.round((sums[a.id].s / (sums[a.id].n * 3)) * 100) : 0])) as Record<SalesAxis, number>;
   const total = Math.round(Object.values(scores).reduce((a, b) => a + b, 0) / SALES_AXES.length);
   const weakest = [...SALES_AXES].sort((a, b) => scores[a.id] - scores[b.id])[0];
-  const strongest = [...SALES_AXES].sort((a, b) => scores[b.id] - scores[a.id])[0];
+  const strongest = [...SALES_AXES].filter((a) => a.id !== weakest.id).sort((a, b) => scores[b.id] - scores[a.id])[0];
   return { scores, total, weakest, strongest };
 }
 
