@@ -213,3 +213,57 @@ export async function probeCloned(text: string, via: string, model: string) {
   }
   return { via, status: r.status, ttfb, firstAudio, total: Date.now() - t0, events, head: buf.slice(0, 400) };
 }
+
+/** Streams Nir's cloned voice as raw 24kHz 16-bit mono PCM, chunk by chunk as Gemini produces it. */
+export async function streamCloned(text: string): Promise<ReadableStream<Uint8Array> | null> {
+  const v = await nirVoice();
+  if (!v) return null;
+  const r = await fetch(`${BASE}/models/${CLONE_MODEL}:streamGenerateContent?alt=sse`, {
+    method: "POST",
+    headers: { "x-goog-api-key": key(), "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [{ role: "user", parts: [{ text }] }],
+      generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { voice: v.id } } },
+    }),
+  });
+  if (!r.ok || !r.body) {
+    console.error("clone stream failed", r.status, (await r.text().catch(() => "")).slice(0, 200));
+    return null;
+  }
+  const rd = r.body.getReader();
+  const dec = new TextDecoder();
+  let buf = "";
+  return new ReadableStream<Uint8Array>({
+    async pull(controller) {
+      while (true) {
+        const nl = buf.indexOf("\n");
+        if (nl >= 0) {
+          const line = buf.slice(0, nl).trim();
+          buf = buf.slice(nl + 1);
+          if (!line.startsWith("data:")) continue;
+          try {
+            const j = JSON.parse(line.slice(5));
+            let out = false;
+            for (const p of j.candidates?.[0]?.content?.parts ?? []) {
+              if (p.inlineData?.data) {
+                controller.enqueue(new Uint8Array(Buffer.from(p.inlineData.data, "base64")));
+                out = true;
+              }
+            }
+            if (out) return;
+          } catch {}
+          continue;
+        }
+        const { value, done } = await rd.read();
+        if (done) {
+          controller.close();
+          return;
+        }
+        buf += dec.decode(value, { stream: true });
+      }
+    },
+    cancel() {
+      rd.cancel().catch(() => {});
+    },
+  });
+}

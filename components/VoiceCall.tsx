@@ -28,6 +28,8 @@ const LABEL: Record<Phase, string> = {
  * Full-screen voice call with the cherry: speech-to-text → Dubdebot (voice mode) → TTS, hands-free loop.
  * Sentences are voiced as soon as they stream in, and the mascot's mouth follows the audio level.
  */
+type Clip = { kind: "buf"; buf: ArrayBuffer } | { kind: "pcm"; res: Response } | null;
+
 const FILLERS: [string, string][] = [
   ["f1", "אוקיי, שנייה אחת."],
   ["f2", "תקשיב, זה טוב."],
@@ -59,7 +61,8 @@ export default function VoiceCall({
   const outAnalyser = useRef<AnalyserNode | null>(null);
   const recRef = useRef<SpeechRec | null>(null);
   const mediaRec = useRef<MediaRecorder | null>(null);
-  const queue = useRef<Promise<ArrayBuffer | null>[]>([]);
+  const queue = useRef<Promise<Clip>[]>([]);
+  const liveSrcs = useRef<AudioBufferSourceNode[]>([]);
   const playing = useRef(false);
   const streamDone = useRef(false);
   const currentSrc = useRef<AudioBufferSourceNode | null>(null);
@@ -112,20 +115,82 @@ export default function VoiceCall({
   }, []);
 
   // ---------- speaking ----------
-  const fetchTts = useCallback(async (text: string): Promise<ArrayBuffer | null> => {
+  const fetchTts = useCallback(async (text: string): Promise<Clip> => {
     if (!ttsOk.current) return null;
     try {
-      const r = await fetch("/api/tts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }) });
+      const r = await fetch("/api/tts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text, stream: true }) });
       if (r.status === 503) {
         ttsOk.current = false;
         return null;
       }
       if (!r.ok) return null;
-      return await r.arrayBuffer();
+      if ((r.headers.get("Content-Type") ?? "").includes("l16") && r.body) return { kind: "pcm", res: r };
+      return { kind: "buf", buf: await r.arrayBuffer() };
     } catch {
       return null;
     }
   }, []);
+
+  /** Plays raw 24kHz PCM as it streams in – audio starts after the first ~0.15s of sound arrives. */
+  const playPcm = async (res: Response, g: number) => {
+    const ctx = ctxRef.current;
+    if (!ctx || !res.body) return false;
+    const rd = res.body.getReader();
+    const RATE = 24000;
+    let pending = new Uint8Array(0);
+    let t = ctx.currentTime + 0.04;
+    let first = true;
+    let played = false;
+    let last: AudioBufferSourceNode | null = null;
+    const flush = (all: boolean) => {
+      const min = first ? RATE * 2 * 0.15 : RATE * 2 * 0.3;
+      if (!all && pending.length < min) return;
+      const n = pending.length - (pending.length % 2);
+      if (n <= 0) return;
+      const view = new DataView(pending.buffer, pending.byteOffset, n);
+      const ab = ctx.createBuffer(1, n / 2, RATE);
+      const ch = ab.getChannelData(0);
+      for (let i = 0; i < n / 2; i++) ch[i] = view.getInt16(i * 2, true) / 32768;
+      pending = pending.slice(n);
+      const src = ctx.createBufferSource();
+      src.buffer = ab;
+      src.connect(outAnalyser.current!);
+      if (t < ctx.currentTime) t = ctx.currentTime + 0.02;
+      src.start(t);
+      t += ab.duration;
+      liveSrcs.current.push(src);
+      last = src;
+      first = false;
+      played = true;
+    };
+    try {
+      while (true) {
+        if (g !== gen.current || !alive.current) {
+          rd.cancel().catch(() => {});
+          return true;
+        }
+        const { value, done } = await rd.read();
+        if (done) break;
+        const merged = new Uint8Array(pending.length + value.length);
+        merged.set(pending);
+        merged.set(value, pending.length);
+        pending = merged;
+        flush(false);
+      }
+      flush(true);
+    } catch {}
+    if (!played) return false;
+    // wait for the scheduled audio to finish (or an interruption)
+    await new Promise<void>((resolve) => {
+      const tick = () => {
+        if (g !== gen.current || !alive.current || ctx.currentTime >= t - 0.01) return resolve();
+        setTimeout(tick, 40);
+      };
+      tick();
+    });
+    liveSrcs.current = liveSrcs.current.filter((x) => x !== last);
+    return true;
+  };
 
   const speakBrowser = (text: string) =>
     new Promise<void>((resolve) => {
@@ -155,10 +220,16 @@ export default function VoiceCall({
       const text = sentences.current.shift() ?? "";
       const g = gen.current;
       go("speaking");
-      const buf = await job;
+      const clip = await job;
       if (!alive.current) break;
       if (g !== gen.current) continue; // user interrupted while this sentence was loading
       if (ctxRef.current && ctxRef.current.state !== "running") await ctxRef.current.resume().catch(() => {});
+      if (clip?.kind === "pcm") {
+        const ok = await playPcm(clip.res, g);
+        if (!ok && text && g === gen.current) await speakBrowser(text);
+        continue;
+      }
+      const buf = clip?.kind === "buf" ? clip.buf : null;
       if (buf && ctxRef.current) {
         try {
           const audio = await ctxRef.current.decodeAudioData(buf.slice(0));
@@ -184,7 +255,7 @@ export default function VoiceCall({
   }, []);
 
   const enqueue = useCallback(
-    (s: string, audio?: Promise<ArrayBuffer | null>) => {
+    (s: string, audio?: Promise<Clip>) => {
       const clean = s.replace(/[*#_`>|]/g, "").trim();
       if (clean.length < 2) return;
       sentences.current.push(clean);
@@ -197,6 +268,12 @@ export default function VoiceCall({
   const stopSpeaking = () => {
     gen.current++;
     abortRef.current?.abort();
+    liveSrcs.current.forEach((x) => {
+      try {
+        x.stop();
+      } catch {}
+    });
+    liveSrcs.current = [];
     try {
       currentSrc.current?.stop();
     } catch {}
@@ -217,7 +294,7 @@ export default function VoiceCall({
         if (i === lastFiller.current) i = (i + 1) % fillers.current.length;
         lastFiller.current = i;
         const f = fillers.current[i];
-        enqueue(f.text, Promise.resolve(f.buf.slice(0)));
+        enqueue(f.text, Promise.resolve({ kind: "buf", buf: f.buf.slice(0) }));
       }
       const ac = new AbortController();
       abortRef.current = ac;
@@ -423,7 +500,7 @@ export default function VoiceCall({
         const pre = fetch("/voice/greeting.wav")
           .then((r) => (r.ok ? r.arrayBuffer() : null))
           .catch(() => null)
-          .then((b) => b ?? fetchTts(hello));
+          .then((b): Promise<Clip> | Clip => (b ? { kind: "buf", buf: b } : fetchTts(hello)));
         const playHello = () => {
           enqueue(hello, pre);
           streamDone.current = true;
