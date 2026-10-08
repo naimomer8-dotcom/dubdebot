@@ -44,33 +44,56 @@ export async function nirVoice(): Promise<{ id: string; model: string } | null> 
   return v?.id ? { id: v.id, model: cached.model } : null;
 }
 
-/** Speech in Nir's cloned voice via the Interactions API. Returns raw audio bytes + mime, or null. */
-export async function speakCloned(text: string, style?: string, modelOverride?: string): Promise<{ audio: Buffer; mime: string } | null> {
+/**
+ * Speech in Nir's cloned voice. Uses streamGenerateContent (≈1.2s to first audio, ≈2s total per sentence –
+ * the Interactions API took 6–10s). Returns raw PCM (audio/l16) or WAV bytes + mime, or null.
+ */
+export async function speakCloned(text: string, _style?: string, modelOverride?: string): Promise<{ audio: Buffer; mime: string } | null> {
   const v = await nirVoice();
   if (!v) return null;
   const model = modelOverride || CLONE_MODEL;
-  const part: Record<string, unknown> = { type: "text", text };
-  if (style) part.annotations = [{ type: "speech_metadata", style }];
-  const r = await fetch(`${BASE}/interactions`, {
+  const r = await fetch(`${BASE}/models/${model}:streamGenerateContent?alt=sse`, {
     method: "POST",
     headers: { "x-goog-api-key": key(), "Content-Type": "application/json" },
     body: JSON.stringify({
-      model,
-      input: [{ type: "user_input", content: [part] }],
-      generation_config: { speech_config: [{ voice: v.id }] },
-      response_format: { type: "audio" },
+      contents: [{ role: "user", parts: [{ text }] }],
+      generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { voice: v.id } } },
     }),
   });
-  const j = await r.json().catch(() => null);
-  if (!r.ok || !j) {
-    console.error("cloned tts failed", r.status, JSON.stringify(j).slice(0, 300));
+  if (!r.ok || !r.body) {
+    console.error("cloned tts failed", r.status, (await r.text().catch(() => "")).slice(0, 300));
     return null;
   }
-  type C = { type?: string; data?: string; mime_type?: string; mimeType?: string };
-  const outs: C[] = (j.steps ?? []).filter((s: { type?: string }) => s.type === "model_output").flatMap((s: { content?: C[] }) => s.content ?? []);
-  const a = [...outs].reverse().find((c) => c.type === "audio" && c.data) ?? (j.output_audio as C | undefined);
-  if (!a?.data) return null;
-  return { audio: Buffer.from(a.data, "base64"), mime: a.mime_type ?? a.mimeType ?? "" };
+  const parts: Buffer[] = [];
+  let mime = "";
+  let buf = "";
+  const rd = r.body.getReader();
+  const dec = new TextDecoder();
+  const take = (line: string) => {
+    if (!line.startsWith("data:")) return;
+    try {
+      const j = JSON.parse(line.slice(5));
+      for (const p of j.candidates?.[0]?.content?.parts ?? []) {
+        if (p.inlineData?.data) {
+          parts.push(Buffer.from(p.inlineData.data, "base64"));
+          mime = mime || p.inlineData.mimeType || "";
+        }
+      }
+    } catch {}
+  };
+  while (true) {
+    const { value, done } = await rd.read();
+    if (done) break;
+    buf += dec.decode(value, { stream: true });
+    let i: number;
+    while ((i = buf.indexOf("\n")) >= 0) {
+      take(buf.slice(0, i).trim());
+      buf = buf.slice(i + 1);
+    }
+  }
+  take(buf.trim());
+  if (!parts.length) return null;
+  return { audio: Buffer.concat(parts), mime: mime || "audio/l16; rate=24000" };
 }
 
 /** Experimental latency probes for the cloned voice (admin only). */
