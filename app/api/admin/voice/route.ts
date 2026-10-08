@@ -3,7 +3,7 @@ import { timingSafeEqual } from "crypto";
 import { createClonedVoice, nirVoice, speakCloned, probeCloned, CLONE_MODEL } from "@/lib/voiceClone";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 90;
 
 function authed(req: Request) {
   const expected = process.env.ADMIN_TOKEN ?? "";

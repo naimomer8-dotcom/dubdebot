@@ -84,11 +84,84 @@ export async function probeCloned(text: string, via: string, model: string) {
       headers: { "x-goog-api-key": key(), "Content-Type": "application/json" },
       body: JSON.stringify({
         contents: [{ role: "user", parts: [{ text }] }],
-        generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: v.id } } } },
+        generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { voice: v.id } } },
       }),
     });
     const j = await r.text();
-    return { via, status: r.status, ms: Date.now() - t0, head: j.slice(0, 300) };
+    return { via, status: r.status, ms: Date.now() - t0, head: j.slice(0, 200) };
+  }
+  if (via === "gcs") {
+    const r = await fetch(`${BASE}/models/${model}:streamGenerateContent?alt=sse`, {
+      method: "POST",
+      headers: { "x-goog-api-key": key(), "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ role: "user", parts: [{ text }] }],
+        generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { voice: v.id } } },
+      }),
+    });
+    const ttfb = Date.now() - t0;
+    let first = -1, n = 0, buf = "";
+    const rd = r.body?.getReader();
+    const dec = new TextDecoder();
+    while (rd) {
+      const { value, done } = await rd.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      n++;
+      if (first < 0 && /"data"\s*:\s*"[A-Za-z0-9+/]{100}/.test(buf)) first = Date.now() - t0;
+    }
+    return { via, status: r.status, ttfb, firstAudio: first, total: Date.now() - t0, chunks: n, head: buf.slice(0, 200) };
+  }
+  if (via === "live") {
+    const { gemini } = await import("./gemini");
+    let first = -1;
+    let bytes = 0;
+    let err = "";
+    await new Promise<void>((resolve) => {
+      const timer = setTimeout(resolve, 20000);
+      gemini()
+        .live.connect({
+          model,
+          config: {
+            responseModalities: ["AUDIO" as never],
+            speechConfig: { voiceConfig: { voice: v.id } } as never,
+            systemInstruction: "Repeat the user's text out loud exactly as written, in Hebrew, nothing else.",
+          },
+          callbacks: {
+            onmessage: (m: { serverContent?: { modelTurn?: { parts?: { inlineData?: { data?: string } }[] }; turnComplete?: boolean } }) => {
+              for (const p of m.serverContent?.modelTurn?.parts ?? []) {
+                if (p.inlineData?.data) {
+                  if (first < 0) first = Date.now() - t0;
+                  bytes += p.inlineData.data.length;
+                }
+              }
+              if (m.serverContent?.turnComplete) {
+                clearTimeout(timer);
+                resolve();
+              }
+            },
+            onerror: (e: unknown) => {
+              err = String((e as { message?: string })?.message ?? e);
+              clearTimeout(timer);
+              resolve();
+            },
+            onclose: (e: unknown) => {
+              err = err || `closed ${(e as { reason?: string })?.reason ?? ""}`;
+              clearTimeout(timer);
+              resolve();
+            },
+          },
+        })
+        .then((s) => {
+          s.sendClientContent({ turns: [{ role: "user", parts: [{ text }] }], turnComplete: true });
+        })
+        .catch((e) => {
+          err = String(e);
+          clearTimeout(timer);
+          resolve();
+        });
+    });
+    return { via, firstAudio: first, total: Date.now() - t0, bytes, err: err.slice(0, 300) };
   }
   // streaming interactions: time to first byte and to first audio chunk
   const r = await fetch(`${BASE}/interactions?alt=sse`, {
