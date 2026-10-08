@@ -45,16 +45,17 @@ export async function nirVoice(): Promise<{ id: string; model: string } | null> 
 }
 
 /** Speech in Nir's cloned voice via the Interactions API. Returns raw audio bytes + mime, or null. */
-export async function speakCloned(text: string, style?: string): Promise<{ audio: Buffer; mime: string } | null> {
+export async function speakCloned(text: string, style?: string, modelOverride?: string): Promise<{ audio: Buffer; mime: string } | null> {
   const v = await nirVoice();
   if (!v) return null;
+  const model = modelOverride || process.env.GEMINI_CLONE_TTS_MODEL || v.model;
   const part: Record<string, unknown> = { type: "text", text };
   if (style) part.annotations = [{ type: "speech_metadata", style }];
   const r = await fetch(`${BASE}/interactions`, {
     method: "POST",
     headers: { "x-goog-api-key": key(), "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: v.model,
+      model,
       input: [{ type: "user_input", content: [part] }],
       generation_config: { speech_config: [{ voice: v.id }] },
       response_format: { type: "audio" },
