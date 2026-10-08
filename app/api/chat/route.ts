@@ -66,7 +66,7 @@ export async function POST(req: Request) {
     try {
       const qEmb = await embed(query, "RETRIEVAL_QUERY");
       const [k, g] = await Promise.all([
-        supabase.rpc("match_knowledge", { query_embedding: qEmb, match_count: voice ? 3 : 5, min_similarity: 0.45 }),
+        supabase.rpc("match_knowledge", { query_embedding: qEmb, match_count: voice ? 3 : 4, min_similarity: 0.45 }),
         supabase.rpc("match_golden", { query_embedding: qEmb, match_count: 2, min_similarity: 0.75 }),
       ]);
       knowledge = (k.data ?? []) as typeof knowledge;

@@ -1,7 +1,7 @@
 import { db } from "./supabase";
 
 const BASE = "https://generativelanguage.googleapis.com/v1beta";
-export const CLONE_MODEL = process.env.GEMINI_CLONE_TTS_MODEL || "gemini-3.8-flash-tts";
+export const CLONE_MODEL = process.env.GEMINI_CLONE_TTS_MODEL || "gemini-3.8-flash-lite-tts"; // $6 vs $9 per 1M audio tokens, same voice
 
 type Audio = { mime_type: string; data: string };
 
