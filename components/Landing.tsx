@@ -85,13 +85,13 @@ export default function Landing() {
               <a className="btn btn-glass btn-lg" href="/xray">רנטגן עסקי · 3 דקות</a>
             </div>
             <ul className="hero-points">
-              <li><Icon name="check" size={18} /> מבוסס על 4 הספרים והשיטה של ניר</li>
+              <li><Icon name="check" size={18} /> 22 שנה ניסיון ואלפי אסטרטגיות עסקיות במקום אחד</li>
               <li><Icon name="check" size={18} /> תוצרים אמיתיים: תחזית, תוכנית, תסריט</li>
               <li><Icon name="check" size={18} /> 30 יום במתנה. בלי כרטיס אשראי</li>
             </ul>
             <div className="hero-proof">
               <div><b>22</b><span>שנות ליווי</span></div>
-              <div><b>4</b><span>ספרים</span></div>
+              <div><b>אלפי</b><span>אסטרטגיות עסקיות</span></div>
               <div><b>24/7</b><span>זמין תמיד</span></div>
             </div>
           </div>
