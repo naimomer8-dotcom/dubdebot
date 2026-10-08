@@ -798,11 +798,12 @@ img, svg { display: block; }
 .meet-card .nir-tag { margin-bottom: 10px; }
 
 /* ---------- Nir cut-out poses ---------- */
-.nir-pose { display: block; height: auto; user-select: none; pointer-events: none; filter: drop-shadow(0 30px 40px rgba(0,0,0,.55)); -webkit-mask-image: linear-gradient(to bottom, #000 82%, transparent 100%); mask-image: linear-gradient(to bottom, #000 82%, transparent 100%); }
+.nir-pose { display: block; height: auto; user-select: none; pointer-events: none; filter: drop-shadow(0 18px 22px rgba(0,0,0,.5)); }
 .hero-nir { position: absolute; top: -178px; right: 10px; z-index: 1; animation: fadeUp 1s .35s var(--ease) both; }
 .hero-form .hero-form-mascot { z-index: 3; }
 .welcome-hero { position: relative; display: inline-flex; align-items: flex-end; width: fit-content; }
 .welcome-hero .mascot { position: absolute; bottom: 6px; left: -34px; }
+.welcome-hero .nir-pose { width: 180px !important; }
 .vision-photo .nir-pose { margin-inline: auto; }
 .xr-nir { margin-block: -28px; align-self: end; }
 .scan-nir { margin-bottom: -10px; }
