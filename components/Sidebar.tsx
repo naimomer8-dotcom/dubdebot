@@ -61,7 +61,10 @@ export default function Sidebar({
           <Icon name="scan" size={18} /> רנטגן עסקי
         </Link>
         <Link className="side-link" href="/scan">
-          <Icon name="radar" size={18} /> סריקת רשתות <span className="new-tag">חדש</span>
+          <Icon name="radar" size={18} /> סריקת רשתות
+        </Link>
+        <Link className="side-link" href="/tests">
+          <Icon name="target" size={18} /> מבחנים: תקשורת ומכירות <span className="new-tag">חדש</span>
         </Link>
         <Link className="side-link" href="/vault" aria-current={active === "vault"}>
           <Icon name="vault" size={18} /> התיק העסקי שלי

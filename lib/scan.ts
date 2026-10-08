@@ -1,4 +1,4 @@
-import { gemini, CHAT_MODEL, FAST_THINKING } from "./gemini";
+import { gemini, FAST_MODEL, LITE_THINKING } from "./gemini";
 
 export type Platform = "instagram" | "facebook" | "tiktok" | "linkedin" | "youtube" | "x" | "website";
 
@@ -240,11 +240,11 @@ export async function runScan(url: URL, shots: { mime: string; data: string }[])
 
   const attempt = async (withTools: boolean) => {
     const res = await gemini().models.generateContent({
-      model: CHAT_MODEL,
+      model: FAST_MODEL,
       contents: [{ role: "user", parts }],
       config: {
         maxOutputTokens: 6000,
-        ...FAST_THINKING,
+        ...LITE_THINKING,
         ...(withTools ? { tools: [{ urlContext: {} }, { googleSearch: {} }] } : { responseMimeType: "application/json" }),
       },
     });

@@ -35,10 +35,8 @@ export const LITE_THINKING = { thinkingConfig: { thinkingLevel: ThinkingLevel.MI
  * Model routing: heavy deliverables (plans, forecasts, scripts, files, long questions) go to the strong model;
  * voice turns and everyday chat go to the fast model. Set ROUTING=strong to disable.
  */
-export function pickModel(opts:{voice:boolean;mode:string;hasAttachments:boolean;textLength:number}) {
+export function pickModel(_opts: { voice: boolean; mode: string; hasAttachments: boolean; textLength?: number }) {
+  // Cost first: everything runs on Flash-Lite (≈3x cheaper). Set ROUTING=strong in Vercel to bring back the strong model.
   if (process.env.ROUTING === "strong") return { model: CHAT_MODEL, thinking: FAST_THINKING, tier: "strong" as const };
-  // Regular chat + voice always run on Flash-Lite (fast and cheap).
-  // Only document analysis and the heavy number tools use the strong model.
-  const heavy = !opts.voice && (opts.hasAttachments || opts.mode === "forecast" || opts.mode === "workplan" || opts.mode === "financials" || opts.mode === "payslip");
-  return heavy ? { model: CHAT_MODEL, thinking: FAST_THINKING, tier: "strong" as const } : { model: FAST_MODEL, thinking: LITE_THINKING, tier: "fast" as const };
+  return { model: FAST_MODEL, thinking: LITE_THINKING, tier: "fast" as const };
 }

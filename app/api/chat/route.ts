@@ -1,4 +1,5 @@
 import { guard } from "@/lib/guard";
+import { hit, limited } from "@/lib/ratelimit";
 import { after } from "next/server";
 import { db } from "@/lib/supabase";
 import { gemini, embed, pickModel, FAST_MODEL, LITE_THINKING } from "@/lib/gemini";
@@ -55,6 +56,14 @@ export async function POST(req: Request) {
   const requestedMode = String(body.mode ?? "chat") as ToolMode;
   const mode: ToolMode = TOOLS.some((t) => t.id === requestedMode) ? requestedMode : "chat";
   if (!text) return new Response("empty", { status: 400 });
+
+  // daily caps per user (protects the budget): 100 messages a day, of which up to 60 voice answers (~20 minutes of talk)
+  const capKey = `u:${userId}`;
+  const [dayFull, voiceFull] = await Promise.all([limited(capKey, "chat", 100, 60 * 24), voice ? limited(capKey, "voice", 60, 60 * 24) : Promise.resolve(false)]);
+  if (dayFull || voiceFull) {
+    return new Response(JSON.stringify({ error: "daily_cap", message: voiceFull ? "הגעת למכסת השיחות הקוליות להיום. נמשיך מחר – או בכתב בצ'אט." : "הגעת למכסת ההודעות להיום. נמשיך מחר 🙂" }), { status: 429, headers: { "Content-Type": "application/json" } });
+  }
+  if (voice) void hit(capKey, "voice").catch(() => {});
 
   const supabase = db();
 

@@ -307,6 +307,13 @@ export default function VoiceCall({
           signal: ac.signal,
         });
         if (res.status === 402) return window.location.reload();
+        if (res.status === 429) {
+          const j = await res.json().catch(() => ({}));
+          setBot(j.message ?? "הגענו למכסה להיום. נמשיך מחר.");
+          streamDone.current = true;
+          go("paused");
+          return;
+        }
         if (!res.ok || !res.body) throw new Error("bad");
         const reader = res.body.getReader();
         const dec = new TextDecoder();

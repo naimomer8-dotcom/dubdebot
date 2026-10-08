@@ -108,8 +108,8 @@ export default function VaultClient({
     await fetch("/api/vault", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) }).catch(() => {});
   }
 
-  const kindIcon = (k: string): IconName => (k === "social_scan" ? "radar" : (TOOLS.find((t) => t.id === k)?.icon as IconName) ?? "file");
-  const kindName = (k: string) => (k === "social_scan" ? "סריקת רשתות" : TOOLS.find((t) => t.id === k)?.title ?? "שיחה");
+  const kindIcon = (k: string): IconName => (k === "social_scan" ? "radar" : k.startsWith("quiz_") ? "target" : (TOOLS.find((t) => t.id === k)?.icon as IconName) ?? "file");
+  const kindName = (k: string) => (k === "social_scan" ? "סריקת רשתות" : k === "quiz_disc" ? "מבחן תקשורת" : k === "quiz_sales" ? "מבחן מכירות" : TOOLS.find((t) => t.id === k)?.title ?? "שיחה");
   const C = 2 * Math.PI * 52;
 
   return (

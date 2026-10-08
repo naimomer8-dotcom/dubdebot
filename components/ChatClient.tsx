@@ -169,7 +169,10 @@ export default function ChatClient({
       }
       if (res.status === 413) return fail("הקבצים כבדים מדי. נסה פחות קבצים או קובץ קטן יותר.");
       if (res.status === 402) return window.location.reload();
-      if (res.status === 429) return fail("יותר מדי הודעות בזמן קצר. תן לזה כמה דקות ונמשיך.");
+      if (res.status === 429) {
+        const j = await res.json().catch(() => ({}));
+        return fail(j.message ?? "יותר מדי הודעות בזמן קצר. תן לזה כמה דקות ונמשיך.");
+      }
       if (!res.ok || !res.body) return fail("משהו נתקע אצלי. שלח שוב את ההודעה.");
 
       const hc = res.headers.get("X-Conversation-Id");
