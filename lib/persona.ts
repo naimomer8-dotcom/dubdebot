@@ -199,7 +199,7 @@ export function buildSystemPrompt(opts: {
   knowledge: { source: string; content: string }[];
   goldenAnswers: { question: string; answer: string }[];
 }) {
-  const parts = [BASE, MODES[opts.mode] ?? MODES.chat];
+  const parts = opts.voice ? [VOICE_RULES, BASE] : [BASE, MODES[opts.mode] ?? MODES.chat];
   if (opts.hasAttachments) parts.push(ATTACH_RULES);
 
   parts.push(`## המשתמש\nשם: ${opts.userName}`);

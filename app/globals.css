@@ -815,3 +815,8 @@ img, svg { display: block; }
   .xr-insight .xr-nir { width: 120px !important; margin: 0 auto -10px; }
   .vault-nir { width: 110px !important; }
 }
+.vision-photo .nir-pose { max-width: min(340px, 74vw); }
+@media (max-width: 900px) {
+  .hero-form { margin-top: 128px; }
+  .vision-photo .mascot { left: -6px; }
+}

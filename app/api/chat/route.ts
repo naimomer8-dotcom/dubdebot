@@ -151,7 +151,7 @@ export async function POST(req: Request) {
             ? { inlineData: { mimeType: a.mime, data: a.data } }
             : { text: `📎 קובץ מצורף: ${a.name}\n"""\n${a.text}\n"""` }
         ),
-        { text },
+        { text: voice ? `${text}\n\n[שיחה קולית – תענה בדיבור: עד 3 משפטים קצרים, בלי רשימות, בלי כוכביות ובלי כותרות. רעיון אחד חזק ושאלה אחת.]` : text },
       ],
     },
   ];
