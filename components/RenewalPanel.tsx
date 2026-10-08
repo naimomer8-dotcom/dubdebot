@@ -63,7 +63,7 @@ export default function RenewalPanel({ access, firstName, phone, compact = false
           <form className="renew-form glass edge" onSubmit={send}>
             <div className="field">
               <label htmlFor="rn-tel">נייד</label>
-              <input id="rn-tel" value={tel} onChange={(e) => setTel(e.target.value)} inputMode="tel" dir="ltr" autoComplete="tel" />
+              <input id="rn-tel" className="input" value={tel} onChange={(e) => setTel(e.target.value)} inputMode="tel" dir="ltr" autoComplete="tel" />
             </div>
             <div className="field">
               <label>מתי נוח שנחזור אליך?</label>
@@ -75,7 +75,7 @@ export default function RenewalPanel({ access, firstName, phone, compact = false
             </div>
             <div className="field">
               <label htmlFor="rn-note">משהו שחשוב שנדע? (לא חובה)</label>
-              <input id="rn-note" value={note} onChange={(e) => setNote(e.target.value)} maxLength={600} placeholder="למשל: רוצה גם פגישה עם ניר" />
+              <input id="rn-note" className="input" value={note} onChange={(e) => setNote(e.target.value)} maxLength={600} placeholder="למשל: רוצה גם פגישה עם ניר" />
             </div>
             {err && <span className="err">{err}</span>}
             <button className="btn btn-primary btn-lg" disabled={state === "sending"} type="submit">

@@ -42,7 +42,7 @@ export default function AdminAuth({ mode, token = "", username = "" }: { mode: "
             {mode === "login" && (
               <div className="field">
                 <label htmlFor="adm-user">שם משתמש</label>
-                <input id="adm-user" value={user} onChange={(e) => setUser(e.target.value)} dir="ltr" autoComplete="username" autoCapitalize="none" spellCheck={false} required />
+                <input id="adm-user" className="input" value={user} onChange={(e) => setUser(e.target.value)} dir="ltr" autoComplete="username" autoCapitalize="none" spellCheck={false} required />
               </div>
             )}
             <PasswordField value={pw} onChange={setPw} error={err.password} meter={mode === "setup"} autoComplete={mode === "login" ? "current-password" : "new-password"} />

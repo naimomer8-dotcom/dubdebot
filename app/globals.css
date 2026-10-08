@@ -913,7 +913,7 @@ img, svg { display: block; }
 .welcome-hero .nir-pose { width: 150px !important; }
 .welcome > p { margin-bottom: 20px; }
 .xr-stage { grid-template-columns: minmax(0, 1fr); }
-.xr-stage > * { justify-self: center; max-width: 100%; min-width: 0; }
+.xr-stage > * { justify-self: center; min-width: 0; }
 .scan-start { justify-self: center; }
 @media (max-width: 600px) { .xr-stage { padding: 12px 16px 56px; } .scan-form { padding: 16px; } }
 .has-touch .kbd-hint { display: none; }
@@ -924,3 +924,5 @@ img, svg { display: block; }
   .hero-mcta .btn { width: 100%; justify-content: center; }
 }
 .plan-line { color: var(--gold) !important; } .plan-line.warn { color: var(--cherry-hi) !important; }
+.xr-stage > .renew { max-width: min(620px, 100%); }
+.xr-stage > .scan-start { max-width: min(680px, 100%); }
