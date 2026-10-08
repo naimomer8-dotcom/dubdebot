@@ -7,6 +7,7 @@ import Mascot, { Mood } from "./Mascot";
 import Spotlight from "./Spotlight";
 import Sidebar from "./Sidebar";
 import NirPhoto from "./NirPhoto";
+import NirPose from "./NirPose";
 import Icon from "./Icon";
 import LeadModal, { MeetingType } from "./LeadModal";
 import ForecastStudio from "./ForecastStudio";
@@ -17,6 +18,7 @@ import { ForecastInput, toPrompt } from "@/lib/forecast";
 import { toPrompt as xrayPrompt } from "@/lib/xray";
 import { ACCEPT, Prepared, prepareFile } from "@/lib/attach";
 import type { ConvItem, ShellUser } from "@/lib/data";
+import { DISCLAIMER_SHORT } from "@/lib/disclaimer";
 
 export type ChatAttachment = { name: string; kind: "image" | "pdf" | "doc"; preview?: string };
 export type ChatMessage = {
@@ -406,7 +408,7 @@ export default function ChatClient({
             <div className="thread-col">
               {messages.length === 0 && (
                 <div className="welcome">
-                  <Mascot size={92} mood="wink" />
+                  <div className="welcome-hero"><NirPose pose="welcome" width={230} eager /><Mascot size={64} mood="wink" /></div>
                   <h2 className="h-display">
                     {user.firstName}, <span className="gold">מה בונים היום?</span>
                   </h2>
@@ -591,7 +593,7 @@ export default function ChatClient({
                   <button className="send-btn" type="submit" disabled={!canSend} aria-label="שליחה"><Icon name="send" size={19} stroke={2} /></button>
                 </div>
               </form>
-              <div className="fine">דובדבוט הוא AI על בסיס השיטה של ניר דובדבני. כיוון עסקי – לא תחליף לרו״ח, עו״ד או יועץ השקעות.</div>
+              <div className="fine">{DISCLAIMER_SHORT}</div>
             </div>
           </div>
         </main>
@@ -663,7 +665,7 @@ function printDeliverable(elementId: string) {
   table{border-collapse:collapse;width:100%;margin:12px 0;font-size:13.5px}th,td{border-bottom:1px solid #e6dcc8;padding:8px 10px;text-align:right}th{color:#8c6f42;font-weight:600}
   footer{margin-top:48px;font-size:11px;color:#8a8275;border-top:1px solid #e6dcc8;padding-top:12px}</style></head>
   <body><header><b>דובדבוט</b><span>DUVDEVANI GROUP · RND.ORG.IL</span></header>${el.innerHTML}
-  <footer>הופק על ידי דובדבוט, יועץ עסקי AI מבית קבוצת דובדבני. מבוסס על הנחות שמסרת, ואינו ייעוץ פיננסי.</footer>
+  <footer>הופק על ידי דובדבוט, כלי AI מבית קבוצת דובדבני, על בסיס הנחות שמסרת. לכיוון ראשוני בלבד – אינו תחליף ליועץ עסקי, רו״ח, עו״ד או יועץ השקעות.</footer>
   <script>document.fonts.ready.then(()=>window.print())</script></body></html>`);
   w.document.close();
 }

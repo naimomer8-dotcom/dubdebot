@@ -1,4 +1,5 @@
 import { gemini } from "./gemini";
+import { speakCloned } from "./voiceClone";
 
 const CANDIDATES = [
   process.env.GEMINI_TTS_MODEL,
@@ -15,6 +16,18 @@ const dead = new Set<string>();
 
 /** Hebrew speech via Gemini TTS. Returns a WAV buffer, or null if no TTS model is available. */
 export async function synthesize(text: string): Promise<{ wav: Buffer; model: string } | null> {
+  // 1) Nir's cloned voice, when one has been created with his consent
+  try {
+    const c = await speakCloned(text, "ישיר, אנרגטי וחם, כמו בשיחת טלפון עם בעל עסק");
+    if (c) {
+      const isWav = c.audio.subarray(0, 4).toString("ascii") === "RIFF";
+      const rate = Number(/rate=(\d+)/.exec(c.mime)?.[1] ?? 24000);
+      return { wav: isWav ? c.audio : pcmToWav(c.audio, rate), model: "nir-clone" };
+    }
+  } catch (e) {
+    console.error("clone path failed", String(e).slice(0, 200));
+  }
+  // 2) prebuilt Gemini voice
   const order = working ? [working, ...CANDIDATES.filter((m) => m !== working)] : CANDIDATES;
   for (const model of order) {
     if (dead.has(model)) continue;

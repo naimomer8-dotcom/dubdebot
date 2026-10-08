@@ -13,6 +13,7 @@ import LeadModal from "./LeadModal";
 import Confetti from "./Confetti";
 import { AXES, ARCHETYPES, Scores, insights } from "@/lib/xray";
 import { TOOLS } from "@/lib/persona";
+import NirPose from "./NirPose";
 import type { ConvItem, ShellUser } from "@/lib/data";
 
 type Xray = { id: string; scores: Scores; total: number; archetype: string | null; created_at: string };
@@ -130,7 +131,7 @@ export default function VaultClient({
                   <span className="eyebrow">{user.firstName} · התיק העסקי</span>
                   <h1 className="h-display">המסלול שלך <span className="gold">לעסק אלפא.</span></h1>
                 </div>
-                <Mascot size={84} mood={pct === 100 && tasks.length ? "celebrate" : "wink"} />
+                <NirPose pose={pct === 100 && tasks.length ? "celebrate" : "box"} width={170} className="vault-nir" />
               </div>
 
               {/* alpha path */}

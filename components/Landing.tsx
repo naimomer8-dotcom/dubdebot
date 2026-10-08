@@ -8,9 +8,10 @@ import Spotlight from "./Spotlight";
 import Radar from "./Radar";
 import { QUESTIONS } from "@/lib/xray";
 import RegisterForm from "./RegisterForm";
-import NirPhoto from "./NirPhoto";
+import NirPose from "./NirPose";
 import Icon, { IconName } from "./Icon";
 import { useReveal } from "./useReveal";
+import { DISCLAIMER_LONG } from "@/lib/disclaimer";
 
 const SAMPLE = { strategy: 62, marketing: 38, sales: 71, pricing: 29, systems: 45, money: 54 };
 
@@ -92,6 +93,7 @@ export default function Landing() {
           </div>
           <div className="hero-form" id="signup">
             <div className="hero-form-mascot"><Mascot size={96} /></div>
+            <NirPose pose="point-down" width={250} className="hero-nir" eager />
             <RegisterForm />
           </div>
         </header>
@@ -173,7 +175,7 @@ export default function Landing() {
         <section className="section vision-sec">
           <div className="wrap">
             <div className="vision reveal">
-              <div className="vision-photo"><NirPhoto size={132} /><Mascot size={72} mood="wink" track={false} /></div>
+              <div className="vision-photo"><NirPose pose="welcome" width={340} /><Mascot size={72} mood="wink" track={false} /></div>
               <blockquote className="h-display">״החזון שלי: שלא יהיה עסק בישראל <span className="gold">שאין לו דובדבוט.</span>״</blockquote>
               <cite>ניר דובדבני · מייסד קבוצת דובדבני</cite>
               <button className="btn btn-primary btn-lg" onClick={() => goSignup()}>לפתוח את דובדבוט בחינם <Icon name="arrow" size={18} className="ico-move" /></button>
@@ -193,6 +195,7 @@ export default function Landing() {
               <a href="/privacy">מדיניות פרטיות</a>
               <a href="/privacy#unsubscribe">הסרה מדיוור</a>
             </nav>
+            <small style={{ width: "100%", fontSize: 12.5, lineHeight: 1.6 }}>{DISCLAIMER_LONG}</small>
           </footer>
         </div>
 

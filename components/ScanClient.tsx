@@ -4,11 +4,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import Mascot from "./Mascot";
+import NirPose from "./NirPose";
 import Icon from "./Icon";
 import Spotlight from "./Spotlight";
 import { Brand } from "./BrandBar";
 import { prepareFile, Prepared } from "@/lib/attach";
 import type { ScanReport } from "@/lib/scan";
+import { DISCLAIMER_SHORT } from "@/lib/disclaimer";
 
 const PLATFORMS: [string, RegExp][] = [
   ["אינסטגרם", /instagram\.com|^@/i],
@@ -97,6 +99,7 @@ export default function ScanClient() {
         <main className="xr-stage">
           {phase === "start" && (
             <div className="scan-start">
+              <NirPose pose="leads" width={150} className="scan-nir" eager />
               <span className="eyebrow">סריקת רשתות חברתיות</span>
               <h1 className="h-display">איפה אתה <span className="gold">נכשל שיווקית?</span></h1>
               <p className="lead" style={{ margin: 0 }}>מדביקים קישור לפרופיל. דובדבוט סורק את הביו, ההצעה, התוכן וה-CTA – ואומר לך בדיוק מה מבריח לקוחות ומה לתקן היום.</p>
@@ -149,7 +152,7 @@ export default function ScanClient() {
           {phase === "done" && r && data && (
             <div className="report">
               <section className="rep-head glass edge">
-                <Mascot size={86} mood={r.score >= 70 ? "celebrate" : "wink"} track={false} />
+                <NirPose pose={r.score >= 70 ? "celebrate" : "alarm"} width={130} />
                 <div>
                   <span className="eyebrow">{r.handle}</span>
                   <h2 className="h-display">{r.display_name || "השורה התחתונה"}</h2>
@@ -218,7 +221,7 @@ export default function ScanClient() {
                 <Link className="btn btn-glass btn-lg" href="/vault"><Icon name="vault" size={18} /> לתיק העסקי</Link>
                 <button className="btn btn-ghost" onClick={() => { setPhase("start"); setData(null); setShots([]); }}>סריקה נוספת</button>
               </div>
-              <p className="rep-note">{r.data_note} · רמת ודאות: {r.confidence === "high" ? "גבוהה" : r.confidence === "low" ? "נמוכה" : "בינונית"}</p>
+              <p className="rep-note">{r.data_note} · רמת ודאות: {r.confidence === "high" ? "גבוהה" : r.confidence === "low" ? "נמוכה" : "בינונית"}<br />{DISCLAIMER_SHORT}</p>
             </div>
           )}
         </main>

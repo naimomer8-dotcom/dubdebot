@@ -1,7 +1,7 @@
 import { after } from "next/server";
 import { db } from "@/lib/supabase";
 import { getSessionUserId } from "@/lib/session";
-import { gemini, CHAT_MODEL, embed, FAST_THINKING } from "@/lib/gemini";
+import { gemini, embed, pickModel, FAST_MODEL, LITE_THINKING } from "@/lib/gemini";
 import { buildSystemPrompt, PROFILE_EXTRACT_PROMPT, ToolMode, TOOLS } from "@/lib/persona";
 
 export const runtime = "nodejs";
@@ -82,30 +82,39 @@ export async function POST(req: Request) {
   conversationId = conv.id;
   const activeMode = (body.mode ? mode : (conv.mode as ToolMode)) || "chat";
 
-  const { data: historyRows } = await supabase
+  const historyP = supabase
     .from("messages")
     .select("role, content, cta")
     .eq("conversation_id", conversationId)
-    .order("created_at", { ascending: true })
-    .limit(40);
-  const history: Turn[] = (historyRows ?? []) as Turn[];
+    .order("created_at", { ascending: false })
+    .limit(voice ? 12 : 40);
 
-  // ---- retrieval ----
+  // ---- retrieval (voice: current utterance only, in parallel with history) ----
   let knowledge: { source: string; content: string; id: number; similarity: number }[] = [];
   let golden: { question: string; answer: string }[] = [];
   let topSimilarity: number | null = null;
-  try {
-    const retrievalQuery = [...history.filter((h) => h.role === "user").slice(-2).map((h) => h.content), text].join("\n");
-    const qEmb = await embed(retrievalQuery, "RETRIEVAL_QUERY");
-    const [k, g] = await Promise.all([
-      supabase.rpc("match_knowledge", { query_embedding: qEmb, match_count: 6, min_similarity: 0.45 }),
-      supabase.rpc("match_golden", { query_embedding: qEmb, match_count: 2, min_similarity: 0.75 }),
-    ]);
-    knowledge = (k.data ?? []) as typeof knowledge;
-    golden = (g.data ?? []) as typeof golden;
-    topSimilarity = knowledge[0]?.similarity ?? null;
-  } catch (e) {
-    console.error("retrieval failed", e);
+  const retrieve = async (query: string) => {
+    try {
+      const qEmb = await embed(query, "RETRIEVAL_QUERY");
+      const [k, g] = await Promise.all([
+        supabase.rpc("match_knowledge", { query_embedding: qEmb, match_count: voice ? 3 : 6, min_similarity: 0.45 }),
+        supabase.rpc("match_golden", { query_embedding: qEmb, match_count: 2, min_similarity: 0.75 }),
+      ]);
+      knowledge = (k.data ?? []) as typeof knowledge;
+      golden = (g.data ?? []) as typeof golden;
+      topSimilarity = knowledge[0]?.similarity ?? null;
+    } catch (e) {
+      console.error("retrieval failed", e);
+    }
+  };
+  let history: Turn[];
+  if (voice) {
+    const [{ data: historyRows }] = await Promise.all([historyP, retrieve(text)]);
+    history = ((historyRows ?? []) as Turn[]).reverse();
+  } else {
+    const { data: historyRows } = await historyP;
+    history = ((historyRows ?? []) as Turn[]).reverse();
+    await retrieve([...history.filter((h) => h.role === "user").slice(-2).map((h) => h.content), text].join("\n"));
   }
 
   // save user message
@@ -127,8 +136,9 @@ export async function POST(req: Request) {
     goldenAnswers: golden,
   });
 
+  const route = pickModel({ voice, mode: activeMode, hasAttachments: attachments.length > 0, textLength: text.length });
   const contents = [
-    ...history.slice(-20).map((h) => ({ role: h.role === "assistant" ? "model" : "user", parts: [{ text: h.content }] })),
+    ...history.slice(voice ? -10 : -20).map((h) => ({ role: h.role === "assistant" ? "model" : "user", parts: [{ text: h.content }] })),
     {
       role: "user",
       parts: [
@@ -177,14 +187,16 @@ export async function POST(req: Request) {
   const stream = new ReadableStream({
     async start(controller) {
       let full = "";
+      let usage: unknown = null;
       try {
         const response = await gemini().models.generateContentStream({
-          model: CHAT_MODEL,
+          model: route.model,
           contents,
-          config: { systemInstruction, maxOutputTokens: voice ? 1500 : 8192, ...FAST_THINKING },
+          config: { systemInstruction, maxOutputTokens: voice ? 900 : 8192, ...route.thinking },
         });
         let pending = "";
         for await (const chunk of response) {
+          if (chunk.usageMetadata) usage = chunk.usageMetadata;
           const t = chunk.text ?? "";
           if (!t) continue;
           full += t;
@@ -220,6 +232,8 @@ export async function POST(req: Request) {
           role: "assistant",
           content: clean,
           cta: !!trigger,
+          model: route.model,
+          usage,
           sources: knowledge.map((k) => ({ id: k.id, source: k.source, similarity: Number(k.similarity.toFixed(3)) })),
         })
         .select("id")
@@ -254,9 +268,9 @@ async function updateProfile(userId: string, current: Record<string, unknown>, t
       .map((t) => `משתמש: ${t.content}`)
       .join("\n");
     const res = await gemini().models.generateContent({
-      model: CHAT_MODEL,
+      model: FAST_MODEL,
       contents: [{ role: "user", parts: [{ text: `${PROFILE_EXTRACT_PROMPT}\n\nפרופיל קיים: ${JSON.stringify(current)}\n\n${transcript}` }] }],
-      config: { responseMimeType: "application/json", ...FAST_THINKING },
+      config: { responseMimeType: "application/json", ...LITE_THINKING },
     });
     const extracted = JSON.parse(res.text ?? "{}");
     if (extracted && typeof extracted === "object" && Object.keys(extracted).length) {

@@ -6,7 +6,7 @@ import { gemini, EMBED_MODEL, EMBED_DIM } from "@/lib/gemini";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-const TYPES = new Set(["book", "booklet", "youtube", "doc", "golden"]);
+const TYPES = new Set(["book", "booklet", "youtube", "doc", "golden", "social", "podcast"]);
 
 function authorized(req: Request) {
   const expected = process.env.ADMIN_TOKEN;
@@ -73,6 +73,7 @@ export async function POST(req: Request) {
     chunk_index: startIndex + i,
     content,
     embedding: vectors[i],
+    meta: Array.isArray(body.meta) && body.meta[i] && typeof body.meta[i] === "object" ? body.meta[i] : null,
   }));
   const { error } = await supabase.from("knowledge_chunks").insert(rows);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

@@ -166,11 +166,11 @@ export default function VoiceCall({
   }, []);
 
   const enqueue = useCallback(
-    (s: string) => {
+    (s: string, audio?: Promise<ArrayBuffer | null>) => {
       const clean = s.replace(/[*#_`>|]/g, "").trim();
       if (clean.length < 2) return;
       sentences.current.push(clean);
-      queue.current.push(fetchTts(clean));
+      queue.current.push(audio ?? fetchTts(clean));
       pump();
     },
     [fetchTts, pump]
@@ -213,7 +213,15 @@ export default function VoiceCall({
           raw += dec.decode(value, { stream: true });
           const visible = raw.split(META_SEP)[0];
           setBot(visible);
-          // voice each finished sentence immediately
+          // first chunk: start talking at the first comma once there's enough text, so Nir answers fast
+          if (spoken === 0) {
+            const c = visible.slice(25).search(/[,،;:–]/);
+            if (c >= 0 && !/[.!?…\n]/.test(visible.slice(0, 25 + c))) {
+              enqueue(visible.slice(0, 25 + c + 1));
+              spoken = 25 + c + 1;
+            }
+          }
+          // then voice each finished sentence immediately
           const re = /[^.!?…\n]+[.!?…\n]+/g;
           re.lastIndex = spoken;
           let m: RegExpExecArray | null;
@@ -254,7 +262,15 @@ export default function VoiceCall({
       rec.continuous = false;
       rec.maxAlternatives = 1;
       let finalText = "";
+      let hush: ReturnType<typeof setTimeout> | null = null;
       rec.onresult = (e) => {
+        // stop ~0.9s after the words stop changing, instead of waiting for the browser's long timeout
+        if (hush) clearTimeout(hush);
+        hush = setTimeout(() => {
+          try {
+            rec.stop();
+          } catch {}
+        }, 900);
         let t = "";
         finalText = "";
         for (let i = 0; i < e.results.length; i++) {
@@ -266,6 +282,7 @@ export default function VoiceCall({
       };
       rec.onerror = () => {};
       rec.onend = () => {
+        if (hush) clearTimeout(hush);
         recRef.current = null;
         if (!alive.current || phaseRef.current !== "listening") return;
         const t = finalText.trim();
@@ -322,7 +339,7 @@ export default function VoiceCall({
           heard = true;
           quietSince = now;
         }
-        if ((heard && now - quietSince > 1300) || now - started > 25000 || (!heard && now - started > 9000)) {
+        if ((heard && now - quietSince > 950) || now - started > 25000 || (!heard && now - started > 9000)) {
           mr.stop();
           return;
         }
@@ -353,8 +370,14 @@ export default function VoiceCall({
         micAnalyser.current = mic;
         // greeting
         streamDone.current = false;
+        const hello = "היי, כאן ניר. ספר לי, מה הכי בוער לך בעסק עכשיו?";
         setBot(`היי ${firstName}, כאן ניר. ספר לי, מה הכי בוער לך בעסק עכשיו?`);
-        enqueue(`היי ${firstName}, כאן ניר. ספר לי, מה הכי בוער לך בעסק עכשיו?`);
+        // pre-recorded greeting plays instantly; live TTS only if the file is missing
+        const pre = fetch("/voice/greeting.wav")
+          .then((r) => (r.ok ? r.arrayBuffer() : null))
+          .catch(() => null)
+          .then((b) => b ?? fetchTts(hello));
+        enqueue(hello, pre);
         streamDone.current = true;
       } catch {
         go("error");

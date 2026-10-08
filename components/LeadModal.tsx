@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Mascot from "./Mascot";
 import NirPhoto from "./NirPhoto";
+import NirPose from "./NirPose";
 import Icon from "./Icon";
 
 export type MeetingType = "advisor" | "nir";
@@ -63,7 +64,7 @@ export default function LeadModal({
         <button className="icon-btn x-btn" onClick={onClose} aria-label="סגירה"><Icon name="close" size={18} /></button>
         {done ? (
           <div className="done-view">
-            {type === "nir" ? <div className="vision-photo"><NirPhoto size={120} /><Mascot size={64} mood="celebrate" track={false} /></div> : <Mascot size={130} mood="celebrate" />}
+            <div className="vision-photo"><NirPose pose={type === "nir" ? "thanks" : "celebrate"} width={type === "nir" ? 120 : 230} /><Mascot size={56} mood="celebrate" track={false} /></div>
             <h3 style={{ marginTop: 10 }}>סגרנו.</h3>
             <p className="sub">
               {type === "nir" ? "הצוות של ניר יחזור אליך לתאם את הפגישה איתו." : "אחד היועצים שלנו יחזור אליך לתאם פגישת אסטרטגיה."} הוא כבר
