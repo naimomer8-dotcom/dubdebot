@@ -65,7 +65,7 @@ export async function POST(req: Request) {
     try {
       const qEmb = await embed(query, "RETRIEVAL_QUERY");
       const [k, g] = await Promise.all([
-        supabase.rpc("match_knowledge", { query_embedding: qEmb, match_count: voice ? 3 : 6, min_similarity: 0.45 }),
+        supabase.rpc("match_knowledge", { query_embedding: qEmb, match_count: voice ? 3 : 5, min_similarity: 0.45 }),
         supabase.rpc("match_golden", { query_embedding: qEmb, match_count: 2, min_similarity: 0.75 }),
       ]);
       knowledge = (k.data ?? []) as typeof knowledge;
@@ -75,7 +75,9 @@ export async function POST(req: Request) {
       console.error("retrieval failed", e);
     }
   };
-  const voiceRetrieval = voice ? retrieve(text) : null;
+  // cost saver: a greeting / one-word message doesn't need a knowledge search (saves the embedding call)
+  const trivial = text.replace(/[^\p{L}\p{N}]/gu, "").length < 12 && !attachments.length;
+  const voiceRetrieval = voice && !trivial ? retrieve(text) : null;
 
   // ---- user + conversation, in parallel ----
   let conversationId: string | null = body.conversationId ?? null;
@@ -110,7 +112,7 @@ export async function POST(req: Request) {
     .select("role, content, cta")
     .eq("conversation_id", conversationId)
     .order("created_at", { ascending: false })
-    .limit(voice ? 12 : 40);
+    .limit(voice ? 10 : 24);
 
   let history: Turn[];
   if (voice) {
@@ -119,7 +121,7 @@ export async function POST(req: Request) {
   } else {
     const { data: historyRows } = await historyP;
     history = ((historyRows ?? []) as Turn[]).reverse();
-    await retrieve([...history.filter((h) => h.role === "user").slice(-2).map((h) => h.content), text].join("\n"));
+    if (!trivial) await retrieve([...history.filter((h) => h.role === "user").slice(-2).map((h) => h.content), text].join("\n"));
   }
 
   // save user message (not awaited – the stream starts right away; awaited before the reply is saved)
@@ -144,7 +146,8 @@ export async function POST(req: Request) {
 
   const route = pickModel({ voice, mode: activeMode, hasAttachments: attachments.length > 0, textLength: text.length });
   const contents = [
-    ...history.slice(voice ? -10 : -20).map((h) => ({ role: h.role === "assistant" ? "model" : "user", parts: [{ text: h.content }] })),
+    // cost saver: shorter history, and long old answers are trimmed (the model already wrote them)
+    ...history.slice(voice ? -8 : -12).map((h) => ({ role: h.role === "assistant" ? "model" : "user", parts: [{ text: h.role === "assistant" && h.content.length > 1500 ? h.content.slice(0, 1500) + "…" : h.content }] })),
     {
       role: "user",
       parts: [
@@ -186,7 +189,9 @@ export async function POST(req: Request) {
     }
     await supabase.from("users").update({ last_seen_at: new Date().toISOString() }).eq("id", userId);
     // learn the business profile every 3 user turns
-    if (userTurns % 3 === 1) {
+    // cost saver: learn the profile on the 2nd turn and then every 5th – and only when there's something concrete to learn
+    const concrete = /\d/.test(text) || text.length > 80;
+    if (concrete && (userTurns === 2 || userTurns % 5 === 0)) {
       await updateProfile(userId, (user.profile as Record<string, unknown>) ?? {}, [...history, { role: "user", content: text, cta: false }]);
     }
   });
@@ -208,7 +213,7 @@ export async function POST(req: Request) {
         const response = await gemini().models.generateContentStream({
           model: route.model,
           contents,
-          config: { systemInstruction, maxOutputTokens: voice ? 900 : 8192, ...route.thinking },
+          config: { systemInstruction, maxOutputTokens: voice ? 400 : ["workplan", "forecast", "sales_script", "feasibility", "campaign"].includes(activeMode) ? 8192 : 2500, ...route.thinking },
         });
         let pending = "";
         for await (const chunk of response) {

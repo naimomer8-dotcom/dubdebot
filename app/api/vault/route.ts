@@ -10,6 +10,30 @@ const EXTRACT = `קיבלת תוצר שדובדבוט (יועץ עסקי) כתב
 {"title": "כותרת קצרה ותיאורית לתוצר, עד 6 מילים", "tasks": [{"text": "משימה אחת, פעולה ברורה, עד 14 מילים", "priority": "urgent" | "important"}]}
 משימות: רק פעולות ביצוע קונקרטיות שמופיעות בתוצר (למשל מטבלת ביצוע, תוכנית 90 יום או צעדים הבאים). עד 10 משימות. "urgent" רק למה שמסומן דחוף/מיידי/שבוע ראשון. אם אין משימות – רשימה ריקה.`;
 
+/** Pulls tasks out of a markdown action table ("מה אני הולך לעשות" / "משימה" column). No AI call. */
+function tableTasks(md: string): { text: string; priority: string }[] {
+  const lines = md.split("\n").map((l) => l.trim()).filter((l) => l.startsWith("|"));
+  const out: { text: string; priority: string }[] = [];
+  let col = -1;
+  let urgentCol = -1;
+  for (const l of lines) {
+    const cells = l.replace(/^\||\|$/g, "").split("|").map((c) => c.replace(/[*_`]/g, "").trim());
+    if (cells.every((c) => /^:?-{2,}:?$/.test(c) || !c)) continue;
+    if (col < 0) {
+      col = cells.findIndex((c) => /מה אני הולך לעשות|משימה|פעולה|מה עושים/.test(c));
+      urgentCol = cells.findIndex((c) => /דחוף/.test(c));
+      if (col < 0) return [];
+      continue;
+    }
+    const text = cells[col];
+    if (!text || text.length < 4) continue;
+    const urgent = urgentCol >= 0 && /✓|✔|כן|x|v|דחוף|●|🔥/i.test(cells[urgentCol] ?? "");
+    out.push({ text: text.slice(0, 200), priority: urgent ? "urgent" : "important" });
+    if (out.length >= 10) break;
+  }
+  return out;
+}
+
 /** Save an assistant message to the user's business vault, and pull its action items into tasks. */
 export async function POST(req: Request) {
   const gate = await guard("vault", 40, 60);
@@ -31,8 +55,9 @@ export async function POST(req: Request) {
   if (existing) return NextResponse.json({ ok: true, id: existing.id, title: existing.title, tasks: 0, already: true });
 
   let title = msg.content.split("\n").find((l: string) => l.trim())?.replace(/[#*]/g, "").trim().slice(0, 60) || "תוצר מדובדבוט";
-  let tasks: { text: string; priority: string }[] = [];
-  try {
+  // cost saver: a work plan already has an action table – read the tasks from it without calling the AI
+  let tasks: { text: string; priority: string }[] = tableTasks(msg.content);
+  if (!tasks.length && msg.content.length > 300) try {
     const res = await gemini().models.generateContent({
       model: FAST_MODEL,
       contents: [{ role: "user", parts: [{ text: `${EXTRACT}\n\nהתוצר:\n${msg.content.slice(0, 14000)}` }] }],

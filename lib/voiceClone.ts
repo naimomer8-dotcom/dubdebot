@@ -32,9 +32,12 @@ export async function createClonedVoice(source: Audio, consent: Audio, model = C
 }
 
 let cached: { id: string | null; model: string; at: number } | null = null;
+let downUntil = 0; // after a failure, don't retry the clone for a few minutes (saves wasted calls)
+const markDown = () => (downUntil = Date.now() + 5 * 60_000);
 
 /** The active cloned voice (from env, or saved by the admin endpoint). Cached for 5 minutes. */
 export async function nirVoice(): Promise<{ id: string; model: string } | null> {
+  if (Date.now() < downUntil) return null;
   if (process.env.NIR_VOICE_ID) return { id: process.env.NIR_VOICE_ID, model: CLONE_MODEL };
   if (process.env.NIR_VOICE_OFF === "1") return null;
   if (cached && Date.now() - cached.at < 300_000) return cached.id ? { id: cached.id, model: cached.model } : null;
@@ -62,6 +65,7 @@ export async function speakCloned(text: string, _style?: string, modelOverride?:
   });
   if (!r.ok || !r.body) {
     console.error("cloned tts failed", r.status, (await r.text().catch(() => "")).slice(0, 300));
+    if (r.status >= 400 && r.status !== 429) markDown();
     return null;
   }
   const parts: Buffer[] = [];
@@ -228,6 +232,7 @@ export async function streamCloned(text: string): Promise<ReadableStream<Uint8Ar
   });
   if (!r.ok || !r.body) {
     console.error("clone stream failed", r.status, (await r.text().catch(() => "")).slice(0, 200));
+    if (r.status >= 400 && r.status !== 429) markDown();
     return null;
   }
   const rd = r.body.getReader();

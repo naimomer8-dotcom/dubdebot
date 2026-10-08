@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Mascot from "./Mascot";
 import NirPhoto from "./NirPhoto";
-import NirTalker from "./NirTalker";
 import Icon from "./Icon";
 
 type Phase = "connecting" | "listening" | "thinking" | "speaking" | "paused" | "error";
@@ -317,21 +316,13 @@ export default function VoiceCall({
           raw += dec.decode(value, { stream: true });
           const visible = raw.split(META_SEP)[0];
           setBot(visible);
-          // first chunk: start talking at the first comma once there's enough text, so Nir answers fast
+          // cost saver: voice the first clause/sentence as soon as it's ready, then the whole rest in ONE TTS call
           if (spoken === 0) {
-            const c = visible.slice(25).search(/[,،;:–]/);
-            if (c >= 0 && !/[.!?…\n]/.test(visible.slice(0, 25 + c))) {
+            const c = visible.slice(25).search(/[,،;:–.!?…\n]/);
+            if (c >= 0) {
               enqueue(visible.slice(0, 25 + c + 1));
               spoken = 25 + c + 1;
             }
-          }
-          // then voice each finished sentence immediately
-          const re = /[^.!?…\n]+[.!?…\n]+/g;
-          re.lastIndex = spoken;
-          let m: RegExpExecArray | null;
-          while ((m = re.exec(visible))) {
-            enqueue(m[0]);
-            spoken = re.lastIndex;
           }
         }
         const [visible, metaRaw] = raw.split(META_SEP);
@@ -582,8 +573,7 @@ export default function VoiceCall({
         <div className={`orb ${phase === "listening" ? "listening" : ""}`} style={{ ["--lvl" as string]: level.toFixed(3) }}>
           <span className="halo" /><span className="halo" /><span className="halo" />
           <span className="core" />
-          <NirTalker size={230} level={level} state={phase === "speaking" ? "speaking" : phase === "listening" ? "listening" : phase === "thinking" ? "thinking" : "idle"} />
-          <span className="talker-cherry"><Mascot size={72} mood={phase === "thinking" ? "thinking" : phase === "listening" ? "curious" : "idle"} level={phase === "speaking" ? level : undefined} track={false} /></span>
+          <Mascot size={210} mood={phase === "thinking" ? "thinking" : phase === "listening" ? "curious" : "idle"} level={phase === "speaking" ? level : undefined} track={false} />
         </div>
         <div className="call-state" aria-live="polite">{LABEL[phase]}</div>
         <p className={`call-caption ${phase === "listening" ? "you" : ""}`}>
