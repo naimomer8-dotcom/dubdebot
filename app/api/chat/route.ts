@@ -55,21 +55,43 @@ export async function POST(req: Request) {
   if (!text) return new Response("empty", { status: 400 });
 
   const supabase = db();
-  const { data: user } = await supabase.from("users").select("id, full_name, profile").eq("id", userId).single();
-  if (!user) return new Response("unauthorized", { status: 401 });
 
-  // ---- conversation ----
+  // ---- retrieval helpers (declared early so voice can start embedding right away) ----
+  let knowledge: { source: string; content: string; id: number; similarity: number }[] = [];
+  let golden: { question: string; answer: string }[] = [];
+  let topSimilarity: number | null = null;
+  const retrieve = async (query: string) => {
+    try {
+      const qEmb = await embed(query, "RETRIEVAL_QUERY");
+      const [k, g] = await Promise.all([
+        supabase.rpc("match_knowledge", { query_embedding: qEmb, match_count: voice ? 3 : 6, min_similarity: 0.45 }),
+        supabase.rpc("match_golden", { query_embedding: qEmb, match_count: 2, min_similarity: 0.75 }),
+      ]);
+      knowledge = (k.data ?? []) as typeof knowledge;
+      golden = (g.data ?? []) as typeof golden;
+      topSimilarity = knowledge[0]?.similarity ?? null;
+    } catch (e) {
+      console.error("retrieval failed", e);
+    }
+  };
+  const voiceRetrieval = voice ? retrieve(text) : null;
+
+  // ---- user + conversation, in parallel ----
   let conversationId: string | null = body.conversationId ?? null;
   let conv: { id: string; mode: string; cta_shown_count: number; lead_submitted: boolean } | null = null;
-  if (conversationId) {
-    const { data } = await supabase
-      .from("conversations")
-      .select("id, mode, cta_shown_count, lead_submitted")
-      .eq("id", conversationId)
-      .eq("user_id", userId)
-      .maybeSingle();
-    conv = data;
-  }
+  const [{ data: user }, convRes] = await Promise.all([
+    supabase.from("users").select("id, full_name, profile").eq("id", userId).single(),
+    conversationId
+      ? supabase
+          .from("conversations")
+          .select("id, mode, cta_shown_count, lead_submitted")
+          .eq("id", conversationId)
+          .eq("user_id", userId)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
+  if (!user) return new Response("unauthorized", { status: 401 });
+  conv = convRes.data;
   if (!conv) {
     const { data, error } = await supabase
       .from("conversations")
@@ -89,27 +111,9 @@ export async function POST(req: Request) {
     .order("created_at", { ascending: false })
     .limit(voice ? 12 : 40);
 
-  // ---- retrieval (voice: current utterance only, in parallel with history) ----
-  let knowledge: { source: string; content: string; id: number; similarity: number }[] = [];
-  let golden: { question: string; answer: string }[] = [];
-  let topSimilarity: number | null = null;
-  const retrieve = async (query: string) => {
-    try {
-      const qEmb = await embed(query, "RETRIEVAL_QUERY");
-      const [k, g] = await Promise.all([
-        supabase.rpc("match_knowledge", { query_embedding: qEmb, match_count: voice ? 3 : 6, min_similarity: 0.45 }),
-        supabase.rpc("match_golden", { query_embedding: qEmb, match_count: 2, min_similarity: 0.75 }),
-      ]);
-      knowledge = (k.data ?? []) as typeof knowledge;
-      golden = (g.data ?? []) as typeof golden;
-      topSimilarity = knowledge[0]?.similarity ?? null;
-    } catch (e) {
-      console.error("retrieval failed", e);
-    }
-  };
   let history: Turn[];
   if (voice) {
-    const [{ data: historyRows }] = await Promise.all([historyP, retrieve(text)]);
+    const [{ data: historyRows }] = await Promise.all([historyP, voiceRetrieval]);
     history = ((historyRows ?? []) as Turn[]).reverse();
   } else {
     const { data: historyRows } = await historyP;
@@ -117,14 +121,14 @@ export async function POST(req: Request) {
     await retrieve([...history.filter((h) => h.role === "user").slice(-2).map((h) => h.content), text].join("\n"));
   }
 
-  // save user message
-  await supabase.from("messages").insert({
+  // save user message (not awaited – the stream starts right away; awaited before the reply is saved)
+  const saveUserMsg = Promise.resolve(supabase.from("messages").insert({
     conversation_id: conversationId,
     role: "user",
     content: text,
     top_similarity: topSimilarity,
     attachments: attachments.map((a) => ({ name: a.name, mime: a.mime, kind: a.data ? (a.mime === "application/pdf" ? "pdf" : "image") : "doc" })),
-  });
+  }));
 
   const systemInstruction = buildSystemPrompt({
     voice,
@@ -167,6 +171,7 @@ export async function POST(req: Request) {
   // post-response work (runs after the stream finishes, kept alive by Vercel)
   after(async () => {
     const trigger = await done;
+    await saveUserMsg;
     await supabase
       .from("conversations")
       .update({
@@ -225,6 +230,7 @@ export async function POST(req: Request) {
         else if (userTurns >= 6 && convRef.cta_shown_count === 0) trigger = "depth";
       }
 
+      await saveUserMsg;
       const { data: saved } = await supabase
         .from("messages")
         .insert({
