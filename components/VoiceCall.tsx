@@ -28,6 +28,13 @@ const LABEL: Record<Phase, string> = {
  * Full-screen voice call with the cherry: speech-to-text → Dubdebot (voice mode) → TTS, hands-free loop.
  * Sentences are voiced as soon as they stream in, and the mascot's mouth follows the audio level.
  */
+const FILLERS: [string, string][] = [
+  ["f1", "אוקיי, שנייה."],
+  ["f2", "תקשיב, זה טוב."],
+  ["f3", "שאלה טובה. רגע."],
+  ["f4", "הבנתי אותך."],
+];
+
 export default function VoiceCall({
   conversationId,
   firstName,
@@ -65,6 +72,9 @@ export default function VoiceCall({
   const useRecorder = useRef(false); // SpeechRecognition unavailable/blocked → record + server STT
   const mutedRef = useRef(false);
   const pendingHello = useRef<(() => void) | null>(null);
+  // short pre-recorded fillers in Nir's voice – played the moment you stop talking, while the real answer is prepared
+  const fillers = useRef<{ text: string; buf: ArrayBuffer }[]>([]);
+  const lastFiller = useRef(-1);
 
   const go = (p: Phase) => {
     phaseRef.current = p;
@@ -202,6 +212,13 @@ export default function VoiceCall({
       go("thinking");
       setBot("");
       streamDone.current = false;
+      if (fillers.current.length) {
+        let i = Math.floor(Math.random() * fillers.current.length);
+        if (i === lastFiller.current) i = (i + 1) % fillers.current.length;
+        lastFiller.current = i;
+        const f = fillers.current[i];
+        enqueue(f.text, Promise.resolve(f.buf.slice(0)));
+      }
       const ac = new AbortController();
       abortRef.current = ac;
       let raw = "";
@@ -373,6 +390,14 @@ export default function VoiceCall({
   // ---------- lifecycle ----------
   useEffect(() => {
     alive.current = true;
+    FILLERS.forEach(([file, text]) =>
+      fetch(`/voice/${file}.wav`)
+        .then((r) => (r.ok ? r.arrayBuffer() : null))
+        .then((buf) => {
+          if (buf && buf.byteLength > 2000) fillers.current.push({ text, buf });
+        })
+        .catch(() => {})
+    );
     fetch("/api/event", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "call_started", conversationId, meta: {} }) }).catch(() => {});
     (async () => {
       try {

@@ -1,7 +1,7 @@
 import { db } from "./supabase";
 
 const BASE = "https://generativelanguage.googleapis.com/v1beta";
-export const CLONE_MODEL = process.env.GEMINI_CLONE_TTS_MODEL || "gemini-3.8-flash-lite-tts";
+export const CLONE_MODEL = process.env.GEMINI_CLONE_TTS_MODEL || "gemini-3.8-flash-tts";
 
 type Audio = { mime_type: string; data: string };
 
@@ -48,7 +48,7 @@ export async function nirVoice(): Promise<{ id: string; model: string } | null> 
 export async function speakCloned(text: string, style?: string, modelOverride?: string): Promise<{ audio: Buffer; mime: string } | null> {
   const v = await nirVoice();
   if (!v) return null;
-  const model = modelOverride || process.env.GEMINI_CLONE_TTS_MODEL || v.model;
+  const model = modelOverride || CLONE_MODEL;
   const part: Record<string, unknown> = { type: "text", text };
   if (style) part.annotations = [{ type: "speech_metadata", style }];
   const r = await fetch(`${BASE}/interactions`, {
