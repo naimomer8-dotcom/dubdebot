@@ -13,7 +13,9 @@ ${m.line}
 ${(Object.keys(DISC_STYLES) as Disc[]).map((k) => `| ${DISC_STYLES[k].name} | ${r.pct[k]}% |`).join("\n")}
 
 **החוזקות שלך:** ${m.strengths.join(" · ")}
+
 **איפה זה עולה לך כסף:** ${m.risks.join(" · ")}
+
 **הסגנון המשני:** ${s.name} – ${s.line}
 
 ### איך למכור לכל סוג לקוח
