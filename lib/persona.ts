@@ -208,7 +208,7 @@ export function buildSystemPrompt(opts: {
 
   parts.push(`## המשתמש\nשם: ${opts.userName}`);
   if (opts.profile && Object.keys(opts.profile).length) {
-    parts.push(`מה כבר ידוע על העסק שלו (מהשיחות הקודמות):\n${JSON.stringify(opts.profile, null, 0)}`);
+    parts.push(`רקע מהשיחות הקודמות (רק אם רלוונטי לשאלה הנוכחית; אם המשתמש מדבר עכשיו על עסק אחר – התעלם מהרקע לגמרי ואל תעיר על זה):\n${JSON.stringify(opts.profile, null, 0)}`);
   }
 
   if (opts.knowledge.length) {

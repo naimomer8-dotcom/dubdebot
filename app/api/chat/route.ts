@@ -136,7 +136,8 @@ export async function POST(req: Request) {
     hasAttachments: attachments.length > 0,
     mode: activeMode,
     userName: user.full_name,
-    profile: (user.profile as Record<string, unknown>) ?? null,
+    // a bare greeting gets no stored profile, so the bot doesn't jump to old assumptions
+    profile: text.replace(/[^\p{L}]/gu, "").length < 8 ? null : ((user.profile as Record<string, unknown>) ?? null),
     knowledge: knowledge.map((k) => ({ source: k.source, content: k.content })),
     goldenAnswers: golden,
   });

@@ -926,3 +926,7 @@ img, svg { display: block; }
 .plan-line { color: var(--gold) !important; } .plan-line.warn { color: var(--cherry-hi) !important; }
 .xr-stage > .renew { max-width: min(620px, 100%); }
 .xr-stage > .scan-start { max-width: min(680px, 100%); }
+.access-bar { top: 78px; }
+.access-bar .ab-short { display: none; }
+@media (min-width: 901px) { .access-bar { left: calc((100vw - var(--side-w)) / 2); } }
+@media (max-width: 900px) { .access-bar { top: 66px; bottom: auto; } .access-bar .ab-long { display: none; } .access-bar .ab-short { display: inline; } }

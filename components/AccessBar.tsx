@@ -17,7 +17,8 @@ export default function AccessBar({ user }: { user: ShellUser }) {
     <>
       <div className="access-bar" role="status">
         <Icon name="clock" size={16} />
-        <span>{text}</span>
+        <span className="ab-long">{text}</span>
+        <span className="ab-short">{a.plan === "paid" ? `עוד ${a.daysLeft} ימים למנוי` : `עוד ${a.daysLeft} ימים במתנה`}</span>
         <button className="btn btn-primary btn-sm" onClick={() => setOpen(true)}>{a.renewalRequestedAt ? "הבקשה התקבלה" : "להמשיך גם אחרי"}</button>
         <button className="icon-btn" onClick={() => setHidden(true)} aria-label="הסתרה"><Icon name="close" size={14} /></button>
       </div>
