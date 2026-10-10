@@ -93,7 +93,11 @@ export async function mineQuestions(): Promise<{ scanned: number; added: number;
     a.push(r);
     byConv.set(r.conversation_id, a);
   }
+  // only free-chat conversations (tool modes like work plans are personal by nature)
+  const { data: convs } = await supabase.from("conversations").select("id, mode").in("id", convIds);
+  const chatConv = new Set(((convs ?? []) as { id: string; mode: string }[]).filter((c) => !c.mode || c.mode === "chat").map((c) => c.id));
   const pairs = qs
+    .filter((q) => chatConv.has(q.conversation_id))
     .map((q) => {
       const ans = (byConv.get(q.conversation_id) ?? []).find((r) => r.created_at > q.created_at);
       return ans && ans.model !== "canned" && ans.model !== "bank" && ans.content.length > 40 ? { q, answer: ans.content } : null;
