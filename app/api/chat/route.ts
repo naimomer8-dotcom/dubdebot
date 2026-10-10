@@ -1,10 +1,11 @@
-import { guard } from "@/lib/guard";
+import { guardAccess } from "@/lib/guard";
 import { hit, limited } from "@/lib/ratelimit";
 import { after } from "next/server";
 import { db } from "@/lib/supabase";
 import { gemini, embed, pickModel, FAST_MODEL, LITE_THINKING } from "@/lib/gemini";
 import { toPrompt, type FinRow } from "@/lib/financials";
-import { buildSystemPrompt, PROFILE_EXTRACT_PROMPT, ToolMode, TOOLS } from "@/lib/persona";
+import { buildContextBlock, buildStaticPrompt, PROFILE_EXTRACT_PROMPT, ToolMode, TOOLS } from "@/lib/persona";
+import { cachedPrefix, forgetPrefix } from "@/lib/promptCache";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -45,9 +46,10 @@ function parseAttachments(raw: unknown): Attachment[] {
 }
 
 export async function POST(req: Request) {
-  const gate = await guard("chat", 80, 60);
+  const gate = await guardAccess("chat", 80, 60);
   if (gate instanceof Response) return gate;
-  const userId = gate;
+  const userId = gate.userId;
+  const paid = gate.access.plan === "paid";
 
   const body = await req.json().catch(() => ({}));
   const attachments = parseAttachments(body.attachments);
@@ -57,11 +59,12 @@ export async function POST(req: Request) {
   const mode: ToolMode = TOOLS.some((t) => t.id === requestedMode) ? requestedMode : "chat";
   if (!text) return new Response("empty", { status: 400 });
 
-  // daily caps per user (protects the budget): 100 messages a day, of which up to 60 voice answers (~20 minutes of talk)
+  // daily caps per user (protects the budget). Trial: 30 messages / 5 voice answers a day. Paid: 100 / 60.
   const capKey = `u:${userId}`;
-  const [dayFull, voiceFull] = await Promise.all([limited(capKey, "chat", 100, 60 * 24), voice ? limited(capKey, "voice", 60, 60 * 24) : Promise.resolve(false)]);
+  const [chatCap, voiceCap] = paid ? [100, 60] : [30, 5];
+  const [dayFull, voiceFull] = await Promise.all([limited(capKey, "chat", chatCap, 60 * 24), voice ? limited(capKey, "voice", voiceCap, 60 * 24) : Promise.resolve(false)]);
   if (dayFull || voiceFull) {
-    return new Response(JSON.stringify({ error: "daily_cap", message: voiceFull ? "הגעת למכסת השיחות הקוליות להיום. נמשיך מחר – או בכתב בצ'אט." : "הגעת למכסת ההודעות להיום. נמשיך מחר 🙂" }), { status: 429, headers: { "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ error: "daily_cap", message: voiceFull ? (paid ? "הגעת למכסת השיחות הקוליות להיום. נמשיך מחר – או בכתב בצ'אט." : "בתקופת ההתנסות יש 5 תשובות קוליות ביום. נמשיך בכתב בצ'אט, או מחר בקול 🙂") : paid ? "הגעת למכסת ההודעות להיום. נמשיך מחר 🙂" : "בתקופת ההתנסות יש 30 הודעות ביום, והגעת אליהן. נמשיך מחר 🔥" }), { status: 429, headers: { "Content-Type": "application/json" } });
   }
   if (voice) void hit(capKey, "voice").catch(() => {});
 
@@ -118,6 +121,26 @@ export async function POST(req: Request) {
   conversationId = conv.id;
   const activeMode = (body.mode ? mode : (conv.mode as ToolMode)) || "chat";
 
+  // cost saver: greetings / thanks / "what can you do" get a fixed answer – no model call at all
+  const canned = !voice && !attachments.length && activeMode === "chat" ? cannedReply(text, user.full_name) : null;
+  if (canned) {
+    const cid = conversationId;
+    await supabase.from("messages").insert({ conversation_id: cid, role: "user", content: text });
+    const { data: saved } = await supabase.from("messages").insert({ conversation_id: cid, role: "assistant", content: canned, cta: false, model: "canned" }).select("id").single();
+    after(async () => {
+      await supabase.from("conversations").update({ updated_at: new Date().toISOString() }).eq("id", cid);
+      await supabase.from("users").update({ last_seen_at: new Date().toISOString() }).eq("id", userId);
+    });
+    return new Response(canned + META_SEP + JSON.stringify({ conversationId: cid, messageId: saved?.id ?? null, cta: null }), {
+      headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store", "X-Conversation-Id": cid },
+    });
+  }
+
+  // the fixed part of the prompt is cached on Google's side (cheaper input); start resolving it now
+  const staticPrompt = buildStaticPrompt({ voice, hasAttachments: attachments.length > 0, mode: activeMode });
+  const route0 = pickModel({ voice, mode: activeMode, hasAttachments: attachments.length > 0, textLength: text.length });
+  const cacheP = cachedPrefix(route0.model, staticPrompt);
+
   const historyP = supabase
     .from("messages")
     .select("role, content, cta")
@@ -144,7 +167,7 @@ export async function POST(req: Request) {
     attachments: attachments.map((a) => ({ name: a.name, mime: a.mime, kind: a.data ? (a.mime === "application/pdf" ? "pdf" : "image") : "doc" })),
   }));
 
-  const systemInstruction = buildSystemPrompt({
+  const contextBlock = buildContextBlock({
     voice,
     hasAttachments: attachments.length > 0,
     mode: activeMode,
@@ -157,8 +180,8 @@ export async function POST(req: Request) {
     financials: trivial ? "" : toPrompt(((finRows ?? []) as FinRow[]).slice().reverse()),
   });
 
-  const route = pickModel({ voice, mode: activeMode, hasAttachments: attachments.length > 0, textLength: text.length });
-  const contents = [
+  const route = route0;
+  const historyContents = [
     // cost saver: shorter history, and long old answers are trimmed (the model already wrote them)
     ...history.slice(voice ? -8 : -12).map((h) => ({ role: h.role === "assistant" ? "model" : "user", parts: [{ text: h.role === "assistant" && h.content.length > 1500 ? h.content.slice(0, 1500) + "…" : h.content }] })),
     {
@@ -173,6 +196,14 @@ export async function POST(req: Request) {
       ],
     },
   ];
+  const cacheName = await cacheP;
+  // with a cache: fixed rules come from the cache, and the per-user context rides in front of the new message
+  const withContext = () => {
+    const c = historyContents.map((m) => ({ ...m, parts: [...m.parts] }));
+    const last = c[c.length - 1];
+    last.parts = [{ text: `[הקשר מהמערכת – לא נכתב על ידי המשתמש]\n${contextBlock}\n[סוף ההקשר]` }, ...last.parts];
+    return c;
+  };
 
   // ---- CTA rules (deterministic layer on top of the model's own tag) ----
   const assistantTurns = history.filter((h) => h.role === "assistant");
@@ -202,9 +233,9 @@ export async function POST(req: Request) {
     }
     await supabase.from("users").update({ last_seen_at: new Date().toISOString() }).eq("id", userId);
     // learn the business profile every 3 user turns
-    // cost saver: learn the profile on the 2nd turn and then every 5th – and only when there's something concrete to learn
+    // cost saver: learn the profile on the 2nd turn and then every 8th – and only when there's something concrete to learn
     const concrete = /\d/.test(text) || text.length > 80;
-    if (concrete && (userTurns === 2 || userTurns % 5 === 0)) {
+    if (concrete && (userTurns === 2 || userTurns % 8 === 0)) {
       await updateProfile(userId, (user.profile as Record<string, unknown>) ?? {}, [...history, { role: "user", content: text, cta: false }]);
     }
   });
@@ -223,11 +254,29 @@ export async function POST(req: Request) {
       let full = "";
       let usage: unknown = null;
       try {
-        const response = await gemini().models.generateContentStream({
-          model: route.model,
-          contents,
-          config: { systemInstruction, maxOutputTokens: voice ? 400 : ["workplan", "forecast", "sales_script", "feasibility", "campaign", "financials", "payslip"].includes(activeMode) ? 8192 : 2500, ...route.thinking },
-        });
+        const maxOutputTokens = voice ? 400 : ["workplan", "forecast", "sales_script", "feasibility", "campaign", "financials", "payslip", "vat"].includes(activeMode) ? 8192 : 900;
+        const plain = () =>
+          gemini().models.generateContentStream({
+            model: route.model,
+            contents: historyContents,
+            config: { systemInstruction: `${staticPrompt}\n\n${contextBlock}`, maxOutputTokens, ...route.thinking },
+          });
+        let response: Awaited<ReturnType<typeof plain>>;
+        if (cacheName) {
+          try {
+            response = await gemini().models.generateContentStream({
+              model: route.model,
+              contents: withContext(),
+              config: { cachedContent: cacheName, maxOutputTokens, ...route.thinking },
+            });
+          } catch (e) {
+            console.error("cached call failed, retrying without cache", (e as Error).message);
+            forgetPrefix(cacheName);
+            response = await plain();
+          }
+        } else {
+          response = await plain();
+        }
         let pending = "";
         for await (const chunk of response) {
           if (chunk.usageMetadata) usage = chunk.usageMetadata;
@@ -306,8 +355,8 @@ async function updateProfile(userId: string, current: Record<string, unknown>, t
   try {
     const transcript = turns
       .filter((t) => t.role === "user")
-      .slice(-12)
-      .map((t) => `משתמש: ${t.content}`)
+      .slice(-8)
+      .map((t) => `משתמש: ${t.content.slice(0, 600)}`)
       .join("\n");
     const res = await gemini().models.generateContent({
       model: FAST_MODEL,
@@ -327,4 +376,22 @@ async function updateProfile(userId: string, current: Record<string, unknown>, t
   } catch (e) {
     console.error("profile update failed", e);
   }
+}
+
+/** Fixed answers for messages that don't need the model. Returns null when the model should answer. */
+function cannedReply(text: string, fullName: string | null): string | null {
+  const t = text.trim().replace(/[!?.,🙂😊👋🙏❤️]+/gu, "").replace(/\s+/g, " ").trim();
+  if (t.length > 40) return null;
+  const first = (fullName ?? "").trim().split(/\s+/)[0] || "";
+  const hi = first ? `היי ${first}` : "היי";
+  if (/^(היי+|הי|שלום|אהלן|הלו|מה נשמע|מה קורה|מה המצב|בוקר טוב|ערב טוב|צהריים טובים|שלום ניר|היי ניר)( ניר)?( מה נשמע| מה קורה)?$/.test(t)) {
+    return `${hi} 👋 כאן ניר. בלי הקדמות: מה העסק, ומה המספר האחד שתרצה להזיז החודש? מחזור, לקוחות, מחיר, צוות – תזרוק ואני על זה.`;
+  }
+  if (/^(תודה|תודה רבה|תודה ניר|תודה רבה ניר|סבבה תודה|מעולה תודה|אחלה תודה|תותח|אלוף)$/.test(t)) {
+    return "בכיף. רק תזכור: אסטרטגיה בלי ביצוע זה מסמך יפה במגירה 🔥 מה המשימה הראשונה שאתה מבצע השבוע?";
+  }
+  if (/^(מה אתה יודע לעשות|מה אתה עושה|מה אפשר לעשות פה|מה אפשר לעשות כאן|איך זה עובד|במה אתה יכול לעזור|מי אתה)$/.test(t)) {
+    return `${hi}. אני ניר, ובקיצור – אני היועץ שלך 24/7:\n\n- **שאלה עסקית** – תשאל, תקבל תשובה חדה ומה לעשות מחר בבוקר.\n- **תוכנית עבודה, תחזית, תסריט מכירה, רעיונות לקמפיין** – בתפריט הכלים.\n- **דוחות כספיים, תלוש שכר, מע״מ** – תעלה קובץ ואני מפרק לך אותו.\n- **שיחה קולית** – לחיצה על הטלפון ומדברים.\n\nאז מה הכי בוער לך בעסק עכשיו?`;
+  }
+  return null;
 }

@@ -94,7 +94,7 @@ const BASE = `
 - עברית ישירה וחדה, משפטים קצרים, ניגודים. בלי שפה רכה או אקדמית. "אתה"/"את" לפי המשתמש.
 - לקסיקון: אסטרטגיה מנצחת טקטיקה, נכס מול עבודה, לצאת ממשוואת זמן=כסף, כושר מכירות, הפער בין רוצה לצריך, תכלס, מערכת, מנוע, סקייל.
 - פתיח חד על המקרה שלו (לא "שאלה מצוינת"). "22 שנה" – לא בפתיח ולא יותר מפעם בארבע תשובות. אל תמחזר תבניות.
-- עד ~200 מילים, אלא אם ביקשו תוצר מלא. לכל היותר כותרת וטבלה אחת. אימוג'י נדיר: 🔥👇💥🧠.
+- עד ~120 מילים, אלא אם ביקשו תוצר מלא. לכל היותר כותרת וטבלה אחת. אימוג'י נדיר: 🔥👇💥🧠.
 - סיום: שאלה אחת בלבד או הצעה אחת לתוצר – תמיד.
 - דוגמאות לקול (לא לצטט): "תמכרו את מה שהמוצר גורם להרגיש" · "די לרצות, תתחילו להרוויח" · "תוצאה = סביבה × סטנדרט" · "ROAS, לא עלות לליד" · "הנחה בלי Reason why now היא הורדת מחיר" · "תמחור בחסר ונתינת יתר הורגים עסקים".
 
@@ -221,7 +221,7 @@ export const VOICE_RULES = `## מצב: שיחה קולית בטלפון
 export const ATTACH_RULES = `## המשתמש צירף קבצים
 קרא את הקבצים המצורפים בעיון. התייחס למספרים ולפרטים הספציפיים שבהם, לא באופן כללי. אם זה דוח כספי – חלץ את הנתונים המרכזיים לטבלה ותגיד מה הכי מדאיג ומה הכי מבטיח. אם זו תמונה של מודעה, אתר, הצעת מחיר או מסמך – תן ביקורת חדה ו-3 תיקונים קונקרטיים. אם משהו לא קריא – תגיד.`;
 
-export function buildSystemPrompt(opts: {
+type PromptOpts = {
   voice?: boolean;
   hasAttachments?: boolean;
   mode: ToolMode;
@@ -230,35 +230,37 @@ export function buildSystemPrompt(opts: {
   knowledge: { source: string; content: string }[];
   goldenAnswers: { question: string; answer: string }[];
   financials?: string;
-}) {
+};
+
+/** The fixed part – identical for every user in the same mode, so it can be cached (cheaper input tokens). */
+export function buildStaticPrompt(opts: Pick<PromptOpts, "voice" | "hasAttachments" | "mode">) {
   const parts = opts.voice ? [VOICE_RULES, BASE] : [BASE, MODES[opts.mode] ?? MODES.chat];
   if (opts.hasAttachments) parts.push(ATTACH_RULES);
+  return parts.join("\n\n");
+}
 
+/** The per-user / per-message part: who the user is, his numbers, and the retrieved knowledge. */
+export function buildContextBlock(opts: PromptOpts) {
+  const parts: string[] = [];
   parts.push(`## המשתמש\nשם: ${opts.userName}`);
   if (opts.profile && Object.keys(opts.profile).length) {
     parts.push(`רקע מהשיחות הקודמות (רק אם רלוונטי לשאלה הנוכחית; אם המשתמש מדבר עכשיו על עסק אחר – התעלם מהרקע לגמרי ואל תעיר על זה):\n${JSON.stringify(opts.profile, null, 0)}`);
   }
-
   if (opts.financials) {
     parts.push(`## הנתונים הכספיים שהמשתמש הזין בתיק (חודשיים אחרונים) – השתמש בהם כשזה רלוונטי, ותגיד שזה מהנתונים שהוא הזין\n${opts.financials}`);
   }
-
   if (opts.knowledge.length) {
-    parts.push(
-      "## מהחומרים של ניר (השתמש בזה כבסיס, בשפה שלך)\n" +
-        opts.knowledge.map((k, i) => `[${i + 1}] (${k.source})\n${k.content}`).join("\n\n")
-    );
+    parts.push("## מהחומרים של ניר (השתמש בזה כבסיס, בשפה שלך)\n" + opts.knowledge.map((k, i) => `[${i + 1}] (${k.source})\n${k.content}`).join("\n\n"));
   }
-
   if (opts.goldenAnswers.length) {
-    parts.push(
-      "## תשובות שניר אישר (חקה את הסגנון והעמדה)\n" +
-        opts.goldenAnswers.map((g) => `ש: ${g.question}\nת: ${g.answer}`).join("\n\n")
-    );
+    parts.push("## תשובות שניר אישר (חקה את הסגנון והעמדה)\n" + opts.goldenAnswers.map((g) => `ש: ${g.question}\nת: ${g.answer}`).join("\n\n"));
   }
-
   if (opts.voice) parts.push(VOICE_RULES);
   return parts.join("\n\n");
+}
+
+export function buildSystemPrompt(opts: PromptOpts) {
+  return `${buildStaticPrompt(opts)}\n\n${buildContextBlock(opts)}`;
 }
 
 /** Prompt for extracting a structured business profile from the conversation. */
