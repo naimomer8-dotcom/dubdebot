@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Brand } from "../BrandBar";
 import Icon from "../Icon";
+import AnswerBank from "./AnswerBank";
 
 type Row = {
   id: string; name: string; email: string; phone: string; createdAt: string;
@@ -12,7 +13,7 @@ type Row = {
   answers30: number; answersToday: number; cost30: number;
 };
 type Lead = { id: string; user_id: string | null; meeting_type: string; full_name: string; phone: string; email: string | null; note: string | null; created_at: string; status: string };
-type Tab = "requests" | "all" | "trial" | "paid" | "expired" | "leads";
+type Tab = "requests" | "all" | "trial" | "paid" | "expired" | "leads" | "bank";
 
 const STATUS: Record<Row["status"], string> = { trial: "מתנה 30 יום", paid: "מנוי שנתי", expired: "חסום" };
 const d = (s: string | null) => (s ? new Date(s).toLocaleDateString("he-IL", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "—");
@@ -50,6 +51,7 @@ export default function AdminDashboard({ adminName }: { adminName: string }) {
       paid: rows.filter((r) => r.status === "paid").length,
       expired: rows.filter((r) => r.status === "expired").length,
       leads: leads.length,
+      bank: 0,
     }),
     [rows, leads]
   );
@@ -80,7 +82,7 @@ export default function AdminDashboard({ adminName }: { adminName: string }) {
     window.location.href = "/admin/login";
   }
 
-  const TABS: [Tab, string][] = [["requests", "ביקשו להמשיך"], ["all", "כל המשתמשים"], ["trial", "במתנה"], ["paid", "משלמים"], ["expired", "חסומים"], ["leads", "כל הפניות"]];
+  const TABS: [Tab, string][] = [["requests", "ביקשו להמשיך"], ["all", "כל המשתמשים"], ["trial", "במתנה"], ["paid", "משלמים"], ["expired", "חסומים"], ["leads", "כל הפניות"], ["bank", "מאגר תשובות"]];
 
   return (
     <div className="adm">
@@ -108,14 +110,16 @@ export default function AdminDashboard({ adminName }: { adminName: string }) {
       <div className="adm-bar">
         <div className="adm-tabs" role="tablist">
           {TABS.map(([k, l]) => (
-            <button key={k} role="tab" aria-selected={tab === k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>{l} <small>{counts[k]}</small></button>
+            <button key={k} role="tab" aria-selected={tab === k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>{l} {k !== "bank" && <small>{counts[k]}</small>}</button>
           ))}
         </div>
         <div className="adm-search"><Icon name="eye" size={16} /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="חיפוש לפי שם, טלפון, מייל או עסק" /></div>
         <button className="btn btn-glass btn-sm" onClick={() => { setLoading(true); load(); }}>רענון</button>
       </div>
 
-      {loading ? (
+      {tab === "bank" ? (
+        <AnswerBank flash={flash} />
+      ) : loading ? (
         <div className="adm-empty shimmer">טוען…</div>
       ) : tab === "leads" ? (
         <div className="adm-table glass edge">

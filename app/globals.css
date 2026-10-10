@@ -972,3 +972,19 @@ img, svg { display: block; }
 .quiz-md th, .quiz-md td { text-align: start; padding: 8px 10px; border-bottom: 1px solid var(--hair); }
 .quiz-md p, .quiz-md li { color: var(--text-2); line-height: 1.7; }
 @media (max-width: 900px) { .tests-grid { grid-template-columns: minmax(0, 1fr); } .quiz-card { padding: 18px; } }
+
+/* ---- calculators ---- */
+.calc-list { display: flex; flex-direction: column; gap: 12px; margin-top: 22px; width: 100%; }
+.calc { padding: 0; overflow: hidden; }
+.calc-head { all: unset; cursor: pointer; display: flex; flex-direction: column; gap: 3px; padding: 18px 22px; width: 100%; box-sizing: border-box; }
+.calc-head b { font-size: 18px; }
+.calc.on .calc-head b { color: var(--gold-2); }
+.calc-body { display: grid; gap: 12px; padding: 0 22px 22px; }
+.calc-out { margin-top: 4px; border-top: 1px solid var(--hair); padding-top: 12px; display: grid; gap: 8px; }
+.calc-out > div { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+.calc-out > div span { color: var(--text-2); font-size: 15px; }
+.calc-out > div b { font-size: 18px; }
+.calc-out > div.big b { font-size: 26px; color: var(--gold-2); }
+.calc-seg { display: flex; gap: 8px; }
+.calc-seg button { flex: 1; padding: 10px; border-radius: 12px; border: 1px solid var(--hair); background: transparent; color: var(--text-2); font: inherit; cursor: pointer; }
+.calc-seg button.on { border-color: var(--gold-2); color: var(--gold-2); background: rgba(226, 198, 142, 0.08); }

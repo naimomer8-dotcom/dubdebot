@@ -66,6 +66,9 @@ export default function Sidebar({
         <Link className="side-link" href="/tests">
           <Icon name="target" size={18} /> מבחנים: תקשורת ומכירות <span className="new-tag">חדש</span>
         </Link>
+        <Link className="side-link" href="/calc">
+          <Icon name="chart" size={18} /> מחשבונים עסקיים <span className="new-tag">חדש</span>
+        </Link>
         <Link className="side-link" href="/vault" aria-current={active === "vault"}>
           <Icon name="vault" size={18} /> התיק העסקי שלי
         </Link>

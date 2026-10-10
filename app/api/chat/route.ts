@@ -6,6 +6,7 @@ import { gemini, embed, pickModel, FAST_MODEL, LITE_THINKING } from "@/lib/gemin
 import { toPrompt, type FinRow } from "@/lib/financials";
 import { buildContextBlock, buildStaticPrompt, PROFILE_EXTRACT_PROMPT, ToolMode, TOOLS } from "@/lib/persona";
 import { cachedPrefix, forgetPrefix } from "@/lib/promptCache";
+import { isGenericQuestion, lookupBank, personalize } from "@/lib/answerBank";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -74,9 +75,10 @@ export async function POST(req: Request) {
   let knowledge: { source: string; content: string; id: number; similarity: number }[] = [];
   let golden: { question: string; answer: string }[] = [];
   let topSimilarity: number | null = null;
+  let preEmb: { text: string; emb: number[] } | null = null;
   const retrieve = async (query: string) => {
     try {
-      const qEmb = await embed(query, "RETRIEVAL_QUERY");
+      const qEmb = preEmb && preEmb.text === query ? preEmb.emb : await embed(query, "RETRIEVAL_QUERY");
       const [k, g] = await Promise.all([
         supabase.rpc("match_knowledge", { query_embedding: qEmb, match_count: voice ? 3 : 4, min_similarity: 0.6 }),
         supabase.rpc("match_golden", { query_embedding: qEmb, match_count: 2, min_similarity: 0.75 }),
@@ -123,6 +125,33 @@ export async function POST(req: Request) {
 
   // cost saver: greetings / thanks / "what can you do" get a fixed answer – no model call at all
   const canned = !voice && !attachments.length && activeMode === "chat" ? cannedReply(text, user.full_name) : null;
+  // cost saver: a generic question that already has an approved answer in the bank – served without the model
+  let bankAnswer: { id: number; answer: string } | null = null;
+  if (!canned && !voice && !attachments.length && activeMode === "chat" && !trivial && isGenericQuestion(text, !body.conversationId)) {
+    try {
+      const emb = await embed(text, "RETRIEVAL_QUERY");
+      preEmb = { text, emb };
+      const hit = await lookupBank(emb);
+      if (hit) bankAnswer = { id: hit.id, answer: personalize(hit.answer, user.full_name) };
+    } catch (e) {
+      console.error("bank check failed", e);
+    }
+  }
+  if (bankAnswer) {
+    const cid = conversationId;
+    const ans = bankAnswer;
+    await supabase.from("messages").insert({ conversation_id: cid, role: "user", content: text });
+    const { data: saved } = await supabase.from("messages").insert({ conversation_id: cid, role: "assistant", content: ans.answer, cta: false, model: "bank", sources: [{ bank: ans.id }] }).select("id").single();
+    after(async () => {
+      await supabase.rpc("bank_hit", { bank_id: ans.id });
+      await supabase.from("conversations").update({ updated_at: new Date().toISOString() }).eq("id", cid);
+      await supabase.from("users").update({ last_seen_at: new Date().toISOString() }).eq("id", userId);
+    });
+    return new Response(ans.answer + META_SEP + JSON.stringify({ conversationId: cid, messageId: saved?.id ?? null, cta: null }), {
+      headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store", "X-Conversation-Id": cid },
+    });
+  }
+
   if (canned) {
     const cid = conversationId;
     await supabase.from("messages").insert({ conversation_id: cid, role: "user", content: text });
