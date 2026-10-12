@@ -38,15 +38,19 @@ export async function activateSubscription(opts: { userId: string; tier: Tier; b
   const { error } = await supabase.from("users").update(patch).eq("id", opts.userId);
   if (error) throw new Error(error.message);
 
-  if (opts.orderId) await supabase.from("orders").update({ status: "paid", paid_at: new Date().toISOString() }).eq("id", opts.orderId);
-  else {
+  let order: { id: string; amount_net: number; amount_total: number } | null = null;
+  if (opts.orderId) {
+    const { data } = await supabase.from("orders").update({ status: "paid", paid_at: new Date().toISOString() }).eq("id", opts.orderId).select("id, amount_net, amount_total").maybeSingle();
+    order = data;
+  } else {
     const p = priceOf(opts.tier, opts.billing);
-    await supabase.from("orders").insert({ user_id: opts.userId, tier: opts.tier, billing: opts.billing, amount_net: p.net, vat: p.vat, amount_total: p.total, status: "paid", channel: opts.channel, paid_at: new Date().toISOString() });
+    const { data } = await supabase.from("orders").insert({ user_id: opts.userId, tier: opts.tier, billing: opts.billing, amount_net: p.net, vat: p.vat, amount_total: p.total, status: "paid", channel: opts.channel, paid_at: new Date().toISOString() }).select("id, amount_net, amount_total").maybeSingle();
+    order = data;
   }
 
   const enroll = await enrollAllCourses({ email: u.email, full_name: u.full_name, phone: u.phone });
   if (enroll.ok) await supabase.from("users").update({ courses_enrolled_at: new Date().toISOString() }).eq("id", opts.userId);
 
-  await emit(isUpgrade ? "upgrade" : "purchase", opts.userId, { tier: opts.tier, billing: opts.billing, channel: opts.channel, access_until: patch.access_until, courses: enroll });
+  await emit(isUpgrade ? "upgrade" : "purchase", opts.userId, { tier: opts.tier, billing: opts.billing, channel: opts.channel, access_until: patch.access_until, order_id: order?.id ?? null, amount_net: order?.amount_net ?? null, amount_total: order?.amount_total ?? null, upgrade_from: isUpgrade ? u.tier : null, courses: { ok: enroll.ok } });
   return { accessUntil: patch.access_until as string, upgrade: !!isUpgrade, courses: enroll };
 }
