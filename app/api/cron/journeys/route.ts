@@ -76,6 +76,7 @@ export async function GET(req: Request) {
         trial_end: date(u?.access_until),
         days_left: String(left),
         offer_end: date(Date.now() + 72 * 3600_000),
+        return_end: date(u?.year_ends_at ? new Date(u.year_ends_at).getTime() + 30 * 86400_000 : null),
         plan_name: planName,
       };
       const r = await emit("journey", job.userId, { stage: job.stage, track: st.track, whatsapp_template: st.wa, email_subject: render(st.subject, vars), text: render(st.text, vars), vars, transactional: !!st.transactional });
