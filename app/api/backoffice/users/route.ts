@@ -1,6 +1,8 @@
 import { db } from "@/lib/supabase";
 import { getAdmin, json } from "@/lib/adminAuth";
 import { accessOf } from "@/lib/session";
+import { activateSubscription } from "@/lib/subscription";
+import { PLANS, type Billing, type Tier } from "@/lib/plans";
 
 export const runtime = "nodejs";
 
@@ -12,7 +14,7 @@ export async function GET() {
   if (!admin) return json({ error: "unauthorized" }, 401);
   const supabase = db();
   const [{ data: users }, { data: convs }, { data: leads }, { data: usage }] = await Promise.all([
-    supabase.from("users").select("id, full_name, email, phone, created_at, plan, access_until, paid_at, paid_by, renewal_requested_at, admin_note, profile").order("created_at", { ascending: false }).limit(2000),
+    supabase.from("users").select("id, full_name, email, phone, created_at, plan, tier, billing, renewal_mode, access_until, paid_at, paid_by, renewal_requested_at, admin_note, profile").order("created_at", { ascending: false }).limit(2000),
     supabase.from("conversations").select("user_id, updated_at").order("updated_at", { ascending: false }).limit(20000),
     supabase.from("leads").select("id, user_id, meeting_type, full_name, phone, email, note, created_at, status").order("created_at", { ascending: false }).limit(500),
     supabase.from("user_usage_30d").select("user_id, answers, tokens_in, tokens_out, answers_today"),
@@ -37,6 +39,8 @@ export async function GET() {
       phone: u.phone,
       createdAt: u.created_at,
       status: a.status,
+      tier: a.tier,
+      billing: u.billing,
       accessUntil: a.accessUntil,
       daysLeft: a.daysLeft,
       paidAt: u.paid_at,
@@ -69,9 +73,16 @@ export async function PATCH(req: Request) {
   const current = Math.max(now, new Date(u.access_until).getTime());
   let patch: Record<string, unknown>;
   if (action === "paid") {
-    // a year from today, or from the end of the current paid period if it hasn't ended yet
-    const base = u.plan === "paid" ? current : now;
-    patch = { plan: "paid", paid_at: new Date().toISOString(), paid_by: admin.displayName, access_until: new Date(base + 365 * DAY).toISOString(), renewal_requested_at: null };
+    // a rep closed the deal: open the chosen plan (a year from the end of the gift month), courses + automations
+    const tier = (PLANS.some((p) => p.id === b.tier) ? b.tier : "basic") as Tier;
+    const billing = (b.billing === "installments" ? "installments" : "onetime") as Billing;
+    try {
+      const r = await activateSubscription({ userId, tier, billing, channel: "rep", by: admin.displayName });
+      await supabase.from("admin_audit").insert({ admin_id: admin.id, user_id: userId, action, meta: { tier, billing, ...r } });
+      return json({ ok: true, ...r });
+    } catch (e) {
+      return json({ error: (e as Error).message }, 500);
+    }
   } else if (action === "extend30") {
     patch = { access_until: new Date(current + 30 * DAY).toISOString() };
   } else if (action === "block") {

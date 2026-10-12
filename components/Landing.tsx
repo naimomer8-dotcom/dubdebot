@@ -74,7 +74,7 @@ export default function Landing() {
         {/* ---------- hero: promise + signup ---------- */}
         <header className="wrap hero">
           <div className="hero-copy">
-            <span className="badge"><span className="dot-live" /> יועץ AI מבית קבוצת דובדבני</span>
+            <span className="badge"><span className="dot-live" /> Duvdevani Platform · הפלטפורמה להצלחה בחיים ובעסקים</span>
             <h1 className="h-display">
               <span className="line"><span>יועץ עסקי</span></span>
               <span className="line"><span className="gold">בכיס.</span></span>
@@ -162,7 +162,7 @@ export default function Landing() {
             <div className="steps3">
               {[
                 ["נרשמים בחצי דקה", "שם, נייד, מייל וסיסמה. מעכשיו נכנסים מכל מכשיר."],
-                ["מספרים על העסק", "בכתב, בקול, או שולחים דוח. דובדבוט לומד את העסק וזוכר אותו."],
+                ["מספרים על העסק", "בכתב, בקול, או שולחים דוח. הפלטפורמה לומדת את העסק וזוכרת אותו."],
                 ["מקבלים תוצר, ומתקדמים", "תחזית, תוכנית ותסריט – נשמרים בתיק העסקי עם משימות לביצוע. 30 הימים הראשונים עלינו."],
               ].map(([t, d], i) => (
                 <div className="step3 reveal" key={t} style={{ transitionDelay: `${i * 80}ms` }}>
@@ -180,7 +180,7 @@ export default function Landing() {
           <div className="wrap">
             <div className="vision reveal">
               <div className="vision-photo"><NirPose pose="welcome" width={340} /><Mascot size={72} mood="wink" track={false} /></div>
-              <blockquote className="h-display">״החזון שלי: שלא יהיה עסק בישראל <span className="gold">שאין לו דובדבוט.</span>״</blockquote>
+              <blockquote className="h-display">״החזון שלי: שלא יהיה עסק בישראל <span className="gold">בלי Duvdevani Platform.</span>״</blockquote>
               <cite>ניר דובדבני · מייסד קבוצת דובדבני</cite>
               <button className="btn btn-primary btn-lg" onClick={() => goSignup()}>להתחיל 30 יום במתנה <Icon name="arrow" size={18} className="ico-move" /></button>
             </div>

@@ -8,7 +8,7 @@ import { Brand } from "@/components/BrandBar";
 import { QUIZZES } from "@/lib/quizzes";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "מבחנים | דובדבוט" };
+export const metadata: Metadata = { title: "מבחנים | Duvdevani Platform" };
 
 const ALL = [
   { href: "/xray", title: "רנטגן עסקי", sub: "12 השאלות שניר שואל בפגישה הראשונה – ציון על 6 צירים", minutes: 3, icon: "scan" as const },
@@ -31,7 +31,7 @@ export default async function Tests() {
           <div className="tests">
             <span className="eyebrow">מבחנים</span>
             <h1 className="h-display">תכיר את עצמך. <span className="gold">ואז תשנה.</span></h1>
-            <p className="lead" style={{ margin: 0 }}>3 דקות כל מבחן. התוצאה נשמרת בתיק, ודובדבוט מתאים את הייעוץ אליך.</p>
+            <p className="lead" style={{ margin: 0 }}>3 דקות כל מבחן. התוצאה נשמרת בתיק, והייעוץ מותאם אליך.</p>
             <div className="tests-grid">
               {ALL.map((t) => (
                 <Link key={t.href} href={t.href} className="feat glass edge">

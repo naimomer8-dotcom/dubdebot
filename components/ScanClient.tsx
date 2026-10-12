@@ -103,7 +103,7 @@ export default function ScanClient() {
               <NirPose pose="leads" width={150} className="scan-nir" eager />
               <span className="eyebrow">סריקת רשתות חברתיות</span>
               <h1 className="h-display">איפה אתה <span className="gold">נכשל שיווקית?</span></h1>
-              <p className="lead" style={{ margin: 0 }}>מדביקים קישור לפרופיל. דובדבוט סורק את הביו, ההצעה, התוכן וה-CTA – ואומר לך בדיוק מה מבריח לקוחות ומה לתקן היום.</p>
+              <p className="lead" style={{ margin: 0 }}>מדביקים קישור לפרופיל. הפלטפורמה סורקת את הביו, ההצעה, התוכן וה-CTA – ואומר לך בדיוק מה מבריח לקוחות ומה לתקן היום.</p>
               <form className="scan-form glass edge" onSubmit={run}>
                 <div className="url-box">
                   <Icon name="link" size={20} />

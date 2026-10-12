@@ -5,6 +5,7 @@ import { hashPassword, passwordProblem } from "@/lib/password";
 import { hit, limited } from "@/lib/ratelimit";
 import { cleanName, isEmail, normalizeIsraeliPhone } from "@/lib/validation";
 import { sendToMake } from "@/lib/make";
+import { emit } from "@/lib/automation";
 import { MARKETING_CONSENT_TEXT, PRIVACY_VERSION } from "@/lib/legal";
 
 export const runtime = "nodejs";
@@ -38,7 +39,8 @@ export async function POST(req: Request) {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
   const ua = req.headers.get("user-agent");
 
-  if (await limited(`ip:${ip ?? "unknown"}`, "signup", 12, 60)) {
+  // mobile carriers put many people behind one IP – keep this generous; the email check stops duplicates
+  if (await limited(`ip:${ip ?? "unknown"}`, "signup", 80, 60)) {
     return NextResponse.json({ error: "יותר מדי הרשמות מהרשת הזו. נסה שוב בעוד שעה." }, { status: 429 });
   }
   await hit(`ip:${ip ?? "unknown"}`, "signup");
@@ -89,6 +91,7 @@ export async function POST(req: Request) {
     created_at: now,
   });
 
+  await emit("signup", userId, { marketing_consent: marketingConsent, utm });
   await setSession(userId);
   return NextResponse.json({ ok: true });
 }

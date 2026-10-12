@@ -8,7 +8,8 @@ import Spotlight from "./Spotlight";
 import Sidebar from "./Sidebar";
 import NirPhoto from "./NirPhoto";
 import NirPose from "./NirPose";
-import AccessBar from "./AccessBar";
+import PlanCube from "./PlanCube";
+import UpsellInline from "./UpsellInline";
 import Icon from "./Icon";
 import LeadModal, { MeetingType } from "./LeadModal";
 import ForecastStudio from "./ForecastStudio";
@@ -216,7 +217,7 @@ export default function ChatClient({
         c[c.length - 1] = { id: meta.messageId ?? null, role: "assistant", content: visible.trim(), cta: meta.cta ?? null };
         return c;
       });
-      if (meta.conversationId) setConversationId(meta.conversationId);
+      if (meta.conversationId) { setConversationId(meta.conversationId); window.dispatchEvent(new Event("conv:changed")); }
       setStreaming(false);
       setBusy(false);
       if (window.matchMedia("(pointer: fine)").matches) taRef.current?.focus();
@@ -376,7 +377,7 @@ export default function ChatClient({
   }
 
   const onVoiceTurn = useCallback((u: string, a: string, meta: { conversationId?: string; messageId?: string }) => {
-    if (meta.conversationId) setConversationId(meta.conversationId);
+    if (meta.conversationId) { setConversationId(meta.conversationId); window.dispatchEvent(new Event("conv:changed")); }
     setMessages((m) => [...m, { id: null, role: "user", content: `🎙️ ${u}` }, { id: meta.messageId ?? null, role: "assistant", content: a }]);
   }, []);
 
@@ -403,14 +404,14 @@ export default function ChatClient({
           onClose={() => setSide(false)}
         />
 
-        <AccessBar user={user} />
         <main className="main">
+          <PlanCube access={user.access} />
           <header className="topbar">
             <div className="who">
               <button className="icon-btn mobile-only" onClick={() => setSide(true)} aria-label="תפריט"><Icon name="menu" size={20} /></button>
               <Mascot size={42} mood={headMood} />
               <div style={{ minWidth: 0 }}>
-                <b>{busy ? (streaming ? "ניר כותב…" : "חושב…") : activeTool && activeTool.id !== "chat" ? activeTool.title : "דובדבוט"}</b>
+                <b>{busy ? (streaming ? "ניר כותב…" : "חושב…") : activeTool && activeTool.id !== "chat" ? activeTool.title : "ניר דובדבני"}</b>
                 <small><span className="dot-live" /> היועץ העסקי שלך · השיטה של ניר דובדבני</small>
               </div>
             </div>
@@ -485,7 +486,7 @@ export default function ChatClient({
                         <Mascot size={28} mood={streaming && i === lastIdx ? "talking" : busy && i === lastIdx ? "thinking" : "idle"} track={false} />
                       </span>
                       <div className="body">
-                        <div className="name"><b>דובדבוט</b></div>
+                        <div className="name"><b>ניר</b></div>
                         <div className="md" id={`msg-${i}`}>
                           {m.content ? (
                             <>
@@ -509,6 +510,7 @@ export default function ChatClient({
                             <button className={`act ${m.rating === -1 ? "on" : ""}`} onClick={() => rate(i, -1)} aria-label="תשובה לא טובה"><Icon name="thumbDown" size={15} /></button>
                           </div>
                         )}
+                        {m.id && i === lastIdx && !busy && !m.cta && mode !== "chat" && <UpsellInline mode={mode} tier={user.access.plan === "paid" ? user.access.tier : null} />}
                       </div>
                     </div>
                   )}
@@ -529,11 +531,23 @@ export default function ChatClient({
                       <div>
                         <span className="eyebrow">הצעד הבא</span>
                         <h4 style={{ marginTop: 10 }}>זה בדיוק הרגע לשבת על זה ביחד.</h4>
-                        <p>רוצה פגישת אסטרטגיה עם אחד היועצים שלנו? או לתאם פגישה עם ניר דובדבני בעצמו?</p>
-                        <div className="cta-actions">
-                          <button className="btn btn-primary btn-sm" onClick={() => openLead("advisor", m.cta ?? null)}>פגישה עם יועץ</button>
-                          <button className="btn btn-glass btn-sm" onClick={() => openLead("nir", m.cta ?? null)}><Icon name="crown" size={16} /> פגישה עם ניר</button>
-                        </div>
+                        {user.access.plan === "paid" && user.access.tier && user.access.tier !== "basic" ? (
+                          <>
+                            <p>הפגישות האישיות כלולות במסלול שלך. נתאם?</p>
+                            <div className="cta-actions">
+                              <button className="btn btn-primary btn-sm" onClick={() => openLead(user.access.tier === "private" ? "advisor" : "nir", m.cta ?? null)}>לתיאום פגישה</button>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <p>4 שעות עם יועץ בכיר שמטמיע איתך הכל נמצאות ב-Alpha Private. פגישה עם ניר דובדבני בעצמו נמצאת ב-Alpha Upgrade.</p>
+                            <div className="cta-actions">
+                              <a className="btn btn-primary btn-sm" href="/plans?up=private" onClick={() => track("cta_plans", { tier: "private" })}>יועץ אישי · Alpha Private</a>
+                              <a className="btn btn-glass btn-sm" href="/plans?up=upgrade" onClick={() => track("cta_plans", { tier: "upgrade" })}><Icon name="crown" size={16} /> פגישה עם ניר · Upgrade</a>
+                              <button className="link-btn" onClick={() => openLead("advisor", m.cta ?? null)}>שנחזור אליך?</button>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
                   )}
@@ -568,7 +582,7 @@ export default function ChatClient({
                   if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
                 }}
               >
-                {drag && <div className="drop-hint">שחרר כאן – דובדבוט יקרא את זה</div>}
+                {drag && <div className="drop-hint">שחרר כאן – ניר יקרא את זה</div>}
                 {(files.length > 0 || fileBusy) && (
                   <div className="attach-row" style={{ padding: "8px 8px 0" }}>
                     {files.map((f) => (
@@ -604,7 +618,7 @@ export default function ChatClient({
                       if (canSend) send(input, undefined, files);
                     }
                   }}
-                  aria-label="הודעה לדובדבוט"
+                  aria-label="הודעה לניר"
                 />
                 <div className="composer-bar">
                   <input ref={fileRef} type="file" accept={ACCEPT} multiple hidden onChange={(e) => { if (e.target.files) addFiles(e.target.files); e.target.value = ""; }} />
@@ -638,8 +652,8 @@ export default function ChatClient({
               <button className="icon-btn" onClick={() => setStudio(false)} aria-label="סגירה"><Icon name="close" size={20} /></button>
             </div>
             <ForecastStudio
-              ctaLabel="שלח לדובדבוט לניתוח"
-              ctaNote="דובדבוט יקבל את כל המספרים ויפרק אותם."
+              ctaLabel="שלח לניר לניתוח"
+              ctaNote="ניר יקבל את כל המספרים ויפרק אותם."
               onCta={(inp) => {
                 setStudio(false);
                 setMode("forecast");
@@ -686,7 +700,7 @@ function printDeliverable(elementId: string) {
   const el = document.getElementById(elementId);
   const w = window.open("", "_blank");
   if (!w || !el) return;
-  w.document.write(`<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><title>דובדבוט – קבוצת דובדבני</title>
+  w.document.write(`<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><title>Duvdevani Platform – קבוצת דובדבני</title>
   <link href="https://fonts.googleapis.com/css2?family=Karantina:wght@700&family=Assistant:wght@400;600;700&display=swap" rel="stylesheet">
   <style>body{font-family:Assistant,Arial,sans-serif;max-width:760px;margin:48px auto;padding:0 28px;color:#16130e;line-height:1.75;font-weight:300}
   header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1px solid #c9a46a;padding-bottom:14px;margin-bottom:34px}
@@ -694,8 +708,8 @@ function printDeliverable(elementId: string) {
   h1,h2,h3{font-family:Karantina;font-weight:700;color:#16130e;font-size:32px;margin:24px 0 8px}strong{font-weight:600}
   table{border-collapse:collapse;width:100%;margin:12px 0;font-size:13.5px}th,td{border-bottom:1px solid #e6dcc8;padding:8px 10px;text-align:right}th{color:#8c6f42;font-weight:600}
   footer{margin-top:48px;font-size:11px;color:#8a8275;border-top:1px solid #e6dcc8;padding-top:12px}</style></head>
-  <body><header><b>דובדבוט</b><span>DUVDEVANI GROUP · RND.ORG.IL</span></header>${el.innerHTML}
-  <footer>הופק על ידי דובדבוט, כלי AI מבית קבוצת דובדבני, על בסיס הנחות שמסרת. לכיוון ראשוני בלבד – אינו תחליף ליועץ עסקי, רו״ח, עו״ד או יועץ השקעות.</footer>
+  <body><header><b>Duvdevani Platform</b><span>DUVDEVANI GROUP · RND.ORG.IL</span></header>${el.innerHTML}
+  <footer>הופק על ידי Duvdevani Platform, כלי AI מבית קבוצת דובדבני, על בסיס הנחות שמסרת. לכיוון ראשוני בלבד – אינו תחליף ליועץ עסקי, רו״ח, עו״ד או יועץ השקעות.</footer>
   <script>document.fonts.ready.then(()=>window.print())</script></body></html>`);
   w.document.close();
 }

@@ -45,7 +45,7 @@ export async function POST(req: Request) {
     access_until: s.access.accessUntil,
     business_profile: u.profile ?? {},
     utm: u.utm ?? {},
-    source: "דובדבוט",
+    source: "Duvdevani Platform",
   });
   return json({ ok: true });
 }

@@ -33,15 +33,17 @@ export async function clearSession() {
   store.set(COOKIE, "", { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 0 });
 }
 
-export type Access = { status: "trial" | "paid" | "expired"; plan: string; accessUntil: string; daysLeft: number; renewalRequestedAt: string | null };
+export type Access = { status: "trial" | "paid" | "expired"; plan: string; tier: "basic" | "private" | "upgrade" | "pro" | null; accessUntil: string; daysLeft: number; renewalRequestedAt: string | null; renewalMode: string };
 
-export function accessOf(row: { plan?: string | null; access_until?: string | null; renewal_requested_at?: string | null }): Access {
+export function accessOf(row: { plan?: string | null; tier?: string | null; access_until?: string | null; renewal_requested_at?: string | null; renewal_mode?: string | null }): Access {
   const until = row.access_until ? new Date(row.access_until).getTime() : Date.now() + 30 * 86400_000;
   const ms = until - Date.now();
   const plan = row.plan === "paid" ? "paid" : "trial";
   return {
     status: ms <= 0 ? "expired" : (plan as "trial" | "paid"),
     plan,
+    tier: plan === "paid" ? ((row.tier as Access["tier"]) ?? "basic") : null,
+    renewalMode: row.renewal_mode ?? "none",
     accessUntil: new Date(until).toISOString(),
     daysLeft: Math.max(0, Math.ceil(ms / 86400_000)),
     renewalRequestedAt: row.renewal_requested_at ?? null,
@@ -60,7 +62,7 @@ export async function getSession(): Promise<{ userId: string; access: Access } |
   const b = Buffer.from(sign(`${id}.${ver}`));
   if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
   if (!/^[0-9a-f-]{36}$/.test(id)) return null;
-  const { data } = await db().from("users").select("session_version, plan, access_until, renewal_requested_at").eq("id", id).maybeSingle();
+  const { data } = await db().from("users").select("session_version, plan, tier, access_until, renewal_requested_at, renewal_mode").eq("id", id).maybeSingle();
   if (!data || String(data.session_version) !== ver) return null;
   return { userId: id, access: accessOf(data) };
 }

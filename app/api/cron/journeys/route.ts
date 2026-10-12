@@ -1,0 +1,71 @@
+import { db } from "@/lib/supabase";
+import { emit } from "@/lib/automation";
+import { dueStage, render, type JourneyUser } from "@/lib/journeys";
+
+export const runtime = "nodejs";
+export const maxDuration = 300;
+
+/**
+ * Daily journey run (Vercel Cron, 09:00 Israel). For every person it picks the one stage due today,
+ * records it (each stage once per person) and pushes it to Make → ManyChat WhatsApp + email.
+ * Skips Shabbat. Protected by CRON_SECRET (Vercel sends it as a Bearer token).
+ * ?dry=1 returns what would be sent without sending.
+ */
+export async function GET(req: Request) {
+  const secret = process.env.CRON_SECRET;
+  if (!secret || req.headers.get("authorization") !== `Bearer ${secret}`) return new Response("unauthorized", { status: 401 });
+  const dry = new URL(req.url).searchParams.get("dry") === "1";
+  if (!dry && !process.env.MAKE_EVENTS_WEBHOOK_URL) return Response.json({ error: "MAKE_EVENTS_WEBHOOK_URL not set – nothing sent" }, { status: 503 });
+
+  const il = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Jerusalem", weekday: "short" }).format(new Date());
+  if (il === "Sat" && !dry) return Response.json({ skipped: "shabbat" });
+
+  const supabase = db();
+  const since = new Date(Date.now() - 400 * 86400_000).toISOString();
+  const [{ data: users }, { data: fin }, { data: sends }] = await Promise.all([
+    supabase.from("users").select("id, plan, created_at, access_until, subscribed_at, year_ends_at, renewal_mode, questions_count, marketing_opt_out, marketing_consent").or(`created_at.gte.${since},plan.eq.paid`).limit(20000),
+    supabase.from("financials").select("user_id").limit(50000),
+    supabase.from("journey_sends").select("user_id, stage").limit(200000),
+  ]);
+  const hasFin = new Set((fin ?? []).map((f) => f.user_id));
+  const sent = new Map<string, Set<string>>();
+  for (const s of sends ?? []) {
+    const set = sent.get(s.user_id) ?? new Set<string>();
+    set.add(s.stage);
+    sent.set(s.user_id, set);
+  }
+
+  const app = process.env.PUBLIC_APP_URL || "https://bot.rnd.org.il";
+  const due: { userId: string; stage: string }[] = [];
+  for (const u of (users ?? []) as (Omit<JourneyUser, "has_financials"> & { marketing_consent: boolean | null })[]) {
+    // Israeli anti-spam law: marketing only with consent; transactional notices go to everyone
+    const s = dueStage({ ...u, marketing_opt_out: u.marketing_opt_out || !u.marketing_consent, has_financials: hasFin.has(u.id) }, sent.get(u.id) ?? new Set());
+    if (s) due.push({ userId: u.id, stage: s.key });
+  }
+  // abandoned checkouts: a pending order older than an hour, nothing paid since
+  const { data: pending } = await supabase.from("orders").select("id, user_id, created_at, tier").eq("status", "pending").lt("created_at", new Date(Date.now() - 3600_000).toISOString()).gt("created_at", new Date(Date.now() - 7 * 86400_000).toISOString()).limit(2000);
+  for (const o of pending ?? []) {
+    const key = `c_abandon:${o.id}`;
+    if (!(sent.get(o.user_id)?.has(key))) due.push({ userId: o.user_id, stage: key });
+  }
+  if (dry) return Response.json({ dry: true, count: due.length, sample: due.slice(0, 50) });
+
+  let ok = 0;
+  const { STAGES } = await import("@/lib/journeys");
+  const queue = due.slice(0, 2000);
+  const worker = async () => {
+    for (let job = queue.shift(); job; job = queue.shift()) {
+      const st = STAGES.find((x) => x.key === job.stage.split(":")[0])!;
+      // claim first (unique user+stage) so a retry never double-sends
+      const { error } = await supabase.from("journey_sends").insert({ user_id: job.userId, stage: job.stage });
+      if (error) continue;
+      const { data: u } = await supabase.from("users").select("full_name, year_ends_at").eq("id", job.userId).single();
+      const vars = { first_name: String(u?.full_name ?? "").split(" ")[0], app_url: app, plans_url: `${app}/plans`, year_end: u?.year_ends_at ? new Date(u.year_ends_at).toLocaleDateString("he-IL") : "" };
+      const r = await emit("journey", job.userId, { stage: job.stage, track: st.track, whatsapp_template: st.wa, email_subject: render(st.subject, vars), text: render(st.text, vars), transactional: !!st.transactional });
+      if (r.sent) ok++;
+      else await supabase.from("journey_sends").update({ ok: false }).eq("user_id", job.userId).eq("stage", job.stage);
+    }
+  };
+  await Promise.all(Array.from({ length: 8 }, worker));
+  return Response.json({ due: due.length, sent: ok });
+}

@@ -88,7 +88,8 @@ export default function RegisterForm() {
         setLoading(false);
         return;
       }
-      router.push("/chat");
+      const plan = new URLSearchParams(window.location.search).get("plan");
+      router.push(plan ? `/plans?up=${encodeURIComponent(plan)}` : "/chat");
     } catch {
       setErrors({ form: "אין חיבור כרגע. בדוק את האינטרנט ונסה שוב." });
       setLoading(false);
@@ -98,7 +99,7 @@ export default function RegisterForm() {
   const titles = [
     { t: "איך קוראים לך?", s: "30 שניות ואתה בפנים. בלי כרטיס אשראי." },
     { t: `נעים מאוד, ${first || "חבר"}.`, s: "הפרטים להתחברות. עם המייל והסיסמה האלה נכנסים מכל מכשיר." },
-    { t: "עוד שנייה ואתה בפנים", s: "שני אישורים קצרים, ודובדבוט נפתח." },
+    { t: "עוד שנייה ואתה בפנים", s: "שני אישורים קצרים, והפלטפורמה נפתחת." },
   ];
 
   return (
@@ -161,7 +162,7 @@ export default function RegisterForm() {
 
         {step === 2 && (
           <div className="step" key="s2">
-            {carried && <div className="carried"><Icon name="chart" size={18} /> מה שהתחלת מחכה לך בפנים. דובדבוט ימשיך משם ברגע שתיכנס.</div>}
+            {carried && <div className="carried"><Icon name="chart" size={18} /> מה שהתחלת מחכה לך בפנים. ניר ימשיך משם ברגע שתיכנס.</div>}
             <label className="check">
               <input type="checkbox" checked={terms} onChange={(e) => { setTerms(e.target.checked); setErrors({}); }} />
               <span>
@@ -176,7 +177,7 @@ export default function RegisterForm() {
             {errors.form && <span className="err">{errors.form}</span>}
             <div className="step-actions">
               <button className="btn btn-primary" type="submit" disabled={loading} style={{ flex: 1 }}>
-                {loading ? "פותח לך את דובדבוט…" : "פתח לי את דובדבוט"}
+                {loading ? "פותח לך את הפלטפורמה…" : "פתח לי את הפלטפורמה"}
               </button>
               <button type="button" className="btn btn-ghost btn-sm" onClick={() => setStep(1)}>חזרה</button>
             </div>

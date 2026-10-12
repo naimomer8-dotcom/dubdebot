@@ -564,13 +564,13 @@ export default function VoiceCall({
   const ss = String(seconds % 60).padStart(2, "0");
 
   return (
-    <div className="call" role="dialog" aria-modal="true" aria-label="שיחה קולית עם דובדבוט">
+    <div className="call" role="dialog" aria-modal="true" aria-label="שיחה קולית עם ניר">
       <div className="call-head">
         <div className="nir-tag">
           <NirPhoto size={46} />
           <span>
           <b>שיחה עם ניר</b>
-          <small className="num">{mm}:{ss} · דובדבוט קולי</small>
+          <small className="num">{mm}:{ss} · ניר בשיחה קולית</small>
           </span>
         </div>
         <span className="badge"><span className="dot-live" /> בשיחה</span>

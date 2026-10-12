@@ -6,7 +6,7 @@ import { gemini, FAST_MODEL, LITE_THINKING } from "@/lib/gemini";
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
-const EXTRACT = `קיבלת תוצר שדובדבוט (יועץ עסקי) כתב לבעל עסק. החזר JSON בלבד:
+const EXTRACT = `קיבלת תוצר שהיועץ הדיגיטלי של ניר כתב לבעל עסק. החזר JSON בלבד:
 {"title": "כותרת קצרה ותיאורית לתוצר, עד 6 מילים", "tasks": [{"text": "משימה אחת, פעולה ברורה, עד 14 מילים", "priority": "urgent" | "important"}]}
 משימות: רק פעולות ביצוע קונקרטיות שמופיעות בתוצר (למשל מטבלת ביצוע, תוכנית 90 יום או צעדים הבאים). עד 10 משימות. "urgent" רק למה שמסומן דחוף/מיידי/שבוע ראשון. אם אין משימות – רשימה ריקה.`;
 
@@ -54,7 +54,7 @@ export async function POST(req: Request) {
   const { data: existing } = await supabase.from("deliverables").select("id, title").eq("user_id", userId).eq("message_id", messageId).maybeSingle();
   if (existing) return NextResponse.json({ ok: true, id: existing.id, title: existing.title, tasks: 0, already: true });
 
-  let title = msg.content.split("\n").find((l: string) => l.trim())?.replace(/[#*]/g, "").trim().slice(0, 60) || "תוצר מדובדבוט";
+  let title = msg.content.split("\n").find((l: string) => l.trim())?.replace(/[#*]/g, "").trim().slice(0, 60) || "תוצר מהפלטפורמה";
   // cost saver: a work plan already has an action table – read the tasks from it without calling the AI
   let tasks: { text: string; priority: string }[] = tableTasks(msg.content);
   if (!tasks.length && msg.content.length > 300) try {

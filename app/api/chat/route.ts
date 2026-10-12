@@ -7,6 +7,7 @@ import { toPrompt, type FinRow } from "@/lib/financials";
 import { buildContextBlock, buildStaticPrompt, PROFILE_EXTRACT_PROMPT, ToolMode, TOOLS } from "@/lib/persona";
 import { cachedPrefix, forgetPrefix } from "@/lib/promptCache";
 import { isGenericQuestion, lookupBank, personalize } from "@/lib/answerBank";
+import { emit } from "@/lib/automation";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -250,6 +251,10 @@ export async function POST(req: Request) {
   after(async () => {
     const trigger = await done;
     await saveUserMsg;
+    // lifecycle events for the automation engine: first question and "activated" (3rd question)
+    const { data: qn } = await supabase.rpc("bump_questions", { uid: userId });
+    if (qn === 1) await emit("first_question", userId, { text: text.slice(0, 200) });
+    else if (qn === 3) await emit("activated", userId, {});
     await supabase
       .from("conversations")
       .update({

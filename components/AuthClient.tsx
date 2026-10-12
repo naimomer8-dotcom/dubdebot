@@ -71,7 +71,7 @@ export default function AuthClient({ initialMode, email: initialEmail = "", toke
               <>
                 <span className="eyebrow" style={{ marginTop: 18 }}>כניסה</span>
                 <h1 className="h-display">ברוך שובך.</h1>
-                <p className="step-sub" style={{ marginBottom: 24 }}>דובדבוט זוכר את העסק שלך. ממשיכים מאיפה שעצרנו.</p>
+                <p className="step-sub" style={{ marginBottom: 24 }}>הפלטפורמה זוכרת את העסק שלך. ממשיכים מאיפה שעצרנו.</p>
                 <form onSubmit={login} noValidate>
                   <div className="field">
                     <label htmlFor="email">מייל</label>
@@ -142,7 +142,7 @@ export default function AuthClient({ initialMode, email: initialEmail = "", toke
             {mode === "done" && (
               <>
                 <h1 className="h-display" style={{ marginTop: 18 }}>סגור. אתה בפנים.</h1>
-                <p className="step-sub">מעביר אותך לדובדבוט…</p>
+                <p className="step-sub">מעביר אותך לפלטפורמה…</p>
               </>
             )}
           </div>

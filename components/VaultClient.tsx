@@ -14,7 +14,7 @@ import Confetti from "./Confetti";
 import { AXES, ARCHETYPES, Scores, insights } from "@/lib/xray";
 import { TOOLS } from "@/lib/persona";
 import NirPose from "./NirPose";
-import AccessBar from "./AccessBar";
+import PlanCube from "./PlanCube";
 import FinancialsCard from "./FinancialsCard";
 import type { FinRow } from "@/lib/financials";
 import type { ConvItem, ShellUser } from "@/lib/data";
@@ -117,8 +117,8 @@ export default function VaultClient({
       <Spotlight />
       <div className="app">
         <Sidebar active="vault" conversations={conversations} user={user} leadSent={leadSent} onMeet={() => setMeet(true)} open={side} onClose={() => setSide(false)} />
-        <AccessBar user={user} />
-        <main className="main" style={{ gridTemplateRows: "auto 1fr" }}>
+        <main className="main" style={{ gridTemplateRows: "auto auto 1fr" }}>
+          <PlanCube access={user.access} />
           <header className="topbar">
             <div className="who">
               <button className="icon-btn mobile-only" onClick={() => setSide(true)} aria-label="תפריט"><Icon name="menu" size={20} /></button>
@@ -241,13 +241,13 @@ export default function VaultClient({
                       ))}
                     </div>
                   ) : (
-                    <div className="empty-note">כל תשובה של דובדבוט אפשר לשמור לכאן בלחיצה על <b style={{ color: "var(--gold)" }}>שמירה לתיק</b>.</div>
+                    <div className="empty-note">כל תשובה בצ'אט אפשר לשמור לכאן בלחיצה על <b style={{ color: "var(--gold)" }}>שמירה לתיק</b>.</div>
                   )}
                 </section>
 
                 {/* profile */}
                 <section className="vcard w12 glass edge">
-                  <div className="vcard-h"><h3><Icon name="user" size={20} /> מה דובדבוט יודע על העסק שלך</h3></div>
+                  <div className="vcard-h"><h3><Icon name="user" size={20} /> מה הפלטפורמה יודעת על העסק שלך</h3></div>
                   {profileEntries.length ? (
                     <dl className="kv" style={{ gridTemplateColumns: "auto 1fr auto 1fr" }}>
                       {profileEntries.map(([k, v]) => (
@@ -255,7 +255,7 @@ export default function VaultClient({
                       ))}
                     </dl>
                   ) : (
-                    <div className="empty-note">ככל שתדבר איתו, דובדבוט לומד את העסק – תחום, מחזור, הכאב והיעד – ומתאים את התשובות.</div>
+                    <div className="empty-note">ככל שתדבר עם ניר, הפלטפורמה לומדת את העסק – תחום, מחזור, הכאב והיעד – ומתאים את התשובות.</div>
                   )}
                 </section>
               </div>

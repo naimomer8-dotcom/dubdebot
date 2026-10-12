@@ -3,6 +3,7 @@
 import Spotlight from "./Spotlight";
 import { Brand } from "./BrandBar";
 import RenewalPanel from "./RenewalPanel";
+import Link from "next/link";
 import type { ShellUser } from "@/lib/data";
 import { DISCLAIMER_SHORT } from "@/lib/disclaimer";
 
@@ -21,7 +22,11 @@ export default function ExpiredScreen({ user }: { user: ShellUser }) {
           <span />
           <button className="btn btn-ghost btn-sm" onClick={logout}>יציאה</button>
         </header>
-        <main className="xr-stage">
+        <main className="xr-stage" style={{ flexDirection: "column", gap: 18 }}>
+          <div className="plans-note" style={{ maxWidth: 560 }}>
+            <span>כל השיחות והתיק העסקי שלך שמורים. בוחרים מסלול, והכל נפתח מאיפה שעצרת.</span>
+            <Link href="/plans" className="btn btn-primary btn-sm" style={{ marginInlineStart: "auto" }}>לבחירת מסלול</Link>
+          </div>
           <RenewalPanel access={user.access} firstName={user.firstName} phone={user.phone} />
         </main>
         <p className="rep-note" style={{ textAlign: "center", padding: "0 16px 24px" }}>{DISCLAIMER_SHORT}</p>

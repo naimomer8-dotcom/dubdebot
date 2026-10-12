@@ -2,12 +2,12 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "דובדבוט | יועץ עסקי בכיס – קבוצת דובדבני",
+  title: "Duvdevani Platform | הפלטפורמה להצלחה בחיים ובעסקים",
   description:
-    "דובדבוט – היועץ העסקי האישי שלך מבית קבוצת דובדבני. תחזיות עסקיות, תוכניות עבודה, תסריטי מכירה ובדיקות היתכנות – מבוסס על השיטה של ניר דובדבני.",
+    "Duvdevani Platform – הפלטפורמה להצלחה בחיים ובעסקים מבית קבוצת דובדבני. ניר דובדבני בכיס: תחזיות עסקיות, תוכניות עבודה, תסריטי מכירה ובדיקות היתכנות – מבוסס על השיטה של ניר דובדבני.",
   openGraph: {
-    title: "דובדבוט – יועץ עסקי בכיס",
-    description: "החזון שלי: שלא יהיה עסק בישראל שאין לו דובדבוט.",
+    title: "Duvdevani Platform – הפלטפורמה להצלחה בחיים ובעסקים",
+    description: "החזון שלי: שלא יהיה עסק בישראל בלי Duvdevani Platform.",
     locale: "he_IL",
     type: "website",
   },

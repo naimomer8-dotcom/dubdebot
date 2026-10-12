@@ -45,7 +45,7 @@ export default function FinancialsCard({ initial }: { initial: FinRow[] }) {
     if (!r?.ok) return setMsg(j.error ?? "לא נשמר. נסה שוב.");
     setRows((x) => [...x.filter((y) => y.period !== period), { period, data: j.data }]);
     setEditing(false);
-    setMsg("נשמר. דובדבוט יתייחס למספרים האלה בשיחות.");
+    setMsg("נשמר. ניר יתייחס למספרים האלה בשיחות.");
   }
 
   const prev = sorted.find((r) => r.period < period);
@@ -110,7 +110,7 @@ export default function FinancialsCard({ initial }: { initial: FinRow[] }) {
         </form>
       ) : (
         <div className="fin-actions">
-          <a className="btn btn-glass btn-sm" href={`/chat?new=1&tool=financials`}><Icon name="spark" size={15} /> ניתוח עם דובדבוט</a>
+          <a className="btn btn-glass btn-sm" href={`/chat?new=1&tool=financials`}><Icon name="spark" size={15} /> ניתוח עם ניר</a>
           {live.marketingPct > 0 && <span className="pill">שיווק: {live.marketingPct}% מההכנסות</span>}
           {live.salariesPct > 0 && <span className="pill">שכר: {live.salariesPct}% מההכנסות</span>}
           {live.cash > 0 && <span className="pill">בבנק: {money(live.cash)}</span>}

@@ -4,10 +4,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Brand } from "../BrandBar";
 import Icon from "../Icon";
 import AnswerBank from "./AnswerBank";
+import { PLANS, planById, priceOf, ils } from "@/lib/plans";
 
 type Row = {
   id: string; name: string; email: string; phone: string; createdAt: string;
-  status: "trial" | "paid" | "expired"; accessUntil: string; daysLeft: number;
+  status: "trial" | "paid" | "expired"; tier: string | null; billing: string | null; accessUntil: string; daysLeft: number;
   paidAt: string | null; paidBy: string | null; renewalRequestedAt: string | null; note: string | null;
   business: string | null; conversations: number; lastActive: string | null;
   answers30: number; answersToday: number; cost30: number;
@@ -28,6 +29,8 @@ export default function AdminDashboard({ adminName }: { adminName: string }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<{ row: Row; action: string } | null>(null);
   const [toast, setToast] = useState("");
+  const [payTier, setPayTier] = useState("basic");
+  const [payBilling, setPayBilling] = useState<"onetime" | "installments">("onetime");
 
   const load = useCallback(async () => {
     const r = await fetch("/api/backoffice/users", { cache: "no-store" }).catch(() => null);
@@ -66,11 +69,11 @@ export default function AdminDashboard({ adminName }: { adminName: string }) {
 
   async function act(row: Row, action: string, note?: string) {
     setBusy(row.id + action);
-    const r = await fetch("/api/backoffice/users", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: row.id, action, note }) }).catch(() => null);
+    const r = await fetch("/api/backoffice/users", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: row.id, action, note, tier: payTier, billing: payBilling }) }).catch(() => null);
     setBusy(null);
     setConfirm(null);
     if (!r?.ok) return flash("הפעולה נכשלה. נסה שוב.");
-    flash(action === "paid" ? `נפתחה גישה לשנה ל${row.name}` : action === "extend30" ? `הוארך ב-30 יום ל${row.name}` : action === "block" ? `הגישה של ${row.name} נחסמה` : "נשמר");
+    flash(action === "paid" ? `${planById(payTier)?.name} נפתח ל${row.name}` : action === "extend30" ? `הוארך ב-30 יום ל${row.name}` : action === "block" ? `הגישה של ${row.name} נחסמה` : "נשמר");
     load();
   }
   function flash(t: string) {
@@ -155,7 +158,7 @@ export default function AdminDashboard({ adminName }: { adminName: string }) {
                 </span>
               </div>
               <div className="adm-meta">
-                <span className={`pill ${r.status}`}>{STATUS[r.status]}</span>
+                <span className={`pill ${r.status}`}>{r.status === "paid" ? planById(r.tier)?.name ?? STATUS.paid : STATUS[r.status]}</span>
                 <span>{r.status === "expired" ? `הסתיים ${d(r.accessUntil)}` : `עד ${d(r.accessUntil)} · ${r.daysLeft} ימים`}</span>
                 <span className="muted">נרשם {d(r.createdAt)} · {r.conversations} שיחות · פעיל לאחרונה {d(r.lastActive)}</span>
                 <span className={r.cost30 >= 10 ? "adm-req" : "muted"}>שימוש 30 יום: {r.answers30} תשובות ({r.answersToday} היום) · עלות AI משוערת ₪{r.cost30.toFixed(2)}</span>
@@ -163,7 +166,7 @@ export default function AdminDashboard({ adminName }: { adminName: string }) {
                 {r.renewalRequestedAt && <span className="adm-req"><Icon name="bolt" size={14} /> ביקש להמשיך ב-{d(r.renewalRequestedAt)}</span>}
               </div>
               <div className="adm-actions">
-                <button className="btn btn-primary btn-sm" disabled={!!busy} onClick={() => setConfirm({ row: r, action: "paid" })}><Icon name="check" size={16} /> שולם – פתיחה לשנה</button>
+                <button className="btn btn-primary btn-sm" disabled={!!busy} onClick={() => { setPayTier(r.tier && r.status === "paid" ? r.tier : "basic"); setConfirm({ row: r, action: "paid" }); }}><Icon name="check" size={16} /> {r.status === "paid" ? "שדרוג / חידוש" : "שולם – פתיחת מסלול"}</button>
                 <button className="btn btn-glass btn-sm" disabled={!!busy} onClick={() => act(r, "extend30")}>+30 יום</button>
                 {r.renewalRequestedAt && <button className="btn btn-ghost btn-sm" disabled={!!busy} onClick={() => act(r, "clear_request")}>טופל</button>}
                 {r.status !== "expired" && <button className="btn btn-ghost btn-sm danger" disabled={!!busy} onClick={() => setConfirm({ row: r, action: "block" })}>חסימה</button>}
@@ -178,10 +181,22 @@ export default function AdminDashboard({ adminName }: { adminName: string }) {
       {confirm && (
         <div className="overlay" role="dialog" aria-modal="true" onClick={(e) => e.target === e.currentTarget && setConfirm(null)}>
           <div className="modal" style={{ maxWidth: 440 }}>
-            <h3 style={{ marginTop: 0 }}>{confirm.action === "paid" ? "לסמן כשולם?" : "לחסום את הגישה?"}</h3>
+            <h3 style={{ marginTop: 0 }}>{confirm.action === "paid" ? "איזה מסלול נסגר?" : "לחסום את הגישה?"}</h3>
+            {confirm.action === "paid" && (
+              <div style={{ display: "grid", gap: 8, margin: "8px 0 4px" }}>
+                <select className="input" value={payTier} onChange={(e) => setPayTier(e.target.value)} aria-label="מסלול">
+                  {PLANS.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+                <select className="input" value={payBilling} onChange={(e) => setPayBilling(e.target.value as "onetime" | "installments")} aria-label="אופן תשלום">
+                  <option value="onetime">תשלום אחד</option>
+                  <option value="installments">12 תשלומים</option>
+                </select>
+                <small className="muted">{ils(priceOf(payTier as "basic", payBilling).total, 2)} כולל מע״מ · הקורסים נפתחים והאוטומציות יוצאות לבד</small>
+              </div>
+            )}
             <p className="sub">
               {confirm.action === "paid"
-                ? `${confirm.row.name} יקבל גישה מלאה ל-365 יום${confirm.row.status === "paid" ? " נוספים מסוף המנוי הנוכחי" : " החל מהיום"}.`
+                ? `${confirm.row.name} יקבל את המסלול לשנה${confirm.row.status === "trial" ? ", החל מסוף חודש המתנה" : ""}. אחרי השנה: ₪69 + מע״מ לחודש אוטומטית.`
                 : `${confirm.row.name} יראה מיד את מסך "רוצה להמשיך?" ולא יוכל להשתמש בכלים.`}
             </p>
             <div style={{ display: "flex", gap: 10, marginTop: 18 }}>

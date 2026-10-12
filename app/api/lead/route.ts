@@ -49,7 +49,7 @@ export async function POST(req: Request) {
         .order("created_at", { ascending: true })
         .limit(40);
       transcript = (msgs ?? [])
-        .map((m) => `${m.role === "user" ? "בעל העסק" : "דובדבוט"}: ${m.content.slice(0, 1200)}`)
+        .map((m) => `${m.role === "user" ? "בעל העסק" : "הפלטפורמה"}: ${m.content.slice(0, 1200)}`)
         .join("\n");
     }
   }
@@ -112,7 +112,7 @@ export async function POST(req: Request) {
     ai_summary: summary,
     trigger: body.trigger ?? null,
     utm: user.utm ?? {},
-    source: "דובדבוט",
+    source: "Duvdevani Platform",
   });
 
   return NextResponse.json({ ok: true });

@@ -4,7 +4,7 @@ import { sha256 } from "@/lib/password";
 import AdminAuth from "@/components/admin/AdminAuth";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "הגדרת מנהל | דובדבוט", robots: { index: false, follow: false }, referrer: "no-referrer" };
+export const metadata: Metadata = { title: "הגדרת מנהל | Duvdevani Platform", robots: { index: false, follow: false }, referrer: "no-referrer" };
 
 export default async function AdminSetup({ searchParams }: { searchParams: Promise<{ token?: string }> }) {
   const token = String((await searchParams).token ?? "").slice(0, 200);
