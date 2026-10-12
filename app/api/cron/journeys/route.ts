@@ -1,6 +1,7 @@
 import { db } from "@/lib/supabase";
 import { emit } from "@/lib/automation";
 import { dueStage, render, type JourneyUser } from "@/lib/journeys";
+import { PLANS } from "@/lib/plans";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -59,9 +60,25 @@ export async function GET(req: Request) {
       // claim first (unique user+stage) so a retry never double-sends
       const { error } = await supabase.from("journey_sends").insert({ user_id: job.userId, stage: job.stage });
       if (error) continue;
-      const { data: u } = await supabase.from("users").select("full_name, year_ends_at").eq("id", job.userId).single();
-      const vars = { first_name: String(u?.full_name ?? "").split(" ")[0], app_url: app, plans_url: `${app}/plans`, year_end: u?.year_ends_at ? new Date(u.year_ends_at).toLocaleDateString("he-IL") : "" };
-      const r = await emit("journey", job.userId, { stage: job.stage, track: st.track, whatsapp_template: st.wa, email_subject: render(st.subject, vars), text: render(st.text, vars), transactional: !!st.transactional });
+      const { data: u } = await supabase.from("users").select("full_name, year_ends_at, access_until").eq("id", job.userId).single();
+      const date = (d: string | number | null | undefined) => (d ? new Date(d).toLocaleDateString("he-IL", { timeZone: "Asia/Jerusalem", day: "numeric", month: "numeric" }) : "");
+      const left = u?.access_until ? Math.max(0, Math.ceil((new Date(u.access_until).getTime() - Date.now()) / 86400_000)) : 0;
+      let planName = "המסלול";
+      if (st.key === "c_abandon") {
+        const { data: o } = await supabase.from("orders").select("tier").eq("id", job.stage.split(":")[1]).maybeSingle();
+        planName = PLANS.find((p) => p.id === o?.tier)?.name ?? planName;
+      }
+      const vars = {
+        first_name: String(u?.full_name ?? "").split(" ")[0],
+        app_url: app,
+        plans_url: `${app}/plans`,
+        year_end: date(u?.year_ends_at),
+        trial_end: date(u?.access_until),
+        days_left: String(left),
+        offer_end: date(Date.now() + 72 * 3600_000),
+        plan_name: planName,
+      };
+      const r = await emit("journey", job.userId, { stage: job.stage, track: st.track, whatsapp_template: st.wa, email_subject: render(st.subject, vars), text: render(st.text, vars), vars, transactional: !!st.transactional });
       if (r.sent) ok++;
       else await supabase.from("journey_sends").update({ ok: false }).eq("user_id", job.userId).eq("stage", job.stage);
     }

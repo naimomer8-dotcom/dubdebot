@@ -3,6 +3,7 @@ import { db } from "@/lib/supabase";
 import { limited } from "@/lib/ratelimit";
 import { emit } from "@/lib/automation";
 import { PLANS, priceOf, TIER_RANK, type Billing, type Tier } from "@/lib/plans";
+import { offersFor } from "@/lib/offers";
 
 export const runtime = "nodejs";
 const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
@@ -30,7 +31,8 @@ export async function POST(req: Request) {
   // upgrade: pay only the difference
   const owned = u.plan === "paid" ? (u.tier as Tier | null) : null;
   if (owned && TIER_RANK[tier] <= TIER_RANK[owned]) return json({ error: "המסלול הזה כבר כלול במנוי שלך." }, 400);
-  const target = priceOf(tier, billing);
+  const offers = owned ? {} : await offersFor(s.userId);
+  const target = priceOf(tier, billing, offers);
   const base = owned ? priceOf(owned, billing) : null;
   const net = Math.round((target.net - (base?.net ?? 0)) * 100) / 100;
   const vat = Math.round(net * 0.18 * 100) / 100;
@@ -38,7 +40,7 @@ export async function POST(req: Request) {
 
   const { data: order, error } = await supabase
     .from("orders")
-    .insert({ user_id: s.userId, tier, billing, amount_net: net, vat, amount_total: total, status: "pending", channel: via })
+    .insert({ user_id: s.userId, tier, billing, amount_net: net, vat, amount_total: total, status: "pending", channel: via, kind: Object.keys(offers).length ? `annual:offer:${Object.keys(offers).join("+")}` : "annual" })
     .select("id")
     .single();
   if (error || !order) return json({ error: "משהו השתבש. נסה שוב." }, 500);
@@ -59,7 +61,7 @@ export async function POST(req: Request) {
     full_name: u.full_name,
     phone: u.phone,
     email: u.email,
-    note: `${owned ? `שדרוג מ-${owned} ל-` : "רכישת "}${planName} · ${billing === "installments" ? "12 תשלומים" : "תשלום אחד"} · ₪${total.toLocaleString("he-IL")} כולל מע״מ · הזמנה ${order.id.slice(0, 8)}`,
+    note: `${owned ? `שדרוג מ-${owned} ל-` : "רכישת "}${planName}${offers.privateHalf && tier === "private" ? " · בונוס Private בחצי מחיר" : ""}${offers.installmentsAtOnetime && billing === "installments" ? " · הצעת 72 שעות: תשלומים במחיר תשלום אחד" : ""} · ${billing === "installments" ? "12 תשלומים" : "תשלום אחד"} · ₪${total.toLocaleString("he-IL")} כולל מע״מ · הזמנה ${order.id.slice(0, 8)}`,
     trigger: via === "rep" ? "rep_requested" : "checkout_no_provider",
   });
   await supabase.from("users").update({ renewal_requested_at: new Date().toISOString() }).eq("id", s.userId);

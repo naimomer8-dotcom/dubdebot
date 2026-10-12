@@ -6,7 +6,7 @@ import Spotlight from "./Spotlight";
 import Sidebar from "./Sidebar";
 import Icon from "./Icon";
 import { Brand } from "./BrandBar";
-import { COURSES, PLANS, RENEWAL_MONTHLY, TIER_RANK, VAT, ils, priceOf, type Billing, type Plan, type Tier } from "@/lib/plans";
+import { COURSES, PLANS, RENEWAL_MONTHLY, TIER_RANK, VAT, ils, priceOf, type Billing, type Offers, type Plan, type Tier } from "@/lib/plans";
 import type { ConvItem, ShellUser } from "@/lib/data";
 
 type Done = { status: "rep" | "provider_pending"; total: number; plan: string; via: "self" | "rep" };
@@ -31,7 +31,9 @@ const FAQ = [
   { q: "המחירים כוללים מע״מ?", a: `המחירים מוצגים לפני מע״מ. בכל כרטיס מופיע גם הסכום הכולל עם ${Math.round(VAT * 100)}% מע״מ.` },
 ];
 
-export default function PlansClient({ user, conversations, focus }: { user: ShellUser | null; conversations: ConvItem[]; focus: string | null }) {
+const fmt = (iso: string) => new Date(iso).toLocaleString("he-IL", { timeZone: "Asia/Jerusalem", day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" });
+
+export default function PlansClient({ user, conversations, focus, offers = {} }: { user: ShellUser | null; conversations: ConvItem[]; focus: string | null; offers?: Offers }) {
   const [billing, setBilling] = useState<Billing>("onetime");
   const [pick, setPick] = useState<Plan | null>(null);
   const [agree, setAgree] = useState(false);
@@ -50,7 +52,7 @@ export default function PlansClient({ user, conversations, focus }: { user: Shel
   const trial = !!user && user.access.plan !== "paid";
 
   const diff = (p: Plan) => {
-    const t = priceOf(p.id, billing);
+    const t = priceOf(p.id, billing, offers);
     if (!owned) return t;
     const b = priceOf(owned, billing);
     const net = Math.round((t.net - b.net) * 100) / 100;
@@ -85,6 +87,15 @@ export default function PlansClient({ user, conversations, focus }: { user: Shel
             <button className="link-btn" style={{ marginInlineStart: "auto" }} onClick={toggleRenewal}>{renewal === "cancelled" ? "החזרת החידוש החודשי" : "ביטול החידוש אחרי השנה"}</button>
           </p>
         )}
+        {(offers.privateHalf || offers.installmentsAtOnetime) && (
+          <div className="plans-offer">
+            <Icon name="gem" size={16} />
+            <div>
+              {offers.privateHalf && <p><b>בונוס מצטרפים בחודש המתנה:</b> Alpha Private בחצי מחיר, ₪295 + מע״מ במקום ₪590. בתוקף עד {fmt(offers.privateHalf)}.</p>}
+              {offers.installmentsAtOnetime && <p><b>הצעת 72 שעות:</b> 12 תשלומים במחיר של תשלום אחד, ₪229 לחודש + מע״מ במקום ₪299. בתוקף עד {fmt(offers.installmentsAtOnetime)}.</p>}
+            </div>
+          </div>
+        )}
         <div className="bill-toggle" role="radiogroup" aria-label="אופן תשלום">
           <button role="radio" aria-checked={billing === "onetime"} className={billing === "onetime" ? "on" : ""} onClick={() => setBilling("onetime")}>תשלום אחד <small>הכי משתלם</small></button>
           <button role="radio" aria-checked={billing === "installments"} className={billing === "installments" ? "on" : ""} onClick={() => setBilling("installments")}>12 תשלומים</button>
@@ -93,7 +104,8 @@ export default function PlansClient({ user, conversations, focus }: { user: Shel
 
       <section className="plan-grid" aria-label="המסלולים">
         {PLANS.map((p) => {
-          const pr = priceOf(p.id, billing);
+          const pr = priceOf(p.id, billing, offers);
+          const reg = priceOf(p.id, billing);
           const mine = owned === p.id;
           const below = owned ? TIER_RANK[p.id] <= TIER_RANK[owned] : false;
           const d = diff(p);
@@ -103,6 +115,7 @@ export default function PlansClient({ user, conversations, focus }: { user: Shel
               <h2>{p.name}</h2>
               <p className="plan-tag">{p.tagline}</p>
               <div className="plan-price">
+                {reg.net !== pr.net && <s className="num plan-was">{ils(reg.perMonthNet)}</s>}
                 <b className="num">{ils(pr.perMonthNet)}</b>
                 <span>לחודש · + מע״מ</span>
               </div>
@@ -146,7 +159,7 @@ export default function PlansClient({ user, conversations, focus }: { user: Shel
               {COMPARE.map((r) => (
                 <tr key={r.label}><th scope="row">{r.label}</th>{PLANS.map((p) => <td key={p.id}>{r.on.includes(p.id) ? <Icon name="check" size={16} className="gold-ico" /> : <span className="muted" aria-label="לא כלול">—</span>}</td>)}</tr>
               ))}
-              <tr><th scope="row">מחיר לשנה + מע״מ</th>{PLANS.map((p) => <td key={p.id} className="num">{ils(priceOf(p.id, billing).net)}</td>)}</tr>
+              <tr><th scope="row">מחיר לשנה + מע״מ</th>{PLANS.map((p) => <td key={p.id} className="num">{ils(priceOf(p.id, billing, offers).net)}</td>)}</tr>
             </tbody>
           </table>
         </div>

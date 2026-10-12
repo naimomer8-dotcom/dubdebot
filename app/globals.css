@@ -1131,3 +1131,9 @@ img, svg { display: block; }
 .upsell-inline b { display: block; font-size: 15px; }
 .upsell-inline p { margin: 2px 0 0; font-size: 14px; color: var(--text-2); line-height: 1.45; }
 @media (max-width: 600px) { .upsell-inline { flex-wrap: wrap; } }
+
+/* plans: time-limited offers */
+.plans-offer { display: flex; gap: 10px; align-items: flex-start; margin-top: 14px; padding: 12px 14px; border-radius: 14px; border: 1px solid rgba(255, 74, 98, .45); background: rgba(200, 16, 46, .1); font-size: 14.5px; line-height: 1.55; }
+.plans-offer p + p { margin-top: 4px; }
+.plans-offer b { color: var(--gold, #e2c68e); }
+.plan-was { color: var(--muted, #a69d92); font-size: 15px; margin-inline-end: 6px; text-decoration-thickness: 1.5px; }

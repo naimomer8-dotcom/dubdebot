@@ -75,9 +75,17 @@ export const RENEWAL_MONTHLY = 69; // after the first year, before VAT
 export const planById = (id: string | null | undefined) => PLANS.find((p) => p.id === id) ?? null;
 export const TIER_RANK: Record<Tier, number> = { basic: 1, private: 2, upgrade: 3, pro: 4 };
 
-export function priceOf(tier: Tier, billing: Billing) {
+/** Time-limited offers a person currently holds (see lib/offers.ts). Values are ISO expiry times. */
+export type Offers = { privateHalf?: string; installmentsAtOnetime?: string };
+export const PRIVATE_HALF_EXTRA = 295;
+
+export function priceOf(tier: Tier, billing: Billing, offers?: Offers | null) {
   const p = planById(tier)!;
-  const net = p.flat ?? BASIC[billing] + p.extra;
+  // win-back: 12 installments at the one-time price
+  const base = billing === "installments" && offers?.installmentsAtOnetime ? BASIC.onetime : BASIC[billing];
+  // trial bonus: Alpha Private add-on at half price
+  const extra = tier === "private" && offers?.privateHalf ? PRIVATE_HALF_EXTRA : p.extra;
+  const net = p.flat ?? base + extra;
   const vat = Math.round(net * VAT * 100) / 100;
   const total = Math.round((net + vat) * 100) / 100;
   return { net, vat, total, perMonth: Math.round((total / 12) * 100) / 100, perMonthNet: Math.round((net / 12) * 100) / 100 };
