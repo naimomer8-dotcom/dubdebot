@@ -15,11 +15,11 @@ export type Stage = {
 export const STAGES: Stage[] = [
   // ---------- trial (30 days) ----------
   { key: "t_d1_noq", track: "trial", wa: "dp_t_d1_noq", subject: "עוד לא שאלת אותי כלום 🙂", text: "{{first_name}}, לא צריך שאלה חכמה. \"איך אני מביא יותר לקוחות?\" זה מספיק. 30 שניות: {{app_url}}" },
-  { key: "t_d3_xray", track: "trial", wa: "dp_t_d3_xray", subject: "12 השאלות שאני שואל כל בעל עסק", text: "שמתי אותן ב\"רנטגן עסקי\". 3 דקות, ציון על 6 צירים, והמקום הכי חלש בעסק שלך: {{app_url}}/xray" },
+  { key: "t_d3_xray", track: "trial", wa: "dp_t_d3_xray", subject: "12 השאלות שאני שואל כל בעל עסק", text: "את 12 השאלות שאני שואל כל בעל עסק שמתי ב\"רנטגן עסקי\". 3 דקות, ציון על 6 צירים, והמקום הכי חלש בעסק שלך: {{app_url}}/xray" },
   { key: "t_d7_week", track: "trial", wa: "dp_t_d7_week", subject: "שבוע ראשון מאחוריך 🔥", text: "{{first_name}}, מה הדבר הכי שימושי שקיבלת עד עכשיו? תענה לי במילה או שתיים." },
   { key: "t_d10_numbers", track: "trial", wa: "dp_t_d10_numbers", subject: "רוצה תשובות עם המספרים שלך?", text: "תכניס את הנתונים של החודש בתיק העסקי. 2 דקות, ומשם אני עונה לך עם המספרים שלך: {{app_url}}/vault" },
   { key: "t_d14_half", track: "trial", wa: "dp_t_d14_half", subject: "עברו 14 יום. נשארו 16", text: "עוד לא ביקשת תוכנית עבודה ל-90 יום? זה מה שלקוחות משלמים לי עליו אלפים. ומי שכבר החליט: המסלולים כאן, וימי המתנה לא הולכים לאיבוד: {{plans_url}}" },
-  { key: "t_d21_plans", track: "trial", wa: "dp_t_d21_plans", subject: "מה קורה אחרי ה-30 יום?", text: "Alpha Basic: כל 9 הקורסים שלי, כל הספרים, כנס רבעוני וזום איתי פעם בשבועיים. מ-₪229 לחודש. {{plans_url}}" },
+  { key: "t_d21_plans", track: "trial", wa: "dp_t_d21_plans", subject: "מה קורה אחרי ה-30 יום?", text: "Alpha Basic: כל 9 הקורסים שלי, כל הספרים, כנס רבעוני וזום איתי פעם בשבועיים. מ-₪229 + מע״מ לחודש. {{plans_url}}" },
   { key: "t_d25_offer", track: "trial", wa: "dp_t_d25_offer", subject: "עוד 5 ימים נגמרת המתנה", text: "{{first_name}}, רוצה להמשיך? בוחרים מסלול בשתי דקות, או שנציג חוזר אליך: {{plans_url}}" },
   { key: "t_d28_last", track: "trial", wa: "dp_t_d28_last", subject: "יומיים", text: "אחרי זה הגישה נסגרת והשאלות חוזרות לחכות לפגישה. כל מה שבנינו נשמר: {{plans_url}}" },
   { key: "t_d30_closed", track: "trial", wa: "dp_t_d30_closed", subject: "הגישה במתנה הסתיימה", text: "{{first_name}}, חודש המתנה הסתיים. השיחות והתיק העסקי שלך שמורים, ומחכים לך במסלול: {{plans_url}}", transactional: true },
