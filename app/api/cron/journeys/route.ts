@@ -2,6 +2,7 @@ import { db } from "@/lib/supabase";
 import { emit } from "@/lib/automation";
 import { dueStage, emailParts, render, type JourneyUser } from "@/lib/journeys";
 import { PLANS } from "@/lib/plans";
+import { refLink } from "@/lib/referral";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -78,6 +79,7 @@ export async function GET(req: Request) {
         offer_end: date(Date.now() + 72 * 3600_000),
         return_end: date(u?.year_ends_at ? new Date(u.year_ends_at).getTime() + 30 * 86400_000 : null),
         plan_name: planName,
+        ref_link: refLink(job.userId, app),
       };
       const text = render(st.text, vars);
       const r = await emit("journey", job.userId, { stage: job.stage, track: st.track, whatsapp_template: st.wa, email_subject: render(st.subject, vars), text, email_parts: emailParts(text), vars, transactional: !!st.transactional });

@@ -5,6 +5,7 @@ import { useState } from "react";
 import Spotlight from "./Spotlight";
 import Sidebar from "./Sidebar";
 import Icon from "./Icon";
+import ReferralCard from "./ReferralCard";
 import { Brand } from "./BrandBar";
 import { COURSES, PLANS, RENEWAL_MONTHLY, TIER_RANK, VAT, ils, priceOf, type Billing, type Offers, type Plan, type Tier } from "@/lib/plans";
 import type { ConvItem, ShellUser } from "@/lib/data";
@@ -17,7 +18,7 @@ const COMPARE: { label: string; on: Tier[] }[] = [
   { label: "כל הספרים של ניר", on: ["basic", "private", "upgrade", "pro"] },
   { label: "כנס מינגלינג ענק אחת לרבעון", on: ["basic", "private", "upgrade", "pro"] },
   { label: "זום עם ניר פעם בשבועיים", on: ["basic", "private", "upgrade", "pro"] },
-  { label: "4 שעות אחד על אחד עם יועץ עסקי בכיר", on: ["private", "pro"] },
+  { label: "פגישת הטמעה של 3 שעות עם יועץ עסקי בכיר", on: ["private", "pro"] },
   { label: "פגישה אישית עם ניר דובדבני", on: ["upgrade", "pro"] },
   { label: "פודקאסט אחד על אחד עם ניר", on: ["pro"] },
 ];
@@ -30,6 +31,21 @@ const FAQ = [
   { q: "אפשר לשדרג בהמשך?", a: "כן. משלמים רק את ההפרש בין המסלולים, והשנה שלך ממשיכה מאותו תאריך." },
   { q: "המחירים כוללים מע״מ?", a: `המחירים מוצגים לפני מע״מ. בכל כרטיס מופיע גם הסכום הכולל עם ${Math.round(VAT * 100)}% מע״מ.` },
 ];
+
+/** Every discount and benefit, so people see all of them in one place (live ones are highlighted). */
+const DEALS = (offers: Offers, trial: boolean) => {
+  const basicSave = priceOf("basic", "installments").net - priceOf("basic", "onetime").net;
+  const proSave = priceOf("pro", "installments").net - priceOf("pro", "onetime").net;
+  return [
+    { tag: "תשלום אחד", title: `חיסכון של ${ils(basicSave)} בשנה`, text: "Alpha Basic בתשלום אחד יוצא ₪229 לחודש במקום ₪299.", live: true },
+    { tag: "Alpha Pro", title: `${ils(priceOf("pro", "onetime").net)} בתשלום אחד`, text: `במקום ${ils(priceOf("pro", "installments").net)} ב-12 תשלומים. חיסכון של ${ils(proSave)}.`, live: true },
+    { tag: "חודש המתנה", title: "Alpha Private בחצי מחיר", text: offers.privateHalf ? `₪295 במקום ₪590, בתוקף עד ${fmt(offers.privateHalf)}.` : "₪295 במקום ₪590 למי שמצטרף לפני שחודש המתנה נגמר.", live: !!offers.privateHalf || trial },
+    { tag: "72 שעות", title: "12 תשלומים במחיר של תשלום אחד", text: offers.installmentsAtOnetime ? `₪229 לחודש במקום ₪299, בתוקף עד ${fmt(offers.installmentsAtOnetime)}.` : "הצעה שנפתחת לזמן קצר, נשלחת בוואטסאפ ובמייל.", live: !!offers.installmentsAtOnetime },
+    { tag: "שדרוג", title: "משלמים רק את ההפרש", text: "עוברים למסלול גבוה יותר בכל רגע, והשנה ממשיכה מאותו תאריך.", live: false },
+    { tag: "חבר מביא חבר", title: "סדנת מכירות פיזית עם ניר", text: "על כל חבר שהצטרף דרך הקישור שלך וסולק, מקבלים מקום בסדנת מכירות פיזית עם ניר דובדבני.", live: false },
+    { tag: "שנה שנייה", title: `רק ${ils(RENEWAL_MONTHLY)} לחודש`, text: "אחרי השנה הראשונה הכל ממשיך במחיר סמלי, בלי לסלוק מחדש.", live: false },
+  ];
+};
 
 const fmt = (iso: string) => new Date(iso).toLocaleString("he-IL", { timeZone: "Asia/Jerusalem", day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" });
 
@@ -122,6 +138,10 @@ export default function PlansClient({ user, conversations, focus, offers = {} }:
               <p className="plan-total num">
                 {billing === "onetime" ? "תשלום אחד" : "12 תשלומים"} · {ils(pr.net)} לשנה + מע״מ ({ils(pr.total)} כולל)
               </p>
+              {(() => {
+                const save = billing === "onetime" ? priceOf(p.id, "installments").net - pr.net : reg.net - pr.net;
+                return save > 0 ? <p className="plan-save num"><Icon name="gem" size={13} /> {billing === "onetime" ? "חוסך" : "הנחה של"} {ils(save)} לעומת {billing === "onetime" ? "12 תשלומים" : "המחיר הרגיל"}</p> : null;
+              })()}
               <ul className="plan-feats">
                 {p.features.map((f) => <li key={f}><Icon name="check" size={15} /> {f}</li>)}
               </ul>
@@ -138,6 +158,21 @@ export default function PlansClient({ user, conversations, focus, offers = {} }:
           );
         })}
       </section>
+
+      <section className="plans-deals glass edge" aria-label="כל ההטבות וההנחות">
+        <h3>כל ההטבות וההנחות</h3>
+        <div className="deals-grid">
+          {DEALS(offers, !!trial).map((d) => (
+            <div key={d.title} className={`deal ${d.live ? "live" : ""}`}>
+              <span className="deal-tag">{d.tag}</span>
+              <b>{d.title}</b>
+              <span>{d.text}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {user && <ReferralCard userId={user.id} firstName={user.firstName} />}
 
       <section className="plans-incl glass edge">
         <h3>מה כלול בכל מסלול</h3>
@@ -211,7 +246,7 @@ export default function PlansClient({ user, conversations, focus, offers = {} }:
             })()}
             <p className="buy-renew"><Icon name="clock" size={14} /> {trial ? "השנה מתחילה בסוף חודש המתנה. " : ""}אחרי השנה: {ils(RENEWAL_MONTHLY)} + מע״מ לחודש אוטומטית, ביטול בכל רגע.</p>
             {user ? (
-              <label className="buy-agree"><input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} /> קראתי ואני מסכים ל<Link href="/terms" target="_blank">תנאי השימוש</Link>, כולל החידוש החודשי אחרי השנה.</label>
+              <label className="buy-agree"><input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} /> קראתי ואני מסכים ל<Link href="/terms" target="_blank">תנאי השימוש</Link>, כולל החידוש החודשי אחרי השנה. ידוע לי שהתכנים נפתחים מיד ולכן <b>אין ביטולים</b> אחרי הסליקה.</label>
             ) : (
               <p className="buy-renew">כדי לרכוש צריך חשבון. ההרשמה לוקחת 20 שניות ונותנת 30 יום במתנה.</p>
             )}

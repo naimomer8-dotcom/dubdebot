@@ -14,6 +14,7 @@ export type AutomationEvent =
   | "purchase"
   | "upgrade"
   | "rep_requested"
+  | "referral_reward" // a friend who joined via this member's link paid → sales workshop seat
   | "journey"; // a scheduled journey stage (see lib/journeys.ts)
 
 export async function contactOf(userId: string) {

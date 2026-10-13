@@ -1,6 +1,7 @@
 import { db } from "./supabase";
 import { emit } from "./automation";
 import { enrollAllCourses } from "./schooler";
+import { rewardReferrer } from "./referral";
 import { priceOf, TIER_RANK, type Billing, type Tier } from "./plans";
 
 const YEAR = 365 * 86400_000;
@@ -52,5 +53,6 @@ export async function activateSubscription(opts: { userId: string; tier: Tier; b
   if (enroll.ok) await supabase.from("users").update({ courses_enrolled_at: new Date().toISOString() }).eq("id", opts.userId);
 
   await emit(isUpgrade ? "upgrade" : "purchase", opts.userId, { tier: opts.tier, billing: opts.billing, channel: opts.channel, access_until: patch.access_until, order_id: order?.id ?? null, amount_net: order?.amount_net ?? null, amount_total: order?.amount_total ?? null, upgrade_from: isUpgrade ? u.tier : null, courses: { ok: enroll.ok } });
+  if (!isUpgrade) await rewardReferrer(opts.userId).catch((e) => console.error("referral", e));
   return { accessUntil: patch.access_until as string, upgrade: !!isUpgrade, courses: enroll };
 }

@@ -540,7 +540,7 @@ export default function ChatClient({
                           </>
                         ) : (
                           <>
-                            <p>4 שעות עם יועץ בכיר שמטמיע איתך הכל נמצאות ב-Alpha Private. פגישה עם ניר דובדבני בעצמו נמצאת ב-Alpha Upgrade.</p>
+                            <p>פגישת הטמעה של 3 שעות עם יועץ בכיר שמטמיע איתך הכל נמצאות ב-Alpha Private. פגישה עם ניר דובדבני בעצמו נמצאת ב-Alpha Upgrade.</p>
                             <div className="cta-actions">
                               <a className="btn btn-primary btn-sm" href="/plans?up=private" onClick={() => track("cta_plans", { tier: "private" })}>יועץ אישי · Alpha Private</a>
                               <a className="btn btn-glass btn-sm" href="/plans?up=upgrade" onClick={() => track("cta_plans", { tier: "upgrade" })}><Icon name="crown" size={16} /> פגישה עם ניר · Upgrade</a>

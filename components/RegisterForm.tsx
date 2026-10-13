@@ -24,6 +24,14 @@ export default function RegisterForm() {
   const [carried, setCarried] = useState(false);
   const firstRef = useRef<HTMLInputElement>(null);
 
+  // friend-brings-friend: remember ?ref= even if they browse around before signing up
+  useEffect(() => {
+    try {
+      const r = new URLSearchParams(window.location.search).get("ref");
+      if (r) localStorage.setItem("dp_ref", r.slice(0, 16));
+    } catch {}
+  }, []);
+
   useEffect(() => {
     try {
       setCarried(!!(sessionStorage.getItem("dd_forecast") || sessionStorage.getItem("dd_xray") || sessionStorage.getItem("dd_tool")));
@@ -70,8 +78,12 @@ export default function RegisterForm() {
     setErrors({});
     const utm: Record<string, string> = {};
     new URLSearchParams(window.location.search).forEach((v, k) => {
-      if (k.startsWith("utm_") || k === "fbclid" || k === "gclid") utm[k] = v;
+      if (k.startsWith("utm_") || k === "fbclid" || k === "gclid" || k === "ref") utm[k] = v;
     });
+    try {
+      const saved = localStorage.getItem("dp_ref");
+      if (!utm.ref && saved) utm.ref = saved;
+    } catch {}
     try {
       const res = await fetch("/api/register", {
         method: "POST",

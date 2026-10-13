@@ -7,7 +7,7 @@ import { TIER_RANK, type Tier } from "@/lib/plans";
 
 /** Contextual upsell under a finished deliverable: offers the plan that turns this answer into execution. */
 const RULES: Record<string, { need: Tier; title: string; text: string }> = {
-  workplan: { need: "private", title: "תוכנית בלי הטמעה נשארת במגירה", text: "ב-Alpha Private יועץ עסקי בכיר יושב איתך 4 שעות ומטמיע את התוכנית הזאת בעסק שלך." },
+  workplan: { need: "private", title: "תוכנית בלי הטמעה נשארת במגירה", text: "ב-Alpha Private יועץ עסקי בכיר יושב איתך 3 שעות ומטמיע את התוכנית הזאת בעסק שלך." },
   feasibility: { need: "upgrade", title: "רוצה שניר יעבור על זה איתך?", text: "ב-Alpha Upgrade יש פגישה אישית עם ניר דובדבני על ההחלטה הגדולה הזאת." },
   forecast: { need: "private", title: "תחזית היא התחלה. עכשיו ביצוע", text: "ב-Alpha Private יועץ בכיר בונה איתך את הצעדים שמביאים למספרים האלה." },
   sales_script: { need: "basic", title: "התסריט הזה, ועוד קורס שלם", text: "ב-Alpha Basic נפתחים לך \"פשוט למכור יותר\" ו\"שפת גוף של כוכב מכירות\", וזום עם ניר פעם בשבועיים." },

@@ -31,7 +31,7 @@ export type Plan = {
   name: string;
   tagline: string;
   extra: number; // added on top of the basic price (0 for basic); pro is a flat price
-  flat?: number;
+  flat?: Record<Billing, number>;
   features: string[];
   highlight?: string;
 };
@@ -49,7 +49,7 @@ export const PLANS: Plan[] = [
     name: "Alpha Private",
     tagline: "הכל, ויועץ עסקי אמיתי שמטמיע איתך",
     extra: 590,
-    features: ["כל מה שב-Alpha Basic", "4 שעות אחד על אחד עם יועץ עסקי בכיר שיושב להטמיע איתך את הכל, על העסק שלך"],
+    features: ["כל מה שב-Alpha Basic", "פגישת הטמעה של 3 שעות, אחד על אחד, עם יועץ עסקי בכיר שמטמיע איתך את הכל על העסק שלך"],
     highlight: "הכי משתלם",
   },
   {
@@ -64,8 +64,8 @@ export const PLANS: Plan[] = [
     name: "Alpha Pro",
     tagline: "הכל כלול. כולל פודקאסט אחד על אחד עם ניר",
     extra: 0,
-    flat: 9700,
-    features: ["כל מה שב-Alpha Basic", "4 שעות עם יועץ עסקי בכיר", "פגישה אישית עם ניר דובדבני", "פרק פודקאסט אחד על אחד עם ניר דובדבני על העסק שלך"],
+    flat: { onetime: 8700, installments: 9700 },
+    features: ["כל מה שב-Alpha Basic", "פגישת הטמעה של 3 שעות עם יועץ עסקי בכיר", "פגישה אישית עם ניר דובדבני", "פרק פודקאסט אחד על אחד עם ניר דובדבני על העסק שלך, מוקלט עד 60 יום מהסליקה"],
     highlight: "הכל כלול",
   },
 ];
@@ -85,7 +85,7 @@ export function priceOf(tier: Tier, billing: Billing, offers?: Offers | null) {
   const base = billing === "installments" && offers?.installmentsAtOnetime ? BASIC.onetime : BASIC[billing];
   // trial bonus: Alpha Private add-on at half price
   const extra = tier === "private" && offers?.privateHalf ? PRIVATE_HALF_EXTRA : p.extra;
-  const net = p.flat ?? base + extra;
+  const net = p.flat ? p.flat[billing] : base + extra;
   const vat = Math.round(net * VAT * 100) / 100;
   const total = Math.round((net + vat) * 100) / 100;
   return { net, vat, total, perMonth: Math.round((total / 12) * 100) / 100, perMonthNet: Math.round((net / 12) * 100) / 100 };
