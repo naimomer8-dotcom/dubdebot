@@ -79,7 +79,7 @@ export default function FinancialsCard({ initial }: { initial: FinRow[] }) {
           ["הכנסות", live.revenue, delta(live.revenue, prevCalc?.revenue)],
           ["רווח גולמי", live.gross, null, `${live.grossPct}%`],
           ["רווח תפעולי", live.operating, delta(live.operating, prevCalc?.operating), `${live.operatingPct}%`],
-          ["נשאר בכיס", live.net, null, `${live.netPct}%`],
+          ["נשאר לך", live.net, null, `${live.netPct}%`],
         ].map(([label, v, d, sub]) => (
           <div className="fin-kpi" key={label as string}>
             <span>{label as string}</span>

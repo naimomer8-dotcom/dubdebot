@@ -77,7 +77,7 @@ export default function Landing() {
             <span className="badge"><span className="dot-live" /> Duvdevani Platform · הפלטפורמה להצלחה בחיים ובעסקים</span>
             <h1 className="h-display">
               <span className="line"><span>יועץ עסקי</span></span>
-              <span className="line"><span className="gold">בכיס.</span></span>
+              <span className="line"><span className="gold">שתמיד זמין.</span></span>
             </h1>
             <p className="lead">22 שנה של ליווי עסקים והשיטה המלאה של ניר דובדבני – בתוך יועץ אחד שמכיר את העסק שלך, בונה איתך תוכניות ומדבר איתך תכלס.</p>
             <div className="hero-mcta">

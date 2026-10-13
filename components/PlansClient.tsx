@@ -13,7 +13,7 @@ import type { ConvItem, ShellUser } from "@/lib/data";
 type Done = { status: "rep" | "provider_pending"; total: number; plan: string; via: "self" | "rep" };
 
 const COMPARE: { label: string; on: Tier[] }[] = [
-  { label: "Duvdevani Platform: ניר בכיס וכל הכלים", on: ["basic", "private", "upgrade", "pro"] },
+  { label: "Duvdevani Platform: ניר זמין 24/6 וכל הכלים", on: ["basic", "private", "upgrade", "pro"] },
   { label: "9 הקורסים הדיגיטליים של ניר", on: ["basic", "private", "upgrade", "pro"] },
   { label: "כל הספרים של ניר", on: ["basic", "private", "upgrade", "pro"] },
   { label: "כנס מינגלינג ענק אחת לרבעון", on: ["basic", "private", "upgrade", "pro"] },

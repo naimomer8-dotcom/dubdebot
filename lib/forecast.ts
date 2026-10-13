@@ -56,7 +56,7 @@ export function verdict(inp: ForecastInput): { bold: string; rest: string } {
   }
   if (s.breakEven === -1) {
     return {
-      bold: "כרגע העסק מממן את עצמו מהכיס שלך.",
+      bold: "כרגע העסק מממן את עצמו מהכסף הפרטי שלך.",
       rest: ` עם המספרים האלה אתה לא מגיע לאיזון בשנה הקרובה. צריך לשנות לפחות מנוף אחד – מחיר, נפח או הוצאות קבועות.`,
     };
   }
