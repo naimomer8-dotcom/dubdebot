@@ -1,6 +1,6 @@
 import { db } from "@/lib/supabase";
 import { emit } from "@/lib/automation";
-import { dueStage, render, type JourneyUser } from "@/lib/journeys";
+import { dueStage, emailParts, render, type JourneyUser } from "@/lib/journeys";
 import { PLANS } from "@/lib/plans";
 
 export const runtime = "nodejs";
@@ -79,7 +79,8 @@ export async function GET(req: Request) {
         return_end: date(u?.year_ends_at ? new Date(u.year_ends_at).getTime() + 30 * 86400_000 : null),
         plan_name: planName,
       };
-      const r = await emit("journey", job.userId, { stage: job.stage, track: st.track, whatsapp_template: st.wa, email_subject: render(st.subject, vars), text: render(st.text, vars), vars, transactional: !!st.transactional });
+      const text = render(st.text, vars);
+      const r = await emit("journey", job.userId, { stage: job.stage, track: st.track, whatsapp_template: st.wa, email_subject: render(st.subject, vars), text, email_parts: emailParts(text), vars, transactional: !!st.transactional });
       if (r.sent) ok++;
       else await supabase.from("journey_sends").update({ ok: false }).eq("user_id", job.userId).eq("stage", job.stage);
     }

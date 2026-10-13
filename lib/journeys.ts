@@ -110,3 +110,30 @@ export function dueStage(u: JourneyUser, sent: Set<string>, now = Date.now()): S
 export function render(text: string, vars: Record<string, string>) {
   return text.replace(/\{\{(\w+)\}\}/g, (_, k) => vars[k] ?? "");
 }
+
+/**
+ * Rav Messer personal fields hold at most 255 chars, so the journey email body travels to Make
+ * as 4 chunks (dp_body, dp_b2, dp_b3, dp_b4), split on line boundaries. Always returns 4 strings.
+ */
+export function emailParts(text: string, max = 250, slots = 4): string[] {
+  const units: string[] = [];
+  for (const line of text.split("\n")) {
+    if (line.length <= max) { units.push(line); continue; }
+    let cur = "";
+    for (const w of line.split(" ")) {
+      if (cur && cur.length + 1 + w.length > max) { units.push(cur); cur = w; }
+      else cur = cur ? `${cur} ${w}` : w;
+    }
+    if (cur) units.push(cur);
+  }
+  const parts: string[] = [];
+  let cur = "";
+  for (const u of units) {
+    const next = cur === "" ? u : `${cur}\n${u}`;
+    if (next.length <= max || parts.length === slots - 1) cur = next;
+    else { parts.push(cur); cur = u; }
+  }
+  parts.push(cur);
+  while (parts.length < slots) parts.push("");
+  return parts.map((p) => p.replace(/^\n+|\n+$/g, "").slice(0, 255));
+}
