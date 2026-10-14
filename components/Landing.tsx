@@ -59,6 +59,7 @@ export default function Landing() {
           <div className="topnav-in">
             <Brand />
             <div className="topnav-links">
+              <a href="#platform">הפלטפורמה</a>
               <a href="#xray">רנטגן עסקי</a>
               <a href="#inside">מה בפנים</a>
               <a href="#how">איך זה עובד</a>
@@ -74,7 +75,7 @@ export default function Landing() {
         {/* ---------- hero: promise + signup ---------- */}
         <header className="wrap hero">
           <div className="hero-copy">
-            <span className="badge"><span className="dot-live" /> דובדבוט · הפלטפורמה להצלחה בחיים ובעסקים</span>
+            <span className="badge"><span className="dot-live" /> הפלטפורמה להצלחה בעסקים · ניר דובדבני</span>
             <h1 className="h-display">
               <span className="line"><span>יועץ עסקי</span></span>
               <span className="line"><span className="gold">שתמיד זמין.</span></span>
@@ -92,7 +93,7 @@ export default function Landing() {
             <div className="hero-proof">
               <div><b>22</b><span>שנות ליווי</span></div>
               <div><b>אלפי</b><span>אסטרטגיות עסקיות</span></div>
-              <div><b>24/7</b><span>זמין תמיד</span></div>
+              <div><b>24/6</b><span>בשבת נחים</span></div>
             </div>
           </div>
           <div className="hero-form" id="signup">
@@ -102,13 +103,38 @@ export default function Landing() {
           </div>
         </header>
 
+        {/* ---------- the platform (Nir's narrative, 4 blocks) ---------- */}
+        <section className="section" id="platform">
+          <div className="wrap">
+            <div className="sec-head reveal">
+              <span className="eyebrow">הפלטפורמה להצלחה בעסקים</span>
+              <h2 className="h-display">לא עוד קורס. <span className="gold">פלטפורמה שעובדת איתך.</span></h2>
+              <p className="lead">דובדבוט הוא חלק אחד ממנה. סביבו יש קורסים, סדנאות, פגישות עם ניר, והשיטה שעבדה עם 23,000 עסקים.</p>
+            </div>
+            <div className="steps3 plat4">
+              {[
+                ["היברידית", "דיגיטל ופיזי ביחד: דובדבוט, 8 קורסים דיגיטליים, 4 סדנאות פיזיות בשנה ופגישה אסטרטגית חודשית בזום עם ניר."],
+                ["אקטיבית, לא פסיבית", "הפלטפורמה לא מחכה שתיזכר. היא שולחת לך הודעות, בונה איתך תחזית ותוכנית עבודה, ובודקת שזה קורה."],
+                ["שיטת אלפא", "22 שנה של ליווי עסקים ו-23,000 עסקים שעברו את השיטה. אותה שיטה, זמינה לך 24/6."],
+                ["אנשים כשצריך", "כשההחלטה גדולה, יועץ בכיר מהצוות של ניר יושב איתך, או ניר עצמו. בשבת אנחנו נחים ומתמקדים במשפחה."],
+              ].map(([t, d], i) => (
+                <div className="step3 reveal" key={t} style={{ transitionDelay: `${i * 80}ms` }}>
+                  <span className="step3-n">0{i + 1}</span>
+                  <h4>{t}</h4>
+                  <p>{d}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
         {/* ---------- business x-ray (open to all) ---------- */}
         <section className="section" id="xray">
           <div className="wrap">
             <div className="xr-teaser glass edge reveal">
               <div className="xr-teaser-copy">
                 <span className="eyebrow">רנטגן עסקי · 3 דקות · בלי הרשמה</span>
-                <h2 className="h-display">איפה העסק שלך <span className="gold">דולף כסף?</span></h2>
+                <h2 className="h-display">איפה העסק שלך <span className="gold">נתקע?</span></h2>
                 <p className="lead">12 השאלות שניר שואל בפגישה הראשונה. בסוף מקבלים ציון על שישה צירים, פרופיל עסקי ואת צוואר הבקבוק הכי מסוכן.</p>
                 <div className="xr-first">
                   <b>שאלה 1 מתוך 12: {QUESTIONS[0].q}</b>
