@@ -37,16 +37,27 @@ function headers() {
   return { "X-User-Id": id, "X-Api-Key": key, "Content-Type": "application/json", Accept: "application/json" };
 }
 
-async function post(path: string, students: unknown[]) {
+type Attempt = { form: string; status: number; body: string };
+
+async function post(path: string, students: Record<string, unknown>[], attempts?: Attempt[]) {
   const h = headers()!;
-  let last = { ok: false, status: 400, body: "rejected" };
-  // the spec types students_data as a JSON string; send it as an array first, then as a string
-  for (const payload of [{ students_data: students }, { students_data: JSON.stringify(students) }]) {
-    const r = await fetch(`${API}${path}`, { method: "POST", headers: h, body: JSON.stringify(payload), signal: AbortSignal.timeout(15000) });
-    const body = await r.text();
-    if (r.ok) return { ok: true, status: r.status, body: body.slice(0, 500) };
-    if (r.status !== 400 && r.status !== 422 && r.status !== 500) return { ok: false, status: r.status, body: body.slice(0, 500) };
-    last = { ok: false, status: r.status, body: body.slice(0, 500) };
+  const { "Content-Type": _ct, ...base } = h;
+  const form = new URLSearchParams();
+  for (const st of students) for (const [k, v] of Object.entries(st)) form.append(`students_data[][${k}]`, String(v));
+  // Schooler iterates students_data with .each, so it must arrive as a real array (JSON array or form array)
+  const tries: { form: string; init: RequestInit }[] = [
+    { form: "json-array", init: { headers: h, body: JSON.stringify({ students_data: students }) } },
+    { form: "form-array", init: { headers: { ...base, "Content-Type": "application/x-www-form-urlencoded" }, body: form.toString() } },
+    { form: "json-string", init: { headers: h, body: JSON.stringify({ students_data: JSON.stringify(students) }) } },
+  ];
+  let last = { ok: false, status: 0, body: "no attempt" };
+  for (const t of tries) {
+    const r = await fetch(`${API}${path}`, { method: "POST", ...t.init, signal: AbortSignal.timeout(15000) });
+    const body = (await r.text()).slice(0, 500);
+    attempts?.push({ form: t.form, status: r.status, body });
+    if (r.ok) return { ok: true, status: r.status, body, form: t.form };
+    last = { ok: false, status: r.status, body };
+    if (r.status === 401 || r.status === 403 || r.status === 404) break;
   }
   return last;
 }
@@ -55,16 +66,24 @@ async function post(path: string, students: unknown[]) {
 export async function listCourses() {
   const h = headers();
   if (!h) return { ok: false, status: 0, body: "schooler not configured" };
-  const r = await fetch(`${API}/courses`, { headers: h, signal: AbortSignal.timeout(15000) });
-  const body = await r.text();
-  return { ok: r.ok, status: r.status, body: body.slice(0, 3000) };
+  const r = await fetch(`${API}/courses?per_page=200&page=1`, { headers: h, signal: AbortSignal.timeout(15000) });
+  const text = await r.text();
+  try {
+    const j = JSON.parse(text);
+    const list = (j.data ?? j) as { id: number; course_name: string; course_status?: string }[];
+    return { ok: r.ok, status: r.status, count: list.length, list: list.map((c) => `${c.id} | ${c.course_name} | ${c.course_status ?? ""}`), meta: j.meta ?? j.pagination ?? null };
+  } catch {
+    return { ok: r.ok, status: r.status, body: text.slice(0, 1500) };
+  }
 }
 
 /** Diagnostics: one enrollment with the raw Schooler response. */
 export async function enrollOneDebug(courseId: number, user: { email: string; full_name: string; phone?: string | null }) {
   if (!headers()) return { ok: false, status: 0, body: "schooler not configured" };
   const student = { name: user.full_name, email: user.email, student_phone: (user.phone ?? "").replace(/\D/g, ""), password: randomBytes(9).toString("base64url"), send_welcome_email_course: true };
-  return post(`/courses/${courseId}/enroll_students`, [student]);
+  const attempts: Attempt[] = [];
+  const res = await post(`/courses/${courseId}/enroll_students`, [student], attempts);
+  return { ...res, attempts };
 }
 
 export async function enrollAllCourses(user: { email: string; full_name: string; phone?: string | null }) {

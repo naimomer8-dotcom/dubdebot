@@ -15,7 +15,7 @@ export async function GET() {
   const configured = { userId: !!process.env.SCHOOLER_USER_ID, userKey: !!process.env.SCHOOLER_USER_KEY, schoolId: !!process.env.SCHOOLER_SCHOOL_ID };
   const user = { email: TEST_EMAIL, full_name: "עומר נעים (בדיקה)", phone: "0524618086" };
   const courses = await listCourses();
-  const first = await enrollOneDebug(111779, user);
+  const first = await enrollOneDebug(50, user);
   const all = first.ok ? await enrollAllCourses(user) : null;
   return json({ configured, courses, first, all });
 }
