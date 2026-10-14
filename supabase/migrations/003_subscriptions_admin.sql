@@ -75,3 +75,7 @@ revoke all on function add_ai_spend(text, numeric) from public, anon, authentica
 grant execute on function add_ai_spend(text, numeric) to service_role;
 create table if not exists alerts_sent (key text primary key, sent_at timestamptz not null default now());
 alter table alerts_sent enable row level security;
+
+-- ---------- rolling conversation summary (cheaper, cache-friendly history) ----------
+alter table conversations add column if not exists summary text;            -- short summary of the messages before summary_upto
+alter table conversations add column if not exists summary_upto integer not null default 0; -- how many messages (oldest first) the summary covers

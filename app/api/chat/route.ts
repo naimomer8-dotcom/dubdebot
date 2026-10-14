@@ -15,6 +15,10 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const META_SEP = "\u0000DDMETA";
+// history window: verbatim messages since the summary checkpoint; when it passes ROLL_AT, older ones fold into the summary
+const HISTORY_ROLL_AT = 14;
+const HISTORY_KEEP = 4;
+const HISTORY_HARD_MAX = 20;
 const CTA_TAG = /\n?\s*\[\[CTA\]\]\s*/g;
 const NEXT_TAG = /\n?\s*\[\[NEXT:[^\]]*\]\]\s*/g;
 /** "[[NEXT: a | b | c]]" -> up to 3 short follow-up replies the user can tap. */
@@ -111,13 +115,13 @@ export async function POST(req: Request) {
 
   // ---- user + conversation, in parallel ----
   let conversationId: string | null = body.conversationId ?? null;
-  let conv: { id: string; mode: string; cta_shown_count: number; lead_submitted: boolean } | null = null;
+  let conv: { id: string; mode: string; cta_shown_count: number; lead_submitted: boolean; summary?: string | null; summary_upto?: number } | null = null;
   const [{ data: user }, convRes, { data: finRows }] = await Promise.all([
     supabase.from("users").select("id, full_name, profile").eq("id", userId).single(),
     conversationId
       ? supabase
           .from("conversations")
-          .select("id, mode, cta_shown_count, lead_submitted")
+          .select("id, mode, cta_shown_count, lead_submitted, summary, summary_upto")
           .eq("id", conversationId)
           .eq("user_id", userId)
           .maybeSingle()
@@ -185,20 +189,24 @@ export async function POST(req: Request) {
   const route0 = pickModel({ voice, mode: activeMode, hasAttachments: attachments.length > 0, textLength: text.length });
   const cacheP = cachedPrefix(route0.model, staticPrompt);
 
+  // cost saver: history = a short summary of everything before the checkpoint + the messages since it.
+  // The window only grows between checkpoints, so consecutive calls share the same prefix and hit the cache.
+  const summaryUpto = conv.summary_upto ?? 0;
+  const summary = conv.summary ?? null;
   const historyP = supabase
     .from("messages")
     .select("role, content, cta")
     .eq("conversation_id", conversationId)
-    .order("created_at", { ascending: false })
-    .limit(voice ? 10 : 24);
+    .order("created_at", { ascending: true })
+    .range(summaryUpto, summaryUpto + HISTORY_HARD_MAX - 1);
 
   let history: Turn[];
   if (voice) {
     const [{ data: historyRows }] = await Promise.all([historyP, voiceRetrieval]);
-    history = ((historyRows ?? []) as Turn[]).reverse();
+    history = (historyRows ?? []) as Turn[];
   } else {
     const { data: historyRows } = await historyP;
-    history = ((historyRows ?? []) as Turn[]).reverse();
+    history = (historyRows ?? []) as Turn[];
     if (!trivial) await retrieve([...history.filter((h) => h.role === "user").slice(-2).map((h) => h.content), text].join("\n"));
   }
 
@@ -227,7 +235,13 @@ export async function POST(req: Request) {
   const route = route0;
   const historyContents = [
     // cost saver: shorter history, and long old answers are trimmed (the model already wrote them)
-    ...history.slice(voice ? -8 : -12).map((h) => ({ role: h.role === "assistant" ? "model" : "user", parts: [{ text: h.role === "assistant" && h.content.length > 1500 ? h.content.slice(0, 1500) + "…" : h.content }] })),
+    ...(summary
+      ? [
+          { role: "user", parts: [{ text: `[סיכום השיחה עד עכשיו – נכתב על ידי המערכת]\n${summary}` }] },
+          { role: "model", parts: [{ text: "הבנתי, ממשיכים מכאן." }] },
+        ]
+      : []),
+    ...history.slice(-HISTORY_HARD_MAX).map((h) => ({ role: h.role === "assistant" ? "model" : "user", parts: [{ text: h.role === "assistant" && h.content.length > 1500 ? h.content.slice(0, 1500) + "…" : h.content }] })),
     {
       role: "user",
       parts: [
@@ -253,7 +267,7 @@ export async function POST(req: Request) {
   const assistantTurns = history.filter((h) => h.role === "assistant");
   const lastCtaIdx = assistantTurns.map((t) => t.cta).lastIndexOf(true);
   const turnsSinceCta = lastCtaIdx === -1 ? Infinity : assistantTurns.length - 1 - lastCtaIdx;
-  const userTurns = history.filter((h) => h.role === "user").length + 1;
+  const userTurns = Math.floor(summaryUpto / 2) + history.filter((h) => h.role === "user").length + 1;
   const cooldownOk = turnsSinceCta >= CTA_COOLDOWN && !conv.lead_submitted;
 
   const encoder = new TextEncoder();
@@ -282,6 +296,7 @@ export async function POST(req: Request) {
     await supabase.from("users").update({ last_seen_at: new Date().toISOString() }).eq("id", userId);
     // learn the business profile every 3 user turns
     // cost saver: learn the profile on the 2nd turn and then every 8th – and only when there's something concrete to learn
+    if (history.length + 2 > HISTORY_ROLL_AT) await rollSummary(conversationId!, summary, summaryUpto, history).catch((e) => console.error("summary", (e as Error).message));
     const concrete = /\d/.test(text) || text.length > 80;
     if (concrete && (userTurns === 2 || userTurns % 8 === 0)) {
       await updateProfile(userId, (user.profile as Record<string, unknown>) ?? {}, [...history, { role: "user", content: text, cta: false }]);
@@ -306,8 +321,8 @@ export async function POST(req: Request) {
         const plain = () =>
           gemini().models.generateContentStream({
             model: route.model,
-            contents: historyContents,
-            config: { systemInstruction: `${staticPrompt}\n\n${contextBlock}`, maxOutputTokens, ...route.thinking },
+            contents: withContext(),
+            config: { systemInstruction: staticPrompt, maxOutputTokens, ...route.thinking },
           });
         let response: Awaited<ReturnType<typeof plain>>;
         if (cacheName) {
@@ -401,6 +416,24 @@ export async function POST(req: Request) {
       "X-Conversation-Id": conversationId,
     },
   });
+}
+
+/**
+ * Folds the older part of the window into the running summary and moves the checkpoint,
+ * keeping the last HISTORY_KEEP messages verbatim. Runs after the reply, on the cheap model.
+ */
+async function rollSummary(conversationId: string, prev: string | null, upto: number, window: Turn[]) {
+  const fold = window.slice(0, Math.max(0, window.length - HISTORY_KEEP));
+  if (!fold.length) return;
+  const transcript = fold.map((t) => `${t.role === "user" ? "משתמש" : "ניר"}: ${t.content.slice(0, 900)}`).join("\n");
+  const res = await gemini().models.generateContent({
+    model: FAST_MODEL,
+    contents: [{ role: "user", parts: [{ text: `סכם בעברית, עד 150 מילים, את השיחה בין בעל עסק לניר דובדבני (יועץ עסקי). שמור: פרטי העסק והמספרים שנאמרו, מה כבר נבנה (תחזית/תוכנית/תסריט ועיקריהם), החלטות, ומה נשאר פתוח. בלי הקדמות.\n\n${prev ? `סיכום קודם:\n${prev}\n\n` : ""}המשך השיחה:\n${transcript}` }] }],
+    config: { maxOutputTokens: 400, ...LITE_THINKING },
+  });
+  const next = (res.text ?? "").trim();
+  if (!next) return;
+  await db().from("conversations").update({ summary: next.slice(0, 2000), summary_upto: upto + fold.length }).eq("id", conversationId);
 }
 
 async function updateProfile(userId: string, current: Record<string, unknown>, turns: Turn[]) {

@@ -1273,3 +1273,108 @@ a.crs:hover .ico-move { transform: translateX(-4px); }
   .ob-foot { margin-top: 16px; }
 }
 @media (prefers-reduced-motion: reduce) { .ob-wrap, .ob, .ob-art, .ob-body { animation: none; } }
+
+/* ==========================================================================
+   v4 · Premium pass — larger reading sizes, brighter secondary text, more gold
+   (kept as one override layer so the earlier rules stay readable)
+   ========================================================================== */
+:root {
+  --text-2: #d2c9b8;
+  --text-3: #a0978a;
+  --hair: rgba(255, 238, 205, 0.09);
+  --hair-gold: linear-gradient(90deg, transparent, rgba(226,198,142,.55) 30%, rgba(246,230,194,.85) 50%, rgba(226,198,142,.55) 70%, transparent);
+  --glow-gold: 0 0 0 1px rgba(226,198,142,.28) inset, 0 18px 48px -26px rgba(226,198,142,.55);
+}
+::selection { background: rgba(226,198,142,.32); color: #fff7e6; }
+* { scrollbar-color: rgba(226,198,142,.35) transparent; }
+body { font-size: 18px; }
+
+/* type scale up one step */
+.eyebrow { font-size: 14px; }
+.lead { font-size: 20px; }
+.btn { font-size: 18px; }
+.btn-sm { font-size: 16px; }
+.field label { font-size: 15.5px; }
+.input { font-size: 18px; }
+.check, .notice { font-size: 16px; }
+.badge { font-size: 14.5px; }
+
+/* chat */
+.thread-col { max-width: 820px; }
+.composer-in { max-width: 820px; }
+.md { font-size: 19px; line-height: 1.8; }
+.md table { font-size: 16.5px; }
+.md strong { color: var(--gold-hi); }
+.md h1, .md h2, .md h3 { background: var(--grad-text); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.md th { color: var(--gold-hi); background: linear-gradient(180deg, rgba(226,198,142,.12), rgba(226,198,142,.04)); }
+.md .tbl { border-color: var(--hair-2); }
+.msg.user .bubble { font-size: 18px; border-color: rgba(226,198,142,.34); box-shadow: 0 10px 30px -22px rgba(226,198,142,.6); }
+.msg .name b { background: var(--grad-text); -webkit-background-clip: text; background-clip: text; color: transparent; font-size: 16px; letter-spacing: .02em; }
+.act { font-size: 15px; }
+.composer-box { border-color: rgba(226,198,142,.3); }
+.composer-box textarea { font-size: 18px; }
+.composer-box:focus-within { border-color: rgba(226,198,142,.6); box-shadow: 0 0 0 4px rgba(226,198,142,.08), 0 30px 70px -30px rgba(226,198,142,.35); }
+.welcome > p { font-size: 19.5px; }
+.welcome-label { font-size: 14px; color: var(--gold-2); }
+.starter { border-color: var(--hair-2); background: linear-gradient(180deg, rgba(226,198,142,.06), rgba(226,198,142,.015)); }
+.starter:hover { border-color: rgba(226,198,142,.55); box-shadow: var(--glow-gold); }
+.starter b { font-size: 18.5px; }
+.starter span { font-size: 16px; }
+.power { font-size: 17px; }
+.power small { font-size: 14px; }
+.power:hover { box-shadow: var(--glow-gold); }
+.next-chip { font-size: 15.5px; border-color: rgba(226,198,142,.32); }
+.next-chip:hover { box-shadow: var(--glow-gold); }
+
+/* top bar: gold hairline + gold title */
+.topbar { border-bottom: 0; }
+.topbar::after { content: ""; position: absolute; inset-inline: 0; bottom: 0; height: 1px; background: var(--hair-gold); opacity: .7; }
+.topbar .who b { background: var(--grad-text); -webkit-background-clip: text; background-clip: text; color: transparent; font-size: 32px; }
+.topbar .who small { font-size: 14.5px; }
+
+/* sidebar */
+.side { border-inline-end: 0; }
+.side::after { content: ""; position: absolute; top: 0; bottom: 0; inset-inline-end: 0; width: 1px; background: linear-gradient(180deg, transparent, rgba(226,198,142,.4) 25%, rgba(226,198,142,.18) 75%, transparent); pointer-events: none; }
+.brand b { background: var(--grad-text); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.brand small { font-size: 11px; color: var(--gold-3); white-space: nowrap; }
+.side-new { font-size: 16.5px; border-color: rgba(226,198,142,.35); background: linear-gradient(180deg, rgba(226,198,142,.10), rgba(226,198,142,.03)); }
+.side-new:hover { border-color: rgba(226,198,142,.6); box-shadow: var(--glow-gold); }
+.side-link { font-size: 16.5px; padding: 9px 10px; }
+.side-link[aria-current="true"], .side-link[aria-pressed="true"] { background: linear-gradient(90deg, rgba(226,198,142,.14), rgba(226,198,142,.03)); color: var(--gold-hi); }
+.side-label { font-size: 13px; color: var(--gold-3); }
+.conv { font-size: 15.5px; padding: 8px 10px; }
+.conv[aria-current="page"] { color: var(--gold-hi); }
+.side-tools b { font-size: 16.5px; }
+.side-tools small { font-size: 13.5px; }
+.me b { font-size: 16px; }
+.me small { font-size: 13.5px; }
+.avatar { box-shadow: 0 0 0 2px rgba(7,7,8,1), 0 0 0 3px rgba(226,198,142,.55); }
+
+/* plan strip: richer gold */
+.plan-cube { border-color: rgba(226,198,142,.5); background: linear-gradient(90deg, rgba(226,198,142,.16), rgba(200,16,46,.07) 70%), var(--bg-2); font-size: 15.5px; }
+
+/* cards across the app */
+.crs { border-color: rgba(226,198,142,.26); }
+.crs::before, .tl-item::before { content: ""; position: absolute; inset-inline: 18px; top: 0; height: 1px; background: var(--hair-gold); opacity: .55; }
+.crs-title { font-size: 19px; }
+.crs-blurb { font-size: 15.5px; }
+.tl-item { border-color: rgba(226,198,142,.18); }
+.tl-item:hover { box-shadow: var(--glow-gold); }
+.tl-txt b { font-size: 16px; }
+.tl-txt small { font-size: 14px; }
+.tl-ico, .feat-ico { background: linear-gradient(145deg, rgba(246,230,194,.16), rgba(140,111,66,.10)); border-color: rgba(226,198,142,.35); }
+.cta-card { border-color: rgba(226,198,142,.38); }
+.cta-card h4 { background: var(--grad-text); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.ob, .tl { border-color: rgba(226,198,142,.32); }
+.ob::before, .tl::before { content: ""; position: absolute; inset-inline: 40px; top: 0; height: 1px; background: var(--hair-gold); }
+.tl { position: relative; }
+
+/* gold buttons: a slow light sweep on hover is already there; add depth */
+.btn-primary { box-shadow: 0 0 0 1px rgba(255, 240, 210, 0.45) inset, 0 1px 0 rgba(255, 255, 255, 0.55) inset, 0 18px 46px -18px rgba(226, 198, 142, 0.75); }
+
+@media (max-width: 760px) {
+  body { font-size: 17.5px; }
+  .md { font-size: 18px; }
+  .msg.user .bubble { font-size: 17.5px; }
+  .topbar .who b { font-size: 28px; }
+}

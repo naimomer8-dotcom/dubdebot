@@ -14,7 +14,7 @@ export function Brand({ size = 38, sub = true, href = "/" }: { size?: number; su
       <Mascot size={size} />
       <span>
         <b>דובדבוט</b>
-        <small>{sub ? "BY NIR DUVDEVANI · קבוצת דובדבני" : "BY NIR DUVDEVANI"}</small>
+        <small>BY NIR DUVDEVANI</small>
       </span>
     </Link>
   );
