@@ -30,6 +30,11 @@ export const ALPHA_COURSE_IDS: { id: number; name: string }[] = [
   { id: 93621, name: "האדם מחפש עצמאות" },
 ];
 
+/** Schooler requires an upper, lower, digit and one of !@#$%^*_~ */
+function makePassword() {
+  return `Dv${randomBytes(6).toString("hex")}!7`;
+}
+
 function headers() {
   const id = process.env.SCHOOLER_USER_ID;
   const key = process.env.SCHOOLER_USER_KEY;
@@ -80,7 +85,7 @@ export async function listCourses() {
 /** Diagnostics: one enrollment with the raw Schooler response. */
 export async function enrollOneDebug(courseId: number, user: { email: string; full_name: string; phone?: string | null }) {
   if (!headers()) return { ok: false, status: 0, body: "schooler not configured" };
-  const student = { name: user.full_name, email: user.email, student_phone: (user.phone ?? "").replace(/\D/g, ""), password: randomBytes(9).toString("base64url"), send_welcome_email_course: true };
+  const student = { name: user.full_name, email: user.email, student_phone: (user.phone ?? "").replace(/\D/g, ""), password: makePassword(), send_welcome_email_course: true };
   const attempts: Attempt[] = [];
   const res = await post(`/courses/${courseId}/enroll_students`, [student], attempts);
   return { ...res, attempts };
@@ -92,7 +97,7 @@ export async function enrollAllCourses(user: { email: string; full_name: string;
     name: user.full_name,
     email: user.email,
     student_phone: (user.phone ?? "").replace(/\D/g, ""),
-    password: randomBytes(9).toString("base64url"), // Schooler emails the access details
+    password: makePassword(), // Schooler emails the access details
   };
 
   const schoolId = process.env.SCHOOLER_SCHOOL_ID;
