@@ -39,14 +39,32 @@ function headers() {
 
 async function post(path: string, students: unknown[]) {
   const h = headers()!;
+  let last = { ok: false, status: 400, body: "rejected" };
   // the spec types students_data as a JSON string; send it as an array first, then as a string
   for (const payload of [{ students_data: students }, { students_data: JSON.stringify(students) }]) {
     const r = await fetch(`${API}${path}`, { method: "POST", headers: h, body: JSON.stringify(payload), signal: AbortSignal.timeout(15000) });
     const body = await r.text();
     if (r.ok) return { ok: true, status: r.status, body: body.slice(0, 500) };
-    if (r.status !== 400 && r.status !== 422) return { ok: false, status: r.status, body: body.slice(0, 500) };
+    if (r.status !== 400 && r.status !== 422 && r.status !== 500) return { ok: false, status: r.status, body: body.slice(0, 500) };
+    last = { ok: false, status: r.status, body: body.slice(0, 500) };
   }
-  return { ok: false, status: 400, body: "rejected" };
+  return last;
+}
+
+/** Diagnostics: lists the courses the API credentials can see (id + name). */
+export async function listCourses() {
+  const h = headers();
+  if (!h) return { ok: false, status: 0, body: "schooler not configured" };
+  const r = await fetch(`${API}/courses`, { headers: h, signal: AbortSignal.timeout(15000) });
+  const body = await r.text();
+  return { ok: r.ok, status: r.status, body: body.slice(0, 3000) };
+}
+
+/** Diagnostics: one enrollment with the raw Schooler response. */
+export async function enrollOneDebug(courseId: number, user: { email: string; full_name: string; phone?: string | null }) {
+  if (!headers()) return { ok: false, status: 0, body: "schooler not configured" };
+  const student = { name: user.full_name, email: user.email, student_phone: (user.phone ?? "").replace(/\D/g, ""), password: randomBytes(9).toString("base64url"), send_welcome_email_course: true };
+  return post(`/courses/${courseId}/enroll_students`, [student]);
 }
 
 export async function enrollAllCourses(user: { email: string; full_name: string; phone?: string | null }) {
