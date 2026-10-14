@@ -6,7 +6,7 @@ import Icon from "./Icon";
 /** Friend-brings-friend: personal link + WhatsApp share. Code = first uuid segment (see lib/referral.ts). */
 export default function ReferralCard({ userId, firstName }: { userId: string; firstName: string }) {
   const [copied, setCopied] = useState(false);
-  const link = `${typeof window !== "undefined" ? window.location.origin : "https://bot.rnd.org.il"}/?ref=${userId.replace(/-/g, "").slice(0, 8)}`;
+  const link = `${typeof window !== "undefined" ? window.location.origin : "https://dubdebot.vercel.app"}/?ref=${userId.replace(/-/g, "").slice(0, 8)}`;
   const msg = `היי, אני משתמש ב-Duvdevani Platform, הבוט העסקי של ניר דובדבני. 30 יום במתנה, שווה לנסות 👇\n${link}`;
   async function copy() {
     try {

@@ -3,7 +3,7 @@ import { emit } from "./automation";
 
 /** Friend-brings-friend: every member's personal code is the first 8 chars of their id. */
 export const refCode = (userId: string) => userId.replace(/-/g, "").slice(0, 8);
-export const refLink = (userId: string, app = process.env.PUBLIC_APP_URL || "https://bot.rnd.org.il") => `${app}/?ref=${refCode(userId)}`;
+export const refLink = (userId: string, app = process.env.PUBLIC_APP_URL || "https://dubdebot.vercel.app") => `${app}/?ref=${refCode(userId)}`;
 
 /**
  * Called when someone pays for the first time. If they signed up through a friend's link,

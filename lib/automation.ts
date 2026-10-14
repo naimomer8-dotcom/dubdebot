@@ -51,7 +51,7 @@ export async function emit(event: AutomationEvent, userId: string, data: Record<
   if (!url) return { sent: false, reason: "MAKE_EVENTS_WEBHOOK_URL not set" };
   const contact = await contactOf(userId);
   if (!contact) return { sent: false, reason: "no user" };
-  const body = JSON.stringify({ event, at: new Date().toISOString(), app: process.env.PUBLIC_APP_URL || "https://bot.rnd.org.il", contact, data });
+  const body = JSON.stringify({ event, at: new Date().toISOString(), app: process.env.PUBLIC_APP_URL || "https://dubdebot.vercel.app", contact, data });
   const secret = process.env.AUTOMATION_SECRET || process.env.SESSION_SECRET || "";
   try {
     const r = await fetch(url, {

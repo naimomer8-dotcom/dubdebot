@@ -37,7 +37,7 @@ export async function GET(req: Request) {
     sent.set(s.user_id, set);
   }
 
-  const app = process.env.PUBLIC_APP_URL || "https://bot.rnd.org.il";
+  const app = process.env.PUBLIC_APP_URL || "https://dubdebot.vercel.app";
   const due: { userId: string; stage: string }[] = [];
   for (const u of (users ?? []) as (Omit<JourneyUser, "has_financials"> & { marketing_consent: boolean | null })[]) {
     // Israeli anti-spam law: marketing only with consent; transactional notices go to everyone
