@@ -7,7 +7,7 @@ import Icon from "./Icon";
 export default function ReferralCard({ userId, firstName }: { userId: string; firstName: string }) {
   const [copied, setCopied] = useState(false);
   const link = `${typeof window !== "undefined" ? window.location.origin : "https://dubdebot.vercel.app"}/?ref=${userId.replace(/-/g, "").slice(0, 8)}`;
-  const msg = `היי, אני משתמש ב-Duvdevani Platform, הבוט העסקי של ניר דובדבני. 30 יום במתנה, שווה לנסות 👇\n${link}`;
+  const msg = `היי, אני משתמש בדובדבוט, הבוט העסקי של ניר דובדבני. 30 יום במתנה, שווה לנסות 👇\n${link}`;
   async function copy() {
     try {
       await navigator.clipboard.writeText(link);

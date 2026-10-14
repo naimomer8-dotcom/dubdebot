@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import AuthClient from "@/components/AuthClient";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "סיסמה חדשה | Duvdevani Platform", robots: { index: false }, referrer: "no-referrer" };
+export const metadata: Metadata = { title: "סיסמה חדשה | דובדבוט", robots: { index: false }, referrer: "no-referrer" };
 
 export default async function Reset({ searchParams }: { searchParams: Promise<{ token?: string }> }) {
   const sp = await searchParams;

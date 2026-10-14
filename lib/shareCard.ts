@@ -133,7 +133,7 @@ export async function renderShareCard(opts: {
   ctx.fillText("מה הציון של העסק שלך?", W - 110, 1735);
   ctx.fillStyle = "#e2c68e";
   ctx.font = '500 34px "Assistant"';
-  ctx.fillText("Duvdevani Platform · רנטגן עסקי ב-3 דקות", W - 110, 1795);
+  ctx.fillText("דובדבוט · רנטגן עסקי ב-3 דקות", W - 110, 1795);
 
   return new Promise((res) => c.toBlob((b) => res(b), "image/jpeg", 0.88));
 }

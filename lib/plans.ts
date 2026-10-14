@@ -1,4 +1,4 @@
-/** Duvdevani Platform – subscription tiers. All prices are before VAT; VAT is added on top. */
+/** דובדבוט – subscription tiers. All prices are before VAT; VAT is added on top. */
 export const VAT = 0.18;
 export type Tier = "basic" | "private" | "upgrade" | "pro";
 export type Billing = "onetime" | "installments";

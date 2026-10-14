@@ -4,7 +4,7 @@ import { getAdmin } from "@/lib/adminAuth";
 import AdminDashboard from "@/components/admin/AdminDashboard";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "ניהול מנויים | Duvdevani Platform", robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: "ניהול מנויים | דובדבוט", robots: { index: false, follow: false } };
 
 export default async function AdminHome() {
   const admin = await getAdmin();

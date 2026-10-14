@@ -2,7 +2,8 @@ import { notFound } from "next/navigation";
 import ChatClient, { ChatMessage } from "@/components/ChatClient";
 
 // Design preview with sample data. Disabled in production.
-export default function Preview() {
+export default async function Preview({ searchParams }: { searchParams: Promise<{ empty?: string }> }) {
+  const empty = !!(await searchParams).empty;
   if (process.env.NODE_ENV === "production") notFound();
   const messages: ChatMessage[] = [
     { id: null, role: "user", content: "יש לי סטודיו לפילאטיס בראשון לציון. מחזור של 85 אלף בחודש, 3 מדריכות, ואני עובדת 12 שעות ביום ולא רואה כסף." },
@@ -17,10 +18,10 @@ export default function Preview() {
   return (
     <ChatClient
       user={{ id: "preview", firstName: "מיכל", fullName: "מיכל כהן", phone: "0501234567", email: "michal@example.com", access: { status: "trial", plan: "trial", accessUntil: new Date(Date.now() + 20 * 864e5).toISOString(), daysLeft: 20, renewalRequestedAt: null, tier: null, renewalMode: "none" } }}
-      conversations={[{ id: "c1", title: "איך מעלים מחירים בסטודיו", mode: "chat", updated_at: "", pinned: true, folder: null }, { id: "c2", title: "תחזית ל-2027", mode: "forecast", updated_at: "", pinned: false, folder: "תכנון" }]}
+      conversations={empty ? [] : [{ id: "c1", title: "איך מעלים מחירים בסטודיו", mode: "chat", updated_at: "", pinned: true, folder: null }, { id: "c2", title: "תחזית ל-2027", mode: "forecast", updated_at: "", pinned: false, folder: "תכנון" }]}
       leadSentInitially={false}
       initialConversationId={null}
-      initialMessages={messages}
+      initialMessages={empty ? [] : messages.map((m, i) => (i === 1 ? { ...m, next: ["כ-60% מנויים קבועים", "אני מעבירה 25 שעות בשבוע", "תבנה לי תחזית ל-12 חודש"] } : m))}
       initialTool={null}
       autoXray={false}
     />

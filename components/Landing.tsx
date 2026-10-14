@@ -74,7 +74,7 @@ export default function Landing() {
         {/* ---------- hero: promise + signup ---------- */}
         <header className="wrap hero">
           <div className="hero-copy">
-            <span className="badge"><span className="dot-live" /> Duvdevani Platform · הפלטפורמה להצלחה בחיים ובעסקים</span>
+            <span className="badge"><span className="dot-live" /> דובדבוט · הפלטפורמה להצלחה בחיים ובעסקים</span>
             <h1 className="h-display">
               <span className="line"><span>יועץ עסקי</span></span>
               <span className="line"><span className="gold">שתמיד זמין.</span></span>
@@ -180,7 +180,7 @@ export default function Landing() {
           <div className="wrap">
             <div className="vision reveal">
               <div className="vision-photo"><NirPose pose="welcome" width={340} /><Mascot size={72} mood="wink" track={false} /></div>
-              <blockquote className="h-display">״החזון שלי: שלא יהיה עסק בישראל <span className="gold">בלי Duvdevani Platform.</span>״</blockquote>
+              <blockquote className="h-display">״החזון שלי: שלא יהיה עסק בישראל <span className="gold">בלי דובדבוט.</span>״</blockquote>
               <cite>ניר דובדבני · מייסד קבוצת דובדבני</cite>
               <button className="btn btn-primary btn-lg" onClick={() => goSignup()}>להתחיל 30 יום במתנה <Icon name="arrow" size={18} className="ico-move" /></button>
             </div>

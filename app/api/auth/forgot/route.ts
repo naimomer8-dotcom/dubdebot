@@ -36,7 +36,7 @@ export async function POST(req: Request) {
     phone: user.phone,
     reset_url: `${origin}/reset?token=${token}`,
     expires_minutes: 60,
-    subject: "Duvdevani Platform – קישור לקביעת סיסמה",
+    subject: "דובדבוט – קישור לקביעת סיסמה",
   });
   if (!process.env.MAKE_AUTH_WEBHOOK_URL) console.warn("MAKE_AUTH_WEBHOOK_URL not set – reset email not sent");
   return generic;

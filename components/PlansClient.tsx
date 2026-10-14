@@ -13,7 +13,7 @@ import type { ConvItem, ShellUser } from "@/lib/data";
 type Done = { status: "rep" | "provider_pending"; total: number; plan: string; via: "self" | "rep" };
 
 const COMPARE: { label: string; on: Tier[] }[] = [
-  { label: "Duvdevani Platform: ניר זמין 24/6 וכל הכלים", on: ["basic", "private", "upgrade", "pro"] },
+  { label: "דובדבוט: ניר זמין 24/6 וכל הכלים", on: ["basic", "private", "upgrade", "pro"] },
   { label: "9 הקורסים הדיגיטליים של ניר", on: ["basic", "private", "upgrade", "pro"] },
   { label: "כל הספרים של ניר", on: ["basic", "private", "upgrade", "pro"] },
   { label: "כנס מינגלינג ענק אחת לרבעון", on: ["basic", "private", "upgrade", "pro"] },
@@ -93,7 +93,7 @@ export default function PlansClient({ user, conversations, focus, offers = {} }:
   const content = (
     <div className="plans">
       <header className="plans-hero">
-        <span className="eyebrow">מסלולים · Duvdevani Platform</span>
+        <span className="eyebrow">מסלולים · דובדבוט</span>
         <h1 className="h-display">שנה שלמה עם ניר. <span className="gold">אתה בוחר כמה עמוק.</span></h1>
         <p className="lead">כל המסלולים כוללים את הפלטפורמה, את כל הקורסים והספרים של ניר, כנס רבעוני וזום עם ניר פעם בשבועיים. ההבדל הוא כמה ליווי אישי אתה רוצה.</p>
         {trial && <p className="plans-note"><Icon name="clock" size={15} /> אתה בחודש המתנה ({user!.access.daysLeft} ימים נשארו). השנה מתחילה רק כשהמתנה נגמרת, אז לא מפסידים כלום.</p>}

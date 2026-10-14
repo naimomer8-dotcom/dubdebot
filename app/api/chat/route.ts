@@ -14,6 +14,13 @@ export const maxDuration = 60;
 
 const META_SEP = "\u0000DDMETA";
 const CTA_TAG = /\n?\s*\[\[CTA\]\]\s*/g;
+const NEXT_TAG = /\n?\s*\[\[NEXT:[^\]]*\]\]\s*/g;
+/** "[[NEXT: a | b | c]]" -> up to 3 short follow-up replies the user can tap. */
+function nextReplies(full: string): string[] {
+  const m = full.match(/\[\[NEXT:\s*([^\]]+)\]\]/);
+  if (!m) return [];
+  return m[1].split("|").map((x) => x.trim().replace(/^["״']|["״']$/g, "")).filter((x) => x.length >= 2 && x.length <= 60).slice(0, 3);
+}
 const PAIN_RE =
   /(אין לי לקוחות|אין לקוחות|המחזור ירד|ירידה במחזור|תקוע|תקועה|במינוס|הפסדים|חובות|לסגור את העסק|נשחקתי|שחוק|ליווי|פגישה|כמה זה עולה|לעבוד איתך|לעבוד אתכם|שותף|גיוס כסף|משקיע)/;
 const CTA_COOLDOWN = 4; // assistant turns between CTAs
@@ -317,9 +324,11 @@ export async function POST(req: Request) {
           const t = chunk.text ?? "";
           if (!t) continue;
           full += t;
-          // hold back a small tail so a split "[[CTA]]" tag never reaches the client
-          pending = (pending + t).replace(CTA_TAG, "");
-          let cut = pending.length - 10;
+          // hold back a small tail so a split "[[CTA]]" / "[[NEXT: …]]" tag never reaches the client;
+          // once a "[[" opens, everything after it waits for the end of the stream
+          pending = (pending + t).replace(CTA_TAG, "").replace(NEXT_TAG, "");
+          const open = pending.indexOf("[[");
+          let cut = open >= 0 ? open : pending.length - 10;
           if (cut > 0) {
             // never split a surrogate pair (emoji) – that turns into "��" on the client
             const c = pending.charCodeAt(cut - 1);
@@ -328,7 +337,7 @@ export async function POST(req: Request) {
             pending = pending.slice(cut);
           }
         }
-        send(pending.replace(CTA_TAG, ""));
+        send(pending.replace(CTA_TAG, "").replace(NEXT_TAG, "").replace(/\[\[NEXT:[^\]]*$/, "").trimEnd());
       } catch (e) {
         console.error("gemini error", e);
         const fallback = full ? "\n\n(נקטעתי באמצע – תכתוב לי \"תמשיך\" ואמשיך מאיפה שעצרתי.)" : "משהו נתקע אצלי רגע. תנסה לשלוח שוב.";
@@ -337,7 +346,8 @@ export async function POST(req: Request) {
       }
 
       const modelWantsCta = /\[\[CTA\]\]/.test(full);
-      const clean = full.replace(CTA_TAG, "").trim();
+      const next = voice ? [] : nextReplies(full);
+      const clean = full.replace(CTA_TAG, "").replace(NEXT_TAG, "").replace(/\[\[NEXT:[^\]]*$/, "").trim();
       let trigger: string | null = null;
       if (cooldownOk && !voice) {
         // not on the first answer – earn the right to offer a meeting first
@@ -362,7 +372,7 @@ export async function POST(req: Request) {
         .single();
       if (saveErr) console.error("assistant save failed", saveErr.message);
 
-      send(META_SEP + JSON.stringify({ conversationId, messageId: saved?.id ?? null, cta: trigger }));
+      send(META_SEP + JSON.stringify({ conversationId, messageId: saved?.id ?? null, cta: trigger, next }));
       if (!closed) {
         try {
           controller.close();

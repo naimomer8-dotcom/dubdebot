@@ -6,7 +6,7 @@ import ExpiredScreen from "@/components/ExpiredScreen";
 import ScanClient from "@/components/ScanClient";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "סריקת רשתות חברתיות | Duvdevani Platform" };
+export const metadata: Metadata = { title: "סריקת רשתות חברתיות | דובדבוט" };
 
 export default async function ScanPage() {
   const userId = await getSessionUserId();

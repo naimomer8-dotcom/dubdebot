@@ -106,7 +106,7 @@ export default function XrayClient({ loggedIn }: { loggedIn: boolean }) {
   async function share() {
     if (!card) return;
     const file = new File([card.blob], "dubdebot-xray.jpg", { type: card.blob.type || "image/jpeg" });
-    const text = `עשיתי רנטגן עסקי ב-Duvdevani Platform. יצאתי "${arch?.name}" עם ${result?.total}/100. מה הציון של העסק שלך? ${location.origin}/xray`;
+    const text = `עשיתי רנטגן עסקי בדובדבוט. יצאתי "${arch?.name}" עם ${result?.total}/100. מה הציון של העסק שלך? ${location.origin}/xray`;
     const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
     if (nav.canShare?.({ files: [file] })) {
       await nav.share({ files: [file], text }).catch(() => {});

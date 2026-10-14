@@ -10,11 +10,11 @@ export function GroupLogo({ className = "group-logo" }: { className?: string }) 
 
 export function Brand({ size = 38, sub = true, href = "/" }: { size?: number; sub?: boolean; href?: string }) {
   return (
-    <Link href={href} className="brand" aria-label="Duvdevani Platform – דף הבית">
+    <Link href={href} className="brand" aria-label="דובדבוט – דף הבית">
       <Mascot size={size} />
       <span>
-        <b>Duvdevani</b>
-        <small>{sub ? "PLATFORM · BY DUVDEVANI GROUP" : "PLATFORM"}</small>
+        <b>דובדבוט</b>
+        <small>{sub ? "BY NIR DUVDEVANI · קבוצת דובדבני" : "BY NIR DUVDEVANI"}</small>
       </span>
     </Link>
   );

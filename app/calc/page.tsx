@@ -8,7 +8,7 @@ import { Brand } from "@/components/BrandBar";
 import Calculators from "@/components/Calculators";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "מחשבונים עסקיים | Duvdevani Platform" };
+export const metadata: Metadata = { title: "מחשבונים עסקיים | דובדבוט" };
 
 export default async function CalcPage() {
   if (!(await getSessionUserId())) redirect("/login");

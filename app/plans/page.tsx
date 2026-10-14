@@ -5,7 +5,7 @@ import PlansClient from "@/components/PlansClient";
 import { offersFor } from "@/lib/offers";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "מסלולים | Duvdevani Platform", description: "Alpha Basic, Private, Upgrade ו-Pro: כל הקורסים של ניר, כנסים, זום עם ניר וליווי אישי." };
+export const metadata: Metadata = { title: "מסלולים | דובדבוט", description: "Alpha Basic, Private, Upgrade ו-Pro: כל הקורסים של ניר, כנסים, זום עם ניר וליווי אישי." };
 
 export default async function PlansPage({ searchParams }: { searchParams: Promise<{ up?: string }> }) {
   const userId = await getSessionUserId();

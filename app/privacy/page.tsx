@@ -1,16 +1,16 @@
 import BrandBar from "@/components/BrandBar";
 
-export const metadata = { title: "מדיניות פרטיות | Duvdevani Platform" };
+export const metadata = { title: "מדיניות פרטיות | דובדבוט" };
 
 export default function Privacy() {
   return (
     <main className="legal">
       <BrandBar />
-      <h1>מדיניות פרטיות – Duvdevani Platform</h1>
+      <h1>מדיניות פרטיות – דובדבוט</h1>
       <p><i>טיוטה לבדיקת עו״ד · גרסה v1 · אוקטובר 2026</i></p>
 
       <h2>מי אנחנו</h2>
-      <p>Duvdevani Platform מופעלת על ידי קבוצת דובדבני – RND (ח.פ. 514686534), רחוב נגב 2, איירפורט סיטי (״אנחנו״). יצירת קשר בנושאי פרטיות: <a href="mailto:info@rnd.org.il">info@rnd.org.il</a>.</p>
+      <p>דובדבוט (דובדבוט) מופעלת על ידי קבוצת דובדבני – RND (ח.פ. 514686534), רחוב נגב 2, איירפורט סיטי (״אנחנו״). יצירת קשר בנושאי פרטיות: <a href="mailto:info@rnd.org.il">info@rnd.org.il</a>.</p>
 
       <h2>איזה מידע אנחנו אוספים</h2>
       <ul>

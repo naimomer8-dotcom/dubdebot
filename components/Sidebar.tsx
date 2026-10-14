@@ -4,27 +4,12 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Icon from "./Icon";
 import { Brand, GroupLogo } from "./BrandBar";
-import { TOOLS, ToolMode } from "@/lib/persona";
+import { ToolMode } from "@/lib/persona";
+import ToolsLauncher, { TOOL_COUNT } from "./ToolsLauncher";
 import { nextTier, planById } from "@/lib/plans";
 import type { ConvItem, ShellUser } from "@/lib/data";
 
 type Menu = { id: string; mode: "menu" | "rename" | "folder" | "delete" } | null;
-
-const EXPLORE = [
-  { href: "/xray", icon: "scan" as const, label: "רנטגן עסקי" },
-  { href: "/scan", icon: "radar" as const, label: "סריקת רשתות" },
-  { href: "/tests", icon: "target" as const, label: "מבחני תקשורת ומכירות" },
-  { href: "/calc", icon: "chart" as const, label: "מחשבונים עסקיים" },
-];
-
-function readOpen(key: string, dflt: boolean) {
-  try {
-    const v = localStorage.getItem(key);
-    return v === null ? dflt : v === "1";
-  } catch {
-    return dflt;
-  }
-}
 
 export default function Sidebar({
   active,
@@ -55,17 +40,9 @@ export default function Sidebar({
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState("");
-  const [toolsOpen, setToolsOpen] = useState(true);
+  const [launcher, setLauncher] = useState(false);
   const [me, setMe] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => setToolsOpen(readOpen("side.tools", true)), []);
-  const toggleTools = () => {
-    setToolsOpen((v) => {
-      try { localStorage.setItem("side.tools", v ? "0" : "1"); } catch {}
-      return !v;
-    });
-  };
 
   const refresh = useCallback(async () => {
     const r = await fetch("/api/conversations", { cache: "no-store" }).catch(() => null);
@@ -218,21 +195,11 @@ export default function Sidebar({
           <Link className="side-link" href="/plans" aria-current={active === "plans" ? "true" : undefined}><Icon name="gem" size={18} /> מסלולים ומנוי</Link>
         </nav>
 
-        <button className="side-label side-toggle" onClick={toggleTools} aria-expanded={toolsOpen}>
-          <span>כלים</span><Icon name="chevron" size={14} className={toolsOpen ? "" : "rot"} />
+        <button className="side-tools" onClick={() => setLauncher(true)} aria-haspopup="dialog">
+          <span className="side-tools-ico"><Icon name="spark" size={18} /></span>
+          <span><b>כל הכלים</b><small>תחזית, תוכנית עבודה, תסריט מכירה ועוד</small></span>
+          <span className="side-tools-n num">{TOOL_COUNT}</span>
         </button>
-        {toolsOpen && (
-          <div className="side-group">
-            {TOOLS.filter((t) => t.id !== "chat").map((t) => (
-              <button key={t.id} className="side-link" aria-pressed={active === "chat" && mode === t.id} onClick={() => tool(t.id)}>
-                <Icon name={t.icon} size={18} /> {t.title}
-              </button>
-            ))}
-            {EXPLORE.map((e) => (
-              <Link key={e.href} className="side-link" href={e.href}><Icon name={e.icon} size={18} /> {e.label}</Link>
-            ))}
-          </div>
-        )}
 
         <div className="side-label side-label-row">
           <span>השיחות שלי {convs.length > 0 && <small className="num">({convs.length})</small>}</span>
@@ -268,15 +235,6 @@ export default function Sidebar({
         </div>
 
         <div className="side-foot">
-          {up && (
-            <Link href="/plans" className="side-up" onClick={onClose}>
-              <span className="side-up-ico"><Icon name="gem" size={18} /></span>
-              <span>
-                <b>{a.plan === "paid" ? `שדרוג ל-${up.name}` : "בחירת מסלול שנתי"}</b>
-                <small>{a.plan === "paid" ? up.tagline : "קורסים, כנסים וזום עם ניר · מ-₪229 לחודש"}</small>
-              </span>
-            </Link>
-          )}
           <div className="me">
             <span className="avatar" aria-hidden="true">{user.firstName.slice(0, 1)}</span>
             <span style={{ minWidth: 0, flex: 1 }}>
@@ -297,6 +255,7 @@ export default function Sidebar({
         </div>
         {toast && <div className="side-toast" role="status">{toast}</div>}
       </aside>
+      <ToolsLauncher open={launcher} onClose={() => setLauncher(false)} onTool={tool} />
     </>
   );
 }

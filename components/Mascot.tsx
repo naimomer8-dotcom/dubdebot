@@ -5,7 +5,7 @@ import { useEffect, useId, useRef, useState } from "react";
 export type Mood = "idle" | "thinking" | "talking" | "wink" | "celebrate" | "curious";
 
 /**
- * Duvdevani Platform – the cherry. Eyes follow the pointer (or finger) when `track` is on.
+ * דובדבוט – the cherry. Eyes follow the pointer (or finger) when `track` is on.
  */
 export default function Mascot({
   size = 120,
@@ -62,7 +62,7 @@ export default function Mascot({
       height={size}
       viewBox="0 0 200 200"
       role="img"
-      aria-label="Duvdevani Platform"
+      aria-label="דובדבוט"
       className={`mascot mascot--${level !== undefined ? "lipsync" : mood} ${className}`}
     >
       <defs>
