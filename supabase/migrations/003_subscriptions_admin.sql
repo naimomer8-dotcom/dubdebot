@@ -58,3 +58,7 @@ create table if not exists financials (
 );
 alter table financials enable row level security;
 create index if not exists financials_user_idx on financials(user_id, period desc);
+
+-- ---------- course access links (Schooler unique_link per course) ----------
+alter table users add column if not exists course_links jsonb;          -- { "<course_id>": "<unique signin link>" }
+alter table users add column if not exists courses_synced_at timestamptz;

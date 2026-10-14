@@ -50,7 +50,8 @@ export async function activateSubscription(opts: { userId: string; tier: Tier; b
   }
 
   const enroll = await enrollAllCourses({ email: u.email, full_name: u.full_name, phone: u.phone });
-  if (enroll.ok) await supabase.from("users").update({ courses_enrolled_at: new Date().toISOString() }).eq("id", opts.userId);
+  const now2 = new Date().toISOString();
+  await supabase.from("users").update({ ...(enroll.ok ? { courses_enrolled_at: now2 } : {}), ...(enroll.links && Object.keys(enroll.links).length ? { course_links: enroll.links } : {}), courses_synced_at: now2 }).eq("id", opts.userId);
 
   await emit(isUpgrade ? "upgrade" : "purchase", opts.userId, { tier: opts.tier, billing: opts.billing, channel: opts.channel, access_until: patch.access_until, order_id: order?.id ?? null, amount_net: order?.amount_net ?? null, amount_total: order?.amount_total ?? null, upgrade_from: isUpgrade ? u.tier : null, courses: { ok: enroll.ok } });
   if (!isUpgrade) await rewardReferrer(opts.userId).catch((e) => console.error("referral", e));

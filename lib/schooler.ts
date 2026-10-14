@@ -91,8 +91,28 @@ export async function enrollOneDebug(courseId: number, user: { email: string; fu
   return { ...res, attempts };
 }
 
-export async function enrollAllCourses(user: { email: string; full_name: string; phone?: string | null }) {
-  if (!headers()) return { ok: false as const, reason: "schooler not configured" };
+/** Pulls { course_id: unique_link } out of an enroll response (new or already-enrolled students). */
+function linksFrom(body: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  try {
+    const j = JSON.parse(body);
+    for (const k of ["students_created", "students_exists"]) {
+      for (const row of (j?.[k]?.data ?? []) as { course_id?: number; unique_link?: string }[]) {
+        if (row.course_id && typeof row.unique_link === "string" && row.unique_link.startsWith("https://")) out[String(row.course_id)] = row.unique_link;
+      }
+    }
+  } catch {}
+  return out;
+}
+
+/**
+ * Enrolls the member in every Alpha course and returns the personal sign-in link of each course.
+ * Safe to repeat: Schooler answers an existing student with "students_exists" and the same link.
+ * welcome=false for re-syncs, so a member is not emailed again.
+ */
+export async function enrollAllCourses(user: { email: string; full_name: string; phone?: string | null }, welcome = true) {
+  const links: Record<string, string> = {};
+  if (!headers()) return { ok: false as const, reason: "schooler not configured", links };
   const student = {
     name: user.full_name,
     email: user.email,
@@ -102,8 +122,8 @@ export async function enrollAllCourses(user: { email: string; full_name: string;
 
   const schoolId = process.env.SCHOOLER_SCHOOL_ID;
   if (schoolId) {
-    const r = await post(`/schools/${schoolId}/enroll_students`, [{ ...student, join_all: true, send_welcome_email_school: true }]);
-    return { ok: r.ok, via: "school" as const, results: [r] };
+    const r = await post(`/schools/${schoolId}/enroll_students`, [{ ...student, join_all: true, send_welcome_email_school: welcome }]);
+    return { ok: r.ok, via: "school" as const, results: [r], links: r.ok ? linksFrom(r.body) : links };
   }
 
   const ids = (process.env.SCHOOLER_COURSE_IDS ?? "").split(",").map((s) => Number(s.trim())).filter(Boolean);
@@ -111,8 +131,9 @@ export async function enrollAllCourses(user: { email: string; full_name: string;
   const results: { id: number; ok: boolean; status: number }[] = [];
   for (const [i, id] of courses.entries()) {
     // welcome email only once (on the first course), the rest are added silently
-    const r = await post(`/courses/${id}/enroll_students`, [{ ...student, send_welcome_email_course: i === 0 }]);
+    const r = await post(`/courses/${id}/enroll_students`, [{ ...student, send_welcome_email_course: welcome && i === 0 }]);
     results.push({ id, ok: r.ok, status: r.status });
+    if (r.ok) Object.assign(links, linksFrom(r.body));
   }
-  return { ok: results.every((r) => r.ok), via: "courses" as const, results };
+  return { ok: results.every((r) => r.ok), via: "courses" as const, results, links };
 }
