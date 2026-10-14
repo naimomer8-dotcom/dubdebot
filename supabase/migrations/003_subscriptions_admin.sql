@@ -62,3 +62,16 @@ create index if not exists financials_user_idx on financials(user_id, period des
 -- ---------- course access links (Schooler unique_link per course) ----------
 alter table users add column if not exists course_links jsonb;          -- { "<course_id>": "<unique signin link>" }
 alter table users add column if not exists courses_synced_at timestamptz;
+
+-- ---------- AI monthly budget + ops alerts ----------
+create table if not exists ai_spend (month text primary key, ils numeric not null default 0, calls integer not null default 0, alerted_80 boolean not null default false, alerted_100 boolean not null default false, updated_at timestamptz not null default now());
+alter table ai_spend enable row level security;
+create or replace function add_ai_spend(p_month text, p_ils numeric) returns numeric language sql security definer set search_path = public as $$
+  insert into ai_spend(month, ils, calls) values (p_month, p_ils, 1)
+  on conflict (month) do update set ils = ai_spend.ils + excluded.ils, calls = ai_spend.calls + 1, updated_at = now()
+  returning ils;
+$$;
+revoke all on function add_ai_spend(text, numeric) from public, anon, authenticated;
+grant execute on function add_ai_spend(text, numeric) to service_role;
+create table if not exists alerts_sent (key text primary key, sent_at timestamptz not null default now());
+alter table alerts_sent enable row level security;

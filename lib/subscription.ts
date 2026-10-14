@@ -1,6 +1,7 @@
 import { db } from "./supabase";
 import { emit } from "./automation";
 import { enrollAllCourses } from "./schooler";
+import { alert } from "./alerts";
 import { rewardReferrer } from "./referral";
 import { priceOf, TIER_RANK, type Billing, type Tier } from "./plans";
 
@@ -50,6 +51,7 @@ export async function activateSubscription(opts: { userId: string; tier: Tier; b
   }
 
   const enroll = await enrollAllCourses({ email: u.email, full_name: u.full_name, phone: u.phone });
+  if (!enroll.ok) await alert(`schooler:${opts.userId}`, "פתיחת קורסים ב-Schooler נכשלה", [`מנוי: ${u.full_name} · ${u.email}`, `תוצאה: ${JSON.stringify((enroll as { results?: unknown }).results ?? (enroll as { reason?: string }).reason).slice(0, 400)}`, "המנוי שילם אבל הקורסים לא נפתחו. אפשר לנסות שוב מעמוד 'הקורסים שלי' או לפתוח ידנית."], 60 * 24);
   const now2 = new Date().toISOString();
   await supabase.from("users").update({ ...(enroll.ok ? { courses_enrolled_at: now2 } : {}), ...(enroll.links && Object.keys(enroll.links).length ? { course_links: enroll.links } : {}), courses_synced_at: now2 }).eq("id", opts.userId);
 

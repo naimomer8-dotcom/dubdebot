@@ -1,11 +1,58 @@
 import { GoogleGenAI, ThinkingLevel } from "@google/genai";
+import { BudgetExceeded, overBudget, recordSpend, type Usage } from "./budget";
 
 let ai: GoogleGenAI | null = null;
+
+/**
+ * The Gemini client, metered: every call first checks the monthly ₪ budget (lib/budget.ts) and
+ * adds its token cost afterwards. Over budget → throws BudgetExceeded, so callers fail soft.
+ */
 export function gemini() {
   if (ai) return ai;
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("Missing GEMINI_API_KEY");
-  ai = new GoogleGenAI({ apiKey });
+  const client = new GoogleGenAI({ apiKey });
+  const m = client.models;
+  type GenArgs = Parameters<typeof m.generateContent>[0];
+  type EmbArgs = Parameters<typeof m.embedContent>[0];
+  const gen = m.generateContent.bind(m);
+  const genStream = m.generateContentStream.bind(m);
+  const emb = m.embedContent.bind(m);
+  const guard = async () => { if (await overBudget()) throw new BudgetExceeded(); };
+
+  m.generateContent = (async (args: GenArgs) => {
+    await guard();
+    const res = await gen(args);
+    await recordSpend(String(args.model), res.usageMetadata as Usage);
+    return res;
+  }) as typeof m.generateContent;
+
+  m.generateContentStream = (async (args: GenArgs) => {
+    await guard();
+    const stream = await genStream(args);
+    let usage: Usage = null;
+    async function* metered() {
+      try {
+        for await (const chunk of stream) {
+          if (chunk.usageMetadata) usage = chunk.usageMetadata as Usage;
+          yield chunk;
+        }
+      } finally {
+        await recordSpend(String(args.model), usage);
+      }
+    }
+    return metered();
+  }) as typeof m.generateContentStream;
+
+  m.embedContent = (async (args: EmbArgs) => {
+    await guard();
+    const res = await emb(args);
+    const chars = JSON.stringify(args.contents ?? "").length;
+    await recordSpend(String(args.model), null, chars);
+    return res;
+  }) as typeof m.embedContent;
+
+  ai = client;
   return ai;
 }
 

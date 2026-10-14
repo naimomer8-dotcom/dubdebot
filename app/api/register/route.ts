@@ -40,7 +40,7 @@ export async function POST(req: Request) {
   const ua = req.headers.get("user-agent");
 
   // mobile carriers put many people behind one IP – keep this generous; the email check stops duplicates
-  if (await limited(`ip:${ip ?? "unknown"}`, "signup", 80, 60)) {
+  if (await limited(`ip:${ip ?? "unknown"}`, "signup", 500, 60)) {
     return NextResponse.json({ error: "יותר מדי הרשמות מהרשת הזו. נסה שוב בעוד שעה." }, { status: 429 });
   }
   await hit(`ip:${ip ?? "unknown"}`, "signup");

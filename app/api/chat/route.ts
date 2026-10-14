@@ -1,3 +1,5 @@
+import { overBudget, BudgetExceeded, BUDGET_MESSAGE } from "@/lib/budget";
+import { alert } from "@/lib/alerts";
 import { guardAccess } from "@/lib/guard";
 import { hit, limited } from "@/lib/ratelimit";
 import { after } from "next/server";
@@ -67,6 +69,11 @@ export async function POST(req: Request) {
   const requestedMode = String(body.mode ?? "chat") as ToolMode;
   const mode: ToolMode = TOOLS.some((t) => t.id === requestedMode) ? requestedMode : "chat";
   if (!text) return new Response("empty", { status: 400 });
+
+  // monthly ₪ budget for all AI (lib/budget.ts): pause softly instead of failing mid-answer
+  if (await overBudget()) {
+    return new Response(JSON.stringify({ error: "ai_budget", message: BUDGET_MESSAGE }), { status: 429, headers: { "Content-Type": "application/json" } });
+  }
 
   // daily caps per user (protects the budget). Trial: 30 messages / 5 voice answers a day. Paid: 100 / 60.
   const capKey = `u:${userId}`;
@@ -340,6 +347,7 @@ export async function POST(req: Request) {
         send(pending.replace(CTA_TAG, "").replace(NEXT_TAG, "").replace(/\[\[NEXT:[^\]]*$/, "").trimEnd());
       } catch (e) {
         console.error("gemini error", e);
+        if (!(e instanceof BudgetExceeded)) void alert("gemini_error", "תקלה בתשובות של ה-AI", [`שגיאה: ${(e as Error).message?.slice(0, 300)}`, `מצב: ${activeMode}`], 30);
         const fallback = full ? "\n\n(נקטעתי באמצע – תכתוב לי \"תמשיך\" ואמשיך מאיפה שעצרתי.)" : "משהו נתקע אצלי רגע. תנסה לשלוח שוב.";
         full += fallback;
         send(fallback);

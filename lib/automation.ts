@@ -1,5 +1,6 @@
 import { createHmac } from "crypto";
 import { db } from "./supabase";
+import { alert } from "./alerts";
 
 /**
  * Automation bus: every lifecycle event is stored in `events` and pushed to Make
@@ -60,9 +61,11 @@ export async function emit(event: AutomationEvent, userId: string, data: Record<
       body,
       signal: AbortSignal.timeout(8000),
     });
+    if (!r.ok) await alert("make_http", "Make לא מקבל אירועים", [`אירוע: ${event}`, `סטטוס: ${r.status}`, "וואטסאפ, מיילים ופיירברי לא מתעדכנים עד שזה נפתר."], 60);
     return { sent: r.ok, status: r.status };
   } catch (e) {
     console.error("automation emit failed", event, (e as Error).message);
+    await alert("make_down", "Make לא זמין", [`אירוע: ${event}`, `שגיאה: ${(e as Error).message}`], 60);
     return { sent: false, reason: "network" };
   }
 }
