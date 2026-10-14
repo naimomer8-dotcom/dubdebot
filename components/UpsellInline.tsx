@@ -7,13 +7,13 @@ import { TIER_RANK, type Tier } from "@/lib/plans";
 
 /** Contextual upsell under a finished deliverable: offers the plan that turns this answer into execution. */
 const RULES: Record<string, { need: Tier; title: string; text: string }> = {
-  workplan: { need: "private", title: "תוכנית בלי הטמעה נשארת במגירה", text: "ב-Alpha Private יועץ עסקי בכיר יושב איתך 3 שעות ומטמיע את התוכנית הזאת בעסק שלך." },
-  feasibility: { need: "upgrade", title: "רוצה שניר יעבור על זה איתך?", text: "ב-Alpha Upgrade יש פגישה אישית עם ניר דובדבני על ההחלטה הגדולה הזאת." },
-  forecast: { need: "private", title: "תחזית היא התחלה. עכשיו ביצוע", text: "ב-Alpha Private יועץ בכיר בונה איתך את הצעדים שמביאים למספרים האלה." },
-  sales_script: { need: "basic", title: "התסריט הזה, ועוד קורס שלם", text: "ב-Alpha Basic נפתחים לך \"פשוט למכור יותר\" ו\"שפת גוף של כוכב מכירות\", וזום עם ניר פעם בשבועיים." },
-  campaign: { need: "basic", title: "רוצה ללמוד לבנות את זה לבד?", text: "ב-Alpha Basic יש את כל הקורסים של ניר, כולל \"מקצוען ב-AI\" ו\"איך לבנות קורס דיגיטלי\"." },
-  financials: { need: "basic", title: "המספרים האלה מקבלים קורס שלם", text: "ב-Alpha Basic נפתח לך \"מקצוען בכספים\", וזום עם ניר פעם בשבועיים לשאלות." },
-  payslip: { need: "basic", title: "רוצה להבין את הכסף לעומק?", text: "ב-Alpha Basic נפתח לך הקורס \"מקצוען בכספים\" ועוד 8 קורסים." },
+  workplan: { need: "private", title: "תוכנית בלי הטמעה נשארת במגירה", text: "ב-Platform Private יועץ עסקי בכיר יושב איתך שעתיים וחצי ומטמיע את התוכנית הזאת בעסק שלך." },
+  feasibility: { need: "upgrade", title: "רוצה שניר יעבור על זה איתך?", text: "ב-Platform Upgrade יש פגישה אישית עם ניר דובדבני על ההחלטה הגדולה הזאת." },
+  forecast: { need: "private", title: "תחזית היא התחלה. עכשיו ביצוע", text: "ב-Platform Private יועץ בכיר בונה איתך את הצעדים שמביאים למספרים האלה." },
+  sales_script: { need: "basic", title: "התסריט הזה, ועוד קורס שלם", text: "ב-Platform Basic נפתחים לך \"פשוט למכור יותר\" ו\"שפת גוף של כוכב מכירות\", וזום עם ניר פעם בשבועיים." },
+  campaign: { need: "basic", title: "רוצה ללמוד לבנות את זה לבד?", text: "ב-Platform Basic יש את כל הקורסים של ניר, כולל \"מקצוען ב-AI\" ו\"איך לבנות קורס דיגיטלי\"." },
+  financials: { need: "basic", title: "המספרים האלה מקבלים קורס שלם", text: "ב-Platform Basic נפתח לך \"מקצוען בכספים\", וזום עם ניר פעם בשבועיים לשאלות." },
+  payslip: { need: "basic", title: "רוצה להבין את הכסף לעומק?", text: "ב-Platform Basic נפתח לך הקורס \"מקצוען בכספים\" ועוד 8 קורסים." },
 };
 
 export default function UpsellInline({ mode, tier, onShown }: { mode: string; tier: Tier | null; onShown?: () => void }) {

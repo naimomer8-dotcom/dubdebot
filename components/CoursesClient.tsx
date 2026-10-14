@@ -33,7 +33,8 @@ export default function CoursesClient({ user, conversations, leadSent, links: in
   // a paid member who has no links yet (enrolled before links were saved) gets them on first visit
   useEffect(() => { if (paid && !ready) sync(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
 
-  const courses = LIBRARY.filter((c) => c.kind === "course");
+  const courses = LIBRARY.filter((c) => c.kind === "course" && !c.bonus);
+  const bonus = LIBRARY.filter((c) => c.bonus);
   const books = LIBRARY.filter((c) => c.kind === "book");
 
   const Card = ({ c, i }: { c: Course; i: number }) => {
@@ -48,14 +49,14 @@ export default function CoursesClient({ user, conversations, leadSent, links: in
         <b className="crs-title">{c.title}</b>
         <p className="crs-blurb">{c.blurb}</p>
         <span className="crs-cta">
-          {open ? <>{c.kind === "book" ? "לקריאה" : "כניסה לקורס"} <Icon name="arrowLeft" size={16} className="ico-move" /></> : paid ? <><Icon name="clock" size={15} /> נפתח עבורך…</> : <><Icon name="lock" size={15} /> נפתח במנוי Alpha</>}
+          {open ? <>{c.kind === "book" ? "לקריאה" : "כניסה לקורס"} <Icon name="arrowLeft" size={16} className="ico-move" /></> : paid ? <><Icon name="clock" size={15} /> נפתח עבורך…</> : <><Icon name="lock" size={15} /> נפתח במנוי הפלטפורמה</>}
         </span>
       </>
     );
     return open ? (
-      <a className={`crs crs-${c.kind}`} href={href} target="_blank" rel="noopener noreferrer">{inner}</a>
+      <a className={`crs crs-${c.kind} ${c.bonus ? "crs-bonus" : ""}`} href={href} target="_blank" rel="noopener noreferrer" onClick={() => { try { navigator.sendBeacon("/api/courses/open", new Blob([JSON.stringify({ id: c.id })], { type: "application/json" })); } catch {} }}>{inner}</a>
     ) : (
-      <div className={`crs crs-${c.kind} ${paid ? "is-pending" : "is-locked"}`} aria-disabled="true">{inner}</div>
+      <div className={`crs crs-${c.kind} ${c.bonus ? "crs-bonus" : ""} ${paid ? "is-pending" : "is-locked"}`} aria-disabled="true">{inner}</div>
     );
   };
 
@@ -80,19 +81,19 @@ export default function CoursesClient({ user, conversations, leadSent, links: in
           <div className="vault">
             <div className="vault-in">
               <div className="crs-head">
-                <span className="eyebrow">{user.firstName} · הספרייה של Alpha</span>
+                <span className="eyebrow">{user.firstName} · הספרייה של הפלטפורמה</span>
                 <h1 className="h-display">כל מה שניר לימד, <span className="gold">בלחיצה אחת.</span></h1>
                 <p className="lead" style={{ margin: 0 }}>
                   {paid
                     ? "כל קורס נפתח ישר בחשבון האישי שלך, בלי סיסמה ובלי לחפש מיילים. הקורסים זמינים כל עוד המנוי פעיל."
-                    : "9 קורסים ו-5 ספרים דיגיטליים מחכים לך. הם נפתחים אוטומטית ברגע שמצטרפים למנוי Alpha."}
+                    : "8 קורסים דיגיטליים, קורס בונוס ורבי המכר של ניר מחכים לך. הם נפתחים אוטומטית ברגע שמצטרפים לפלטפורמה."}
                 </p>
               </div>
 
               {!paid && (
                 <div className="crs-unlock">
                   <div>
-                    <b>הספרייה המלאה נפתחת במנוי Alpha</b>
+                    <b>הספרייה המלאה נפתחת במנוי הפלטפורמה</b>
                     <span>מכירות, ניהול, כסף, נדל״ן ו-AI. הכל במקום אחד, נפתח מיד עם ההצטרפות.</span>
                   </div>
                   <Link className="btn btn-primary" href="/plans">לבחירת מסלול <Icon name="arrowLeft" size={18} className="ico-move" /></Link>
@@ -107,11 +108,15 @@ export default function CoursesClient({ user, conversations, leadSent, links: in
               )}
 
               <section className="crs-sec" aria-labelledby="crs-c">
-                <div className="crs-sec-h"><h2 id="crs-c">קורסים</h2><span className="num">{courses.length}</span></div>
+                <div className="crs-sec-h"><h2 id="crs-c">קורסים דיגיטליים</h2><span className="num">{courses.length}</span></div>
                 <div className="crs-grid">{courses.map((c, i) => <Card key={c.id} c={c} i={i} />)}</div>
               </section>
+              <section className="crs-sec" aria-labelledby="crs-x">
+                <div className="crs-sec-h"><h2 id="crs-x">בונוס</h2><span className="num">{bonus.length}</span></div>
+                <div className="crs-grid">{bonus.map((c, i) => <Card key={c.id} c={c} i={i} />)}</div>
+              </section>
               <section className="crs-sec" aria-labelledby="crs-b">
-                <div className="crs-sec-h"><h2 id="crs-b">ספרים דיגיטליים</h2><span className="num">{books.length}</span></div>
+                <div className="crs-sec-h"><h2 id="crs-b">רבי המכר של ניר</h2><span className="num">{books.length}</span></div>
                 <div className="crs-grid crs-grid-books">{books.map((c, i) => <Card key={c.id} c={c} i={i} />)}</div>
               </section>
               {paid && ready > 0 && <p className="muted" style={{ fontSize: 14, margin: 0 }}>הקישורים אישיים לחשבון שלך. אל תעביר אותם לאחרים.</p>}

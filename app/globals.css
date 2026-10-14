@@ -1378,3 +1378,12 @@ body { font-size: 18px; }
   .msg.user .bubble { font-size: 17.5px; }
   .topbar .who b { font-size: 28px; }
 }
+
+/* plans: launch-price anchor + louder savings */
+.plans-anchor { display: inline-flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 4px; padding: 10px 16px; border-radius: 16px; border: 1px solid rgba(226,198,142,.5); background: linear-gradient(90deg, rgba(226,198,142,.16), rgba(200,16,46,.08)); font-size: 16.5px; }
+.plans-anchor .pa-tag { font-size: 12.5px; font-weight: 800; letter-spacing: .06em; color: #17110a; background: var(--grad-gold); padding: 4px 10px; border-radius: 999px; }
+.plans-anchor s { color: var(--text-3); }
+.plans-anchor b { color: var(--gold-hi); font-size: 18px; }
+.plans-anchor small { color: var(--text-3); font-size: 13.5px; }
+.plan-save { font-size: 15.5px !important; font-weight: 800 !important; color: var(--gold-hi) !important; background: rgba(226,198,142,.10); border: 1px solid rgba(226,198,142,.35); border-radius: 10px; padding: 6px 10px; display: inline-flex; align-items: center; gap: 6px; }
+.crs-bonus { border-color: rgba(226,198,142,.55) !important; background: radial-gradient(120% 100% at 100% 0%, rgba(226,198,142,.16), transparent 60%), var(--surface-2) !important; }

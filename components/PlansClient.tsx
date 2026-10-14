@@ -7,24 +7,24 @@ import Sidebar from "./Sidebar";
 import Icon from "./Icon";
 import ReferralCard from "./ReferralCard";
 import { Brand } from "./BrandBar";
-import { COURSES, PLANS, RENEWAL_MONTHLY, TIER_RANK, VAT, ils, priceOf, type Billing, type Offers, type Plan, type Tier } from "@/lib/plans";
+import { BONUS_COURSE, BOOKS, COURSES, PLANS, REGULAR_MONTHLY, RENEWAL_MONTHLY, WORKSHOPS, TIER_RANK, VAT, ils, priceOf, type Billing, type Offers, type Plan, type Tier } from "@/lib/plans";
 import type { ConvItem, ShellUser } from "@/lib/data";
 
 type Done = { status: "rep" | "provider_pending"; total: number; plan: string; via: "self" | "rep" };
 
 const COMPARE: { label: string; on: Tier[] }[] = [
   { label: "דובדבוט: ניר זמין 24/6 וכל הכלים", on: ["basic", "private", "upgrade", "pro"] },
-  { label: "9 הקורסים הדיגיטליים של ניר", on: ["basic", "private", "upgrade", "pro"] },
-  { label: "כל הספרים של ניר", on: ["basic", "private", "upgrade", "pro"] },
-  { label: "כנס מינגלינג ענק אחת לרבעון", on: ["basic", "private", "upgrade", "pro"] },
-  { label: "זום עם ניר פעם בשבועיים", on: ["basic", "private", "upgrade", "pro"] },
-  { label: "פגישת הטמעה של 3 שעות עם יועץ עסקי בכיר", on: ["private", "pro"] },
+  { label: `${COURSES.length} קורסים דיגיטליים + בונוס: ${BONUS_COURSE}`, on: ["basic", "private", "upgrade", "pro"] },
+  { label: `${BOOKS.length} רבי המכר של ניר בדיגיטל`, on: ["basic", "private", "upgrade", "pro"] },
+  { label: "4 סדנאות פיזיות בשנה, אחת לרבעון", on: ["basic", "private", "upgrade", "pro"] },
+  { label: "פגישה אסטרטגית חודשית בזום עם ניר", on: ["basic", "private", "upgrade", "pro"] },
+  { label: "פגישת הטמעה של שעתיים וחצי עם יועץ עסקי בכיר", on: ["private", "pro"] },
   { label: "פגישה אישית עם ניר דובדבני", on: ["upgrade", "pro"] },
   { label: "פודקאסט אחד על אחד עם ניר", on: ["pro"] },
 ];
 
 const FAQ = [
-  { q: "מה ההבדל בין תשלום אחד ל-12 תשלומים?", a: "באותו מסלול מקבלים בדיוק את אותו דבר. בתשלום אחד המחיר נמוך יותר (Alpha Basic יוצא ₪229 לחודש במקום ₪299), וב-12 תשלומים מחלקים בכרטיס אשראי." },
+  { q: "מה ההבדל בין תשלום אחד ל-12 תשלומים?", a: "באותו מסלול מקבלים בדיוק את אותו דבר. בתשלום אחד המחיר נמוך יותר (Platform Basic יוצא ₪229 לחודש במקום ₪299), וב-12 תשלומים מחלקים בכרטיס אשראי." },
   { q: "מה קורה אחרי השנה?", a: `המנוי ממשיך אוטומטית ב-${ils(RENEWAL_MONTHLY)} + מע״מ לחודש, בלי למלא פרטים או לסלוק מחדש. אפשר לבטל בכל רגע, והחיוב נעצר מהחודש הבא.` },
   { q: "אני עדיין בחודש המתנה. אם אקנה עכשיו אפסיד ימים?", a: "לא. השנה מתחילה רק בסוף 30 ימי המתנה, כך שכל יום שנשאר לך נשמר." },
   { q: "איך מקבלים את הקורסים?", a: "ברגע שהתשלום עובר, כל הקורסים נפתחים לך באופן אוטומטי במערכת הקורסים, עם אותו מייל שנרשמת איתו." },
@@ -37,9 +37,9 @@ const DEALS = (offers: Offers, trial: boolean) => {
   const basicSave = priceOf("basic", "installments").net - priceOf("basic", "onetime").net;
   const proSave = priceOf("pro", "installments").net - priceOf("pro", "onetime").net;
   return [
-    { tag: "תשלום אחד", title: `חיסכון של ${ils(basicSave)} בשנה`, text: "Alpha Basic בתשלום אחד יוצא ₪229 לחודש במקום ₪299.", live: true },
-    { tag: "Alpha Pro", title: `${ils(priceOf("pro", "onetime").net)} בתשלום אחד`, text: `במקום ${ils(priceOf("pro", "installments").net)} ב-12 תשלומים. חיסכון של ${ils(proSave)}.`, live: true },
-    { tag: "חודש המתנה", title: "Alpha Private בחצי מחיר", text: offers.privateHalf ? `₪295 במקום ₪590, בתוקף עד ${fmt(offers.privateHalf)}.` : "₪295 במקום ₪590 למי שמצטרף לפני שחודש המתנה נגמר.", live: !!offers.privateHalf || trial },
+    { tag: "תשלום אחד", title: `חיסכון של ${ils(basicSave)} בשנה`, text: "Platform Basic בתשלום אחד יוצא ₪229 לחודש במקום ₪299.", live: true },
+    { tag: "Platform Pro", title: `${ils(priceOf("pro", "onetime").net)} בתשלום אחד`, text: `במקום ${ils(priceOf("pro", "installments").net)} ב-12 תשלומים. חיסכון של ${ils(proSave)}.`, live: true },
+    { tag: "חודש המתנה", title: "Platform Private בחצי מחיר", text: offers.privateHalf ? `₪295 במקום ₪590, בתוקף עד ${fmt(offers.privateHalf)}.` : "₪295 במקום ₪590 למי שמצטרף לפני שחודש המתנה נגמר.", live: !!offers.privateHalf || trial },
     { tag: "72 שעות", title: "12 תשלומים במחיר של תשלום אחד", text: offers.installmentsAtOnetime ? `₪229 לחודש במקום ₪299, בתוקף עד ${fmt(offers.installmentsAtOnetime)}.` : "הצעה שנפתחת לזמן קצר, נשלחת בוואטסאפ ובמייל.", live: !!offers.installmentsAtOnetime },
     { tag: "שדרוג", title: "משלמים רק את ההפרש", text: "עוברים למסלול גבוה יותר בכל רגע, והשנה ממשיכה מאותו תאריך.", live: false },
     { tag: "חבר מביא חבר", title: "סדנת מכירות פיזית עם ניר", text: "על כל חבר שהצטרף דרך הקישור שלך וסולק, מקבלים מקום בסדנת מכירות פיזית עם ניר דובדבני.", live: false },
@@ -95,7 +95,13 @@ export default function PlansClient({ user, conversations, focus, offers = {} }:
       <header className="plans-hero">
         <span className="eyebrow">מסלולים · דובדבוט</span>
         <h1 className="h-display">שנה שלמה עם ניר. <span className="gold">אתה בוחר כמה עמוק.</span></h1>
-        <p className="lead">כל המסלולים כוללים את הפלטפורמה, את כל הקורסים והספרים של ניר, כנס רבעוני וזום עם ניר פעם בשבועיים. ההבדל הוא כמה ליווי אישי אתה רוצה.</p>
+        <p className="lead">כל המסלולים כוללים את הפלטפורמה להצלחה בעסקים: דובדבוט 24/6, הקורסים הדיגיטליים והספרים של ניר, 4 סדנאות פיזיות בשנה ופגישה אסטרטגית חודשית בזום עם ניר. ההבדל הוא כמה ליווי אישי אתה רוצה.</p>
+        <div className="plans-anchor" role="note">
+          <span className="pa-tag">מחיר השקה</span>
+          <span>מחיר רגיל <s className="num">{ils(REGULAR_MONTHLY)}</s> לחודש</span>
+          <b className="num">עכשיו מ-{ils(priceOf("basic", "onetime").perMonthNet)} לחודש</b>
+          <small>מנוי שנתי* · + מע״מ</small>
+        </div>
         {trial && <p className="plans-note"><Icon name="clock" size={15} /> אתה בחודש המתנה ({user!.access.daysLeft} ימים נשארו). השנה מתחילה רק כשהמתנה נגמרת, אז לא מפסידים כלום.</p>}
         {owned && (
           <p className="plans-note">
@@ -107,7 +113,7 @@ export default function PlansClient({ user, conversations, focus, offers = {} }:
           <div className="plans-offer">
             <Icon name="gem" size={16} />
             <div>
-              {offers.privateHalf && <p><b>בונוס מצטרפים בחודש המתנה:</b> Alpha Private בחצי מחיר, ₪295 + מע״מ במקום ₪590. בתוקף עד {fmt(offers.privateHalf)}.</p>}
+              {offers.privateHalf && <p><b>בונוס מצטרפים בחודש המתנה:</b> Platform Private בחצי מחיר, ₪295 + מע״מ במקום ₪590. בתוקף עד {fmt(offers.privateHalf)}.</p>}
               {offers.installmentsAtOnetime && <p><b>הצעת 72 שעות:</b> 12 תשלומים במחיר של תשלום אחד, ₪229 לחודש + מע״מ במקום ₪299. בתוקף עד {fmt(offers.installmentsAtOnetime)}.</p>}
             </div>
           </div>
@@ -131,12 +137,12 @@ export default function PlansClient({ user, conversations, focus, offers = {} }:
               <h2>{p.name}</h2>
               <p className="plan-tag">{p.tagline}</p>
               <div className="plan-price">
-                {reg.net !== pr.net && <s className="num plan-was">{ils(reg.perMonthNet)}</s>}
+                {reg.net !== pr.net ? <s className="num plan-was">{ils(reg.perMonthNet)}</s> : !p.flat && <s className="num plan-was" title="מחיר רגיל">{ils(REGULAR_MONTHLY + p.extra / 12)}</s>}
                 <b className="num">{ils(pr.perMonthNet)}</b>
                 <span>לחודש · + מע״מ</span>
               </div>
               <p className="plan-total num">
-                {billing === "onetime" ? "תשלום אחד" : "12 תשלומים"} · {ils(pr.net)} לשנה + מע״מ ({ils(pr.total)} כולל)
+                מנוי שנתי* · {billing === "onetime" ? "תשלום אחד" : "12 תשלומים"} · {ils(pr.net)} לשנה + מע״מ ({ils(pr.total)} כולל)
               </p>
               {(() => {
                 const save = billing === "onetime" ? priceOf(p.id, "installments").net - pr.net : reg.net - pr.net;
@@ -177,19 +183,19 @@ export default function PlansClient({ user, conversations, focus, offers = {} }:
       <section className="plans-incl glass edge">
         <h3>מה כלול בכל מסלול</h3>
         <div className="incl-grid">
-          <div><Icon name="layers" size={18} /><b>9 קורסים דיגיטליים</b><span>{COURSES.join(" · ")}</span></div>
-          <div><Icon name="bookmark" size={18} /><b>כל הספרים של ניר</b><span>בגרסה דיגיטלית, נפתחים עם המנוי</span></div>
-          <div><Icon name="user" size={18} /><b>כנס מינגלינג רבעוני</b><span>4 כנסים בשנה, מלא בעלי עסקים</span></div>
-          <div><Icon name="phone" size={18} /><b>זום עם ניר פעם בשבועיים</b><span>שאלות, תשובות ואסטרטגיה לעסק שלך</span></div>
+          <div><Icon name="layers" size={18} /><b>{COURSES.length} קורסים דיגיטליים + בונוס</b><span>{COURSES.join(" · ")} · בונוס: {BONUS_COURSE}</span></div>
+          <div><Icon name="bookmark" size={18} /><b>{BOOKS.length} רבי המכר של ניר</b><span>{BOOKS.join(" · ")}</span></div>
+          <div><Icon name="user" size={18} /><b>4 סדנאות פיזיות בשנה</b><span>{WORKSHOPS.map((w) => `סדנת ${w}`).join(" · ")}</span></div>
+          <div><Icon name="phone" size={18} /><b>פגישה אסטרטגית חודשית בזום</b><span>ניר על מנועי צמיחה, ואחר כך שאלות ותשובות פתוחות</span></div>
         </div>
-        <p className="plans-renew"><Icon name="clock" size={15} /> אחרי השנה הראשונה המנוי ממשיך אוטומטית ב-{ils(RENEWAL_MONTHLY)} + מע״מ לחודש, בלי לסלוק מחדש. ביטול בכל רגע.</p>
+        <p className="plans-renew"><Icon name="clock" size={15} /> * מנוי שנתי: משלמים פעם אחת לשנה (או ב-12 תשלומים). דובדבוט זמין 24/6, כי בשבת אנחנו נחים ומתמקדים במשפחה. אחרי השנה הראשונה המנוי ממשיך אוטומטית ב-{ils(RENEWAL_MONTHLY)} + מע״מ לחודש, בלי לסלוק מחדש. ביטול בכל רגע.</p>
       </section>
 
       <section className="plans-compare" aria-label="השוואת מסלולים">
         <h3>השוואה מלאה</h3>
         <div className="tbl">
           <table>
-            <thead><tr><th scope="col">מה מקבלים</th>{PLANS.map((p) => <th key={p.id} scope="col">{p.name.replace("Alpha ", "")}</th>)}</tr></thead>
+            <thead><tr><th scope="col">מה מקבלים</th>{PLANS.map((p) => <th key={p.id} scope="col">{p.name.replace("Platform ", "")}</th>)}</tr></thead>
             <tbody>
               {COMPARE.map((r) => (
                 <tr key={r.label}><th scope="row">{r.label}</th>{PLANS.map((p) => <td key={p.id}>{r.on.includes(p.id) ? <Icon name="check" size={16} className="gold-ico" /> : <span className="muted" aria-label="לא כלול">—</span>}</td>)}</tr>

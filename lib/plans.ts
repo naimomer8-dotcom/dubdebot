@@ -3,24 +3,30 @@ export const VAT = 0.18;
 export type Tier = "basic" | "private" | "upgrade" | "pro";
 export type Billing = "onetime" | "installments";
 
+// order matters: sales first (Nir's "מודל כוכב"); מקצוען בנדל״ן is shown separately as a bonus
 export const COURSES = [
-  "מקצוען בנדל״ן",
-  "מקצוען בכספים",
+  "פשוט למכור הרבה יותר",
+  "(לא) פשוט להיות עסק אלפא",
+  "שפת גוף של כוכב מכירות",
+  "מקצוענים בכסף",
   "מקצוען ב-AI",
   "המבוא לאסטרטגיית הון",
-  "פשוט להיות עסק אלפא",
-  "פשוט למכור יותר",
-  "שפת גוף של כוכב מכירות",
-  "איך לבנות קורס דיגיטלי",
-  "NLP עסקי",
+  "פשוט לעשות קורס / מוצר דיגיטלי שיימכר",
+  "קורס NLP עסקי",
 ];
+export const BONUS_COURSE = "מקצוען בנדל״ן";
+export const BOOKS = ["להיות אלפא בעסקים", "המחיר למשתפן", "בסוף יצא לך ארנב", "האדם מחפש עצמאות"];
+export const WORKSHOPS = ["פשוט למכור יותר", "מקסימום שיווק", "פשוט להיות אלפא בעסקים", "ניהול וצמיחה"];
+
+/** Regular (anchor) price per month, before VAT. The launch prices below are the "מחיר השקה". */
+export const REGULAR_MONTHLY = 450;
 
 const BASE_FEATURES = [
-  "גישה מלאה לפלטפורמה: ניר זמין לך 24/6 עם כל הכלים",
-  `כל 9 הקורסים הדיגיטליים של ניר (${COURSES.slice(0, 3).join(", ")} ועוד)`,
-  "כל הספרים של ניר",
-  "כנס מינגלינג ענק של בעלי עסקים, אחת לרבעון",
-  "זום עם ניר דובדבני פעם בשבועיים: שאלות, תשובות ואסטרטגיה לעסק שלך",
+  "גישה מלאה לפלטפורמה: דובדבוט, ניר זמין לך 24/6 עם כל הכלים",
+  `${COURSES.length} קורסים דיגיטליים של ניר (${COURSES.slice(0, 3).join(", ")} ועוד) + בונוס: ${BONUS_COURSE}`,
+  `${BOOKS.length} רבי המכר של ניר בדיגיטל: ${BOOKS.join(", ")}`,
+  `4 סדנאות פיזיות בשנה, אחת לרבעון: ${WORKSHOPS.map((w) => `סדנת ${w}`).join(", ")}`,
+  "פגישה אסטרטגית חודשית בזום עם ניר: מנועי צמיחה + שאלות ותשובות",
 ];
 
 /** Base annual price: 12 × 299 in installments, or 12 × 229 paid at once. */
@@ -39,33 +45,33 @@ export type Plan = {
 export const PLANS: Plan[] = [
   {
     id: "basic",
-    name: "Alpha Basic",
+    name: "Platform Basic",
     tagline: "כל הידע של ניר, זמין לך 24/6, לשנה שלמה",
     extra: 0,
     features: BASE_FEATURES,
   },
   {
     id: "private",
-    name: "Alpha Private",
+    name: "Platform Private",
     tagline: "הכל, ויועץ עסקי אמיתי שמטמיע איתך",
     extra: 590,
-    features: ["כל מה שב-Alpha Basic", "פגישת הטמעה של 3 שעות, אחד על אחד, עם יועץ עסקי בכיר שמטמיע איתך את הכל על העסק שלך"],
+    features: ["כל מה שב-Platform Basic", "פגישת הטמעה של שעתיים וחצי, אחד על אחד, עם יועץ עסקי בכיר שמטמיע איתך את הכל על העסק שלך"],
     highlight: "הכי משתלם",
   },
   {
     id: "upgrade",
-    name: "Alpha Upgrade",
+    name: "Platform Upgrade",
     tagline: "הכל, ופגישה אישית עם ניר דובדבני בעצמו",
     extra: 2500,
-    features: ["כל מה שב-Alpha Basic", "פגישת אסטרטגיה אישית עם ניר דובדבני (במקום הפגישות עם היועץ)"],
+    features: ["כל מה שב-Platform Basic", "פגישת אסטרטגיה אישית עם ניר דובדבני (במקום הפגישות עם היועץ)"],
   },
   {
     id: "pro",
-    name: "Alpha Pro",
+    name: "Platform Pro",
     tagline: "הכל כלול. כולל פודקאסט אחד על אחד עם ניר",
     extra: 0,
     flat: { onetime: 8700, installments: 9700 },
-    features: ["כל מה שב-Alpha Basic", "פגישת הטמעה של 3 שעות עם יועץ עסקי בכיר", "פגישה אישית עם ניר דובדבני", "פרק פודקאסט אחד על אחד עם ניר דובדבני על העסק שלך, מוקלט עד 60 יום מהסליקה"],
+    features: ["כל מה שב-Platform Basic", "פגישת הטמעה של שעתיים וחצי עם יועץ עסקי בכיר", "פגישה אישית עם ניר דובדבני", "פרק פודקאסט אחד על אחד עם ניר דובדבני על העסק שלך, מוקלט עד 60 יום מהסליקה"],
     highlight: "הכל כלול",
   },
 ];

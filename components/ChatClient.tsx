@@ -6,6 +6,7 @@ import remarkGfm from "remark-gfm";
 import Mascot, { Mood } from "./Mascot";
 import Spotlight from "./Spotlight";
 import Onboarding from "./Onboarding";
+import WelcomePaid from "./WelcomePaid";
 import Sidebar from "./Sidebar";
 import NirPhoto from "./NirPhoto";
 import NirPose from "./NirPose";
@@ -407,7 +408,8 @@ export default function ChatClient({
   return (
     <>
       <Spotlight />
-      <Onboarding firstName={user.firstName} enabled={conversations.length === 0 && messages.length === 0} />
+      <Onboarding firstName={user.firstName} enabled={user.access.status !== "paid" && conversations.length === 0 && messages.length === 0} />
+      <WelcomePaid firstName={user.firstName} access={user.access} />
       <div className="app">
         <Sidebar
           active="chat"
@@ -566,9 +568,9 @@ export default function ChatClient({
                           </>
                         ) : (
                           <>
-                            <p>פגישת הטמעה של 3 שעות עם יועץ בכיר שמטמיע איתך הכל נמצאות ב-Alpha Private. פגישה עם ניר דובדבני בעצמו נמצאת ב-Alpha Upgrade.</p>
+                            <p>פגישת הטמעה של שעתיים וחצי עם יועץ בכיר שמטמיע איתך הכל נמצאות ב-Platform Private. פגישה עם ניר דובדבני בעצמו נמצאת ב-Platform Upgrade.</p>
                             <div className="cta-actions">
-                              <a className="btn btn-primary btn-sm" href="/plans?up=private" onClick={() => track("cta_plans", { tier: "private" })}>יועץ אישי · Alpha Private</a>
+                              <a className="btn btn-primary btn-sm" href="/plans?up=private" onClick={() => track("cta_plans", { tier: "private" })}>יועץ אישי · Platform Private</a>
                               <a className="btn btn-glass btn-sm" href="/plans?up=upgrade" onClick={() => track("cta_plans", { tier: "upgrade" })}><Icon name="crown" size={16} /> פגישה עם ניר · Upgrade</a>
                               <button className="link-btn" onClick={() => openLead("advisor", m.cta ?? null)}>שנחזור אליך?</button>
                             </div>

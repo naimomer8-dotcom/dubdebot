@@ -19,7 +19,7 @@ export default function PlanCube({ access, compact = false }: { access: Access; 
         {trial ? (
           <>
             <b>{access.daysLeft <= 1 ? "היום האחרון במתנה" : `עוד ${access.daysLeft} ימים במתנה`}</b>
-            <span className="pc-sub"> · Alpha Basic: כל הקורסים, כנס רבעוני וזום עם ניר · מ-{ils(basicMonthly)} לחודש + מע״מ</span>
+            <span className="pc-sub"> · Platform Basic: קורסים, 4 סדנאות וזום חודשי עם ניר · מ-{ils(basicMonthly)} לחודש + מע״מ</span>
           </>
         ) : (
           <>

@@ -6,7 +6,7 @@ const H = 3600_000;
 /**
  * The real, time-limited offers the journey messages promise. The deadline in every message is
  * enforced here, so the FOMO is true: after the date, the regular price comes back.
- * - privateHalf: in the gift month (not paid yet) → Alpha Private add-on ₪295 instead of ₪590, until access ends
+ * - privateHalf: in the gift month (not paid yet) → Platform Private add-on ₪295 instead of ₪590, until access ends
  * - installmentsAtOnetime: 72h after the "l_d33_rep" win-back message → 12 installments at ₪229 instead of ₪299
  */
 export async function offersFor(userId: string): Promise<Offers> {
