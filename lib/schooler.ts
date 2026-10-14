@@ -137,3 +137,20 @@ export async function enrollAllCourses(user: { email: string; full_name: string;
   }
   return { ok: results.every((r) => r.ok), via: "courses" as const, results, links };
 }
+
+/** Diagnostics: a course's own details (description, lessons) as Schooler returns them, trimmed. */
+export async function courseDetails(courseId: number) {
+  const h = headers();
+  if (!h) return { id: courseId, ok: false, body: "schooler not configured" };
+  const out: Record<string, unknown> = { id: courseId };
+  for (const path of [`/courses/${courseId}`, `/courses/${courseId}/lessons`, `/courses/${courseId}/chapters`]) {
+    try {
+      const r = await fetch(`${API}${path}`, { headers: h, signal: AbortSignal.timeout(12000) });
+      const text = await r.text();
+      out[path] = { status: r.status, body: text.slice(0, 6000) };
+    } catch (e) {
+      out[path] = { error: String(e) };
+    }
+  }
+  return out;
+}

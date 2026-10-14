@@ -3,6 +3,7 @@ import { emit } from "@/lib/automation";
 import { dueStage, emailParts, render, type JourneyUser } from "@/lib/journeys";
 import { PLANS } from "@/lib/plans";
 import { refLink } from "@/lib/referral";
+import { alert } from "@/lib/alerts";
 import { TOOLS } from "@/lib/persona";
 import { webinarMoment, nextWebinar, webinarLabel, webinarLinks, WEBINAR_TIME } from "@/lib/webinars";
 
@@ -57,7 +58,15 @@ export async function GET(req: Request) {
   const { data: pending } = await supabase.from("orders").select("id, user_id, created_at, tier").eq("status", "pending").lt("created_at", new Date(Date.now() - 3600_000).toISOString()).gt("created_at", new Date(Date.now() - 7 * 86400_000).toISOString()).limit(2000);
   for (const o of pending ?? []) {
     const key = `c_abandon:${o.id}`;
-    if (!(sent.get(o.user_id)?.has(key))) due.push({ userId: o.user_id, stage: key });
+    if (!(sent.get(o.user_id)?.has(key))) {
+      due.push({ userId: o.user_id, stage: key });
+      // the sales team gets a heads-up too (Nadav: "אם הוא עצר באמצע, נדב יקבל הקפצה")
+      if (!dry) {
+        const { data: who } = await supabase.from("users").select("full_name, phone, email").eq("id", o.user_id).single();
+        const plan = PLANS.find((p) => p.id === o.tier)?.name ?? String(o.tier ?? "");
+        await alert(`abandon:${o.id}`, `עצר באמצע תשלום: ${plan}`, [`${who?.full_name ?? ""} · ${who?.phone ?? ""} · ${who?.email ?? ""}`, `התחיל לשלם על ${plan} ולא סיים. שווה שיחה היום.`], 60 * 24 * 30);
+      }
+    }
   }
   if (dry) return Response.json({ dry: true, count: due.length, sample: due.slice(0, 50) });
 

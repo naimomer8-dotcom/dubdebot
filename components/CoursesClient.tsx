@@ -14,8 +14,19 @@ export default function CoursesClient({ user, conversations, leadSent, links: in
   const [links, setLinks] = useState(initialLinks);
   const [syncing, setSyncing] = useState(false);
   const [err, setErr] = useState("");
+  const [zq, setZq] = useState("");
+  const [zqState, setZqState] = useState<"" | "sending" | "sent" | string>("");
   const paid = user.access.status === "paid";
   const ready = Object.keys(links).length;
+
+  async function sendZoomQ() {
+    setZqState("sending");
+    try {
+      const r = await fetch("/api/zoom-question", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: zq }) });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok) { setZqState("sent"); setZq(""); } else setZqState(d.error || "לא הצלחנו לשלוח. נסה שוב.");
+    } catch { setZqState("אין חיבור כרגע. נסה שוב."); }
+  }
 
   async function sync() {
     setSyncing(true); setErr("");
@@ -40,23 +51,28 @@ export default function CoursesClient({ user, conversations, leadSent, links: in
   const Card = ({ c, i }: { c: Course; i: number }) => {
     const href = links[String(c.id)];
     const open = paid && !!href;
-    const inner = (
-      <>
+    const ping = () => { try { navigator.sendBeacon("/api/courses/open", new Blob([JSON.stringify({ id: c.id })], { type: "application/json" })); } catch {} };
+    return (
+      <div className={`crs crs-${c.kind} ${c.bonus ? "crs-bonus" : ""} ${open ? "" : paid ? "is-pending" : "is-locked"}`}>
         <div className="crs-top">
           <span className="crs-num num">{String(i + 1).padStart(2, "0")}</span>
           <span className="crs-tag">{c.tag}</span>
         </div>
         <b className="crs-title">{c.title}</b>
-        <p className="crs-blurb">{c.blurb}</p>
-        <span className="crs-cta">
-          {open ? <>{c.kind === "book" ? "לקריאה" : "כניסה לקורס"} <Icon name="arrowLeft" size={16} className="ico-move" /></> : paid ? <><Icon name="clock" size={15} /> נפתח עבורך…</> : <><Icon name="lock" size={15} /> נפתח במנוי הפלטפורמה</>}
-        </span>
-      </>
-    );
-    return open ? (
-      <a className={`crs crs-${c.kind} ${c.bonus ? "crs-bonus" : ""}`} href={href} target="_blank" rel="noopener noreferrer" onClick={() => { try { navigator.sendBeacon("/api/courses/open", new Blob([JSON.stringify({ id: c.id })], { type: "application/json" })); } catch {} }}>{inner}</a>
-    ) : (
-      <div className={`crs crs-${c.kind} ${c.bonus ? "crs-bonus" : ""} ${paid ? "is-pending" : "is-locked"}`} aria-disabled="true">{inner}</div>
+        <p className="crs-blurb">{c.about ?? c.blurb}</p>
+        {c.learn && (
+          <details className="crs-more">
+            <summary>מה לומדים בקורס <Icon name="chevron" size={14} /></summary>
+            <ul>{c.learn.map((l) => <li key={l}><Icon name="check" size={14} /> {l}</li>)}</ul>
+            {c.forWho && <p className="crs-who"><b>למי זה מתאים:</b> {c.forWho}</p>}
+          </details>
+        )}
+        {open ? (
+          <a className="crs-cta" href={href} target="_blank" rel="noopener noreferrer" onClick={ping}>{c.kind === "book" ? "לקריאה" : "כניסה לקורס"} <Icon name="arrowLeft" size={16} className="ico-move" /></a>
+        ) : (
+          <span className="crs-cta" aria-disabled="true">{paid ? <><Icon name="clock" size={15} /> נפתח עבורך…</> : <><Icon name="lock" size={15} /> נפתח במנוי הפלטפורמה</>}</span>
+        )}
+      </div>
     );
   };
 
@@ -107,6 +123,23 @@ export default function CoursesClient({ user, conversations, leadSent, links: in
                 </div>
               )}
 
+              {paid && (
+                <section className="zq glass edge" aria-labelledby="zq-h">
+                  <div>
+                    <h2 id="zq-h">שאלה לזום החודשי עם ניר</h2>
+                    <p>שולחים עד 24 שעות לפני הזום, וניר עונה עליה ספציפית בזום. עד 3 שאלות לכל זום.</p>
+                  </div>
+                  {zqState === "sent" ? (
+                    <p className="zq-ok"><Icon name="check" size={16} /> השאלה אצל ניר. נתראה בזום.</p>
+                  ) : (
+                    <div className="zq-form">
+                      <textarea className="input" rows={3} maxLength={1200} value={zq} onChange={(e) => setZq(e.target.value)} placeholder="מה הכי בוער לך בעסק? כמה שיותר ספציפי, ככה התשובה תהיה מדויקת יותר." />
+                      <button className="btn btn-primary" disabled={zq.trim().length < 8 || zqState === "sending"} onClick={sendZoomQ}>{zqState === "sending" ? "שולח…" : "שליחה לניר"}</button>
+                      {zqState && zqState !== "sending" && <span className="err">{zqState}</span>}
+                    </div>
+                  )}
+                </section>
+              )}
               <section className="crs-sec" aria-labelledby="crs-c">
                 <div className="crs-sec-h"><h2 id="crs-c">קורסים דיגיטליים</h2><span className="num">{courses.length}</span></div>
                 <div className="crs-grid">{courses.map((c, i) => <Card key={c.id} c={c} i={i} />)}</div>

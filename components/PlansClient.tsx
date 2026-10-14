@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { PERSONAS } from "@/lib/platform";
 import { useState } from "react";
 import Spotlight from "./Spotlight";
 import Sidebar from "./Sidebar";
 import Icon from "./Icon";
 import ReferralCard from "./ReferralCard";
 import { Brand } from "./BrandBar";
-import { BONUS_COURSE, BOOKS, COURSES, PLANS, REGULAR_MONTHLY, RENEWAL_MONTHLY, WORKSHOPS, TIER_RANK, VAT, ils, priceOf, type Billing, type Offers, type Plan, type Tier } from "@/lib/plans";
+import { BONUS_COURSE, BOOKS, COURSES, PLANS, REGULAR_MONTHLY, RENEWAL_MONTHLY, WORKSHOPS, WORKSHOP_VALUE, TIER_RANK, VAT, ils, priceOf, type Billing, type Offers, type Plan, type Tier } from "@/lib/plans";
 import type { ConvItem, ShellUser } from "@/lib/data";
 
 type Done = { status: "rep" | "provider_pending"; total: number; plan: string; via: "self" | "rep" };
@@ -134,6 +135,7 @@ export default function PlansClient({ user, conversations, focus, offers = {} }:
           return (
             <article key={p.id} className={`plan-card ${p.highlight ? "hl" : ""} ${focus === p.id ? "focus" : ""} ${mine ? "mine" : ""}`}>
               {p.highlight && <span className="plan-badge">{p.highlight}</span>}
+              <span className="plan-persona">{PERSONAS[p.id]}</span>
               <h2>{p.name}</h2>
               <p className="plan-tag">{p.tagline}</p>
               <div className="plan-price">
@@ -186,7 +188,17 @@ export default function PlansClient({ user, conversations, focus, offers = {} }:
           <div><Icon name="layers" size={18} /><b>{COURSES.length} קורסים דיגיטליים + בונוס</b><span>{COURSES.join(" · ")} · בונוס: {BONUS_COURSE}</span></div>
           <div><Icon name="bookmark" size={18} /><b>{BOOKS.length} רבי המכר של ניר</b><span>{BOOKS.join(" · ")}</span></div>
           <div><Icon name="user" size={18} /><b>4 סדנאות פיזיות בשנה</b><span>{WORKSHOPS.map((w) => `סדנת ${w}`).join(" · ")}</span></div>
-          <div><Icon name="phone" size={18} /><b>פגישה אסטרטגית חודשית בזום</b><span>ניר על מנועי צמיחה, ואחר כך שאלות ותשובות פתוחות</span></div>
+          <div><Icon name="phone" size={18} /><b>פגישה אסטרטגית חודשית בזום</b><span>ניר על מנועי צמיחה, ואחר כך שאלות ותשובות. שולחים שאלה 24 שעות לפני, וניר עונה עליה בזום</span></div>
+        </div>
+        <div className="plans-value">
+          <h4>מה זה שווה, במחיר רגיל</h4>
+          <div className="pv-row"><span>הפלטפורמה ודובדבוט, 12 חודשים × {ils(REGULAR_MONTHLY)}</span><b className="num">{ils(REGULAR_MONTHLY * 12)}</b></div>
+          <div className="pv-row"><span>4 סדנאות פיזיות של 4 שעות × {ils(WORKSHOP_VALUE)}</span><b className="num">{ils(WORKSHOP_VALUE * 4)}</b></div>
+          <div className="pv-row"><span>12 פגישות אסטרטגיות בזום עם ניר</span><b>כלול</b></div>
+          <div className="pv-row"><span>{COURSES.length} קורסים דיגיטליים, בונוס ו-{BOOKS.length} ספרים</span><b>כלול</b></div>
+          <div className="pv-row pv-total"><span>שווי לפחות</span><b className="num">{ils(REGULAR_MONTHLY * 12 + WORKSHOP_VALUE * 4)}</b></div>
+          <div className="pv-row pv-you"><span>אתה משלם במחיר השקה, מנוי שנתי בתשלום אחד</span><b className="num">{ils(priceOf("basic", "onetime").net)}</b></div>
+          <a className="pv-more" href="/platform">ההסבר המלא על הפלטפורמה ←</a>
         </div>
         <p className="plans-renew"><Icon name="clock" size={15} /> * מנוי שנתי: משלמים פעם אחת לשנה (או ב-12 תשלומים). דובדבוט זמין 24/6, כי בשבת אנחנו נחים ומתמקדים במשפחה. אחרי השנה הראשונה המנוי ממשיך אוטומטית ב-{ils(RENEWAL_MONTHLY)} + מע״מ לחודש, בלי לסלוק מחדש. ביטול בכל רגע.</p>
       </section>

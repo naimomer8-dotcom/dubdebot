@@ -1,5 +1,6 @@
 "use client";
 
+import { nextWebinar, webinarLabel, WEBINAR_TIME } from "@/lib/webinarDates";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown, { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -558,7 +559,7 @@ export default function ChatClient({
                       <div className="cta-mascot cta-photo"><NirPhoto size={104} /><Mascot size={52} mood="wink" track={false} /></div>
                       <div>
                         <span className="eyebrow">הצעד הבא</span>
-                        <h4 style={{ marginTop: 10 }}>זה בדיוק הרגע לשבת על זה ביחד.</h4>
+                        <h4 style={{ marginTop: 10 }}>{user.access.plan === "paid" && user.access.tier && user.access.tier !== "basic" ? "זה בדיוק הרגע לשבת על זה ביחד." : "בוא נעשה את זה בלייב."}</h4>
                         {user.access.plan === "paid" && user.access.tier && user.access.tier !== "basic" ? (
                           <>
                             <p>הפגישות האישיות כלולות במסלול שלך. נתאם?</p>
@@ -566,13 +567,20 @@ export default function ChatClient({
                               <button className="btn btn-primary btn-sm" onClick={() => openLead(user.access.tier === "private" ? "advisor" : "nir", m.cta ?? null)}>לתיאום פגישה</button>
                             </div>
                           </>
-                        ) : (
+                        ) : user.access.plan === "paid" ? (
                           <>
-                            <p>פגישת הטמעה של שעתיים וחצי עם יועץ בכיר שמטמיע איתך הכל נמצאות ב-Platform Private. פגישה עם ניר דובדבני בעצמו נמצאת ב-Platform Upgrade.</p>
+                            <p>פגישת הטמעה של שעתיים וחצי עם יועץ בכיר נמצאת ב-Platform Private. פגישה עם ניר דובדבני בעצמו נמצאת ב-Platform Upgrade. משלמים רק את ההפרש.</p>
                             <div className="cta-actions">
                               <a className="btn btn-primary btn-sm" href="/plans?up=private" onClick={() => track("cta_plans", { tier: "private" })}>יועץ אישי · Platform Private</a>
                               <a className="btn btn-glass btn-sm" href="/plans?up=upgrade" onClick={() => track("cta_plans", { tier: "upgrade" })}><Icon name="crown" size={16} /> פגישה עם ניר · Upgrade</a>
-                              <button className="link-btn" onClick={() => openLead("advisor", m.cta ?? null)}>שנחזור אליך?</button>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <p>ביום שני, {webinarLabel(nextWebinar())} ב-{WEBINAR_TIME}, אני עולה לוובינר פתוח לבעלי עסקים. תבוא עם השאלה הזאת, ואני עונה עליה מול כולם.</p>
+                            <div className="cta-actions">
+                              <a className="btn btn-primary btn-sm" href="/w" target="_blank" rel="noopener noreferrer" onClick={() => track("cta_webinar", { trigger: m.cta })}>שמור לי מקום בוובינר</a>
+                              <button className="link-btn" onClick={() => openLead("advisor", m.cta ?? null)}>שנציג יחזור אליי?</button>
                             </div>
                           </>
                         )}

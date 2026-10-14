@@ -20,6 +20,8 @@ export const WORKSHOPS = ["פשוט למכור יותר", "מקסימום שיו
 
 /** Regular (anchor) price per month, before VAT. The launch prices below are the "מחיר השקה". */
 export const REGULAR_MONTHLY = 450;
+/** Value of one 4-hour physical workshop (Nir, meeting 14.10.2026). */
+export const WORKSHOP_VALUE = 470;
 
 const BASE_FEATURES = [
   "גישה מלאה לפלטפורמה: דובדבוט, ניר זמין לך 24/6 עם כל הכלים",

@@ -4,7 +4,7 @@ import { getSessionUserId } from "@/lib/session";
 import AuthClient from "@/components/AuthClient";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "כניסה | דובדבוט" };
+export const metadata: Metadata = { title: "כניסה | הפלטפורמה להצלחה בעסקים" };
 
 export default async function Login({ searchParams }: { searchParams: Promise<{ email?: string; forgot?: string; next?: string }> }) {
   const sp = await searchParams;

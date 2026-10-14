@@ -12,6 +12,7 @@ import NirPose from "./NirPose";
 import Icon, { IconName } from "./Icon";
 import { useReveal } from "./useReveal";
 import { DISCLAIMER_LONG } from "@/lib/disclaimer";
+import { MODES } from "@/lib/platform";
 
 const SAMPLE = { strategy: 62, marketing: 38, sales: 71, pricing: 29, systems: 45, money: 54 };
 
@@ -59,7 +60,7 @@ export default function Landing() {
           <div className="topnav-in">
             <Brand />
             <div className="topnav-links">
-              <a href="#platform">הפלטפורמה</a>
+              <a href="/platform">הפלטפורמה</a>
               <a href="#xray">רנטגן עסקי</a>
               <a href="#inside">מה בפנים</a>
               <a href="#how">איך זה עובד</a>
@@ -75,24 +76,24 @@ export default function Landing() {
         {/* ---------- hero: promise + signup ---------- */}
         <header className="wrap hero">
           <div className="hero-copy">
-            <span className="badge"><span className="dot-live" /> הפלטפורמה להצלחה בעסקים · ניר דובדבני</span>
+            <span className="badge"><span className="dot-live" /> ניר דובדבני מציג</span>
             <h1 className="h-display">
-              <span className="line"><span>יועץ עסקי</span></span>
-              <span className="line"><span className="gold">שתמיד זמין.</span></span>
+              <span className="line"><span>הפלטפורמה</span></span>
+              <span className="line"><span className="gold">להצלחה בעסקים.</span></span>
             </h1>
-            <p className="lead">22 שנה של ליווי עסקים והשיטה המלאה של ניר דובדבני – בתוך יועץ אחד שמכיר את העסק שלך, בונה איתך תוכניות ומדבר איתך תכלס.</p>
+            <p className="lead">פלטפורמה היברידית ואקטיבית על בסיס שיטת האלפא של ניר דובדבני. דובדבוט זמין לך 24/6 ובונה איתך תחזית, תוכנית ותסריט מכירה, ומסביבו קורסים דיגיטליים, 4 סדנאות פיזיות בשנה ופגישה אסטרטגית חודשית בזום עם ניר.</p>
             <div className="hero-mcta">
               <button className="btn btn-primary btn-lg" onClick={() => goSignup()}>להתחיל 30 יום במתנה <Icon name="arrow" size={18} className="ico-move" /></button>
-              <a className="btn btn-glass btn-lg" href="/xray">רנטגן עסקי · 3 דקות</a>
+              <a className="btn btn-glass btn-lg" href="/platform">מה זה הפלטפורמה</a>
             </div>
             <ul className="hero-points">
-              <li><Icon name="check" size={18} /> 22 שנה ניסיון ואלפי אסטרטגיות עסקיות במקום אחד</li>
+              <li><Icon name="check" size={18} /> 22 שנה של ליווי ויותר מ-23,000 עסקים שעברו את השיטה</li>
               <li><Icon name="check" size={18} /> תוצרים אמיתיים: תחזית, תוכנית, תסריט</li>
               <li><Icon name="check" size={18} /> 30 יום במתנה. בלי כרטיס אשראי</li>
             </ul>
             <div className="hero-proof">
               <div><b>22</b><span>שנות ליווי</span></div>
-              <div><b>אלפי</b><span>אסטרטגיות עסקיות</span></div>
+              <div><b>23,000+</b><span>עסקים עברו את השיטה</span></div>
               <div><b>24/6</b><span>בשבת נחים</span></div>
             </div>
           </div>
@@ -124,6 +125,12 @@ export default function Landing() {
                   <p>{d}</p>
                 </div>
               ))}
+            </div>
+            <div className="plat-modes" style={{ marginTop: 16 }}>
+              {MODES.map((m) => <div key={m.t} className="plat-mode reveal"><b>{m.t}</b><span>{m.d}</span></div>)}
+            </div>
+            <div className="plat-final reveal" style={{ marginTop: 24 }}>
+              <a className="btn btn-glass btn-lg" href="/platform">ההסבר המלא על הפלטפורמה <Icon name="arrow" size={18} className="ico-move" /></a>
             </div>
           </div>
         </section>
@@ -160,7 +167,7 @@ export default function Landing() {
         <section className="section" id="inside">
           <div className="wrap">
             <div className="sec-head reveal">
-              <span className="eyebrow">מה מחכה לך בפנים</span>
+              <span className="eyebrow">מה מחכה לך בדובדבוט</span>
               <h2 className="h-display">כל מה שקורה בפגישה עם ניר. <span className="gold">מתי שצריך.</span></h2>
             </div>
             <div className="feat-grid">
