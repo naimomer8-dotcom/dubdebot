@@ -62,7 +62,7 @@ export default function CoursesClient({ user, conversations, leadSent, links: in
         <p className="crs-blurb">{c.about ?? c.blurb}</p>
         {c.learn && (
           <details className="crs-more">
-            <summary>מה לומדים בקורס <Icon name="chevron" size={14} /></summary>
+            <summary>{c.kind === "book" ? "מה תיקח מהספר" : "מה לומדים בקורס"} <Icon name="chevron" size={14} /></summary>
             <ul>{c.learn.map((l) => <li key={l}><Icon name="check" size={14} /> {l}</li>)}</ul>
             {c.forWho && <p className="crs-who"><b>למי זה מתאים:</b> {c.forWho}</p>}
           </details>
