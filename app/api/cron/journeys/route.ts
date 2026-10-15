@@ -47,8 +47,9 @@ export async function GET(req: Request) {
   for (const u of (users ?? []) as (Omit<JourneyUser, "has_financials"> & { marketing_consent: boolean | null })[]) {
     // Israeli anti-spam law: marketing only with consent; transactional notices go to everyone
     const optOut = u.marketing_opt_out || !u.marketing_consent;
-    if (wm && u.plan !== "paid" && !optOut) {
-      const key = `w_${wm.kind}:${wm.date}`;
+    // members get the week-before and the day itself; everyone else the full sequence
+    if (wm && !optOut && (u.plan !== "paid" || wm.kind === "week" || wm.kind === "day")) {
+      const key = `${u.plan === "paid" ? "wm" : "w"}_${wm.kind}:${wm.date}`;
       if (!sent.get(u.id)?.has(key)) { due.push({ userId: u.id, stage: key }); continue; }
     }
     const s = dueStage({ ...u, marketing_opt_out: optOut, has_financials: hasFin.has(u.id) }, sent.get(u.id) ?? new Set());
@@ -70,7 +71,7 @@ export async function GET(req: Request) {
   }
   if (dry) return Response.json({ dry: true, count: due.length, sample: due.slice(0, 50) });
 
-  const wDate = wm?.date ?? nextWebinar();
+  const wDate = wm && wm.kind !== "after" ? wm.date : nextWebinar();
   const wLink = (await webinarLinks().catch(() => ({} as Record<string, string>)))[wDate];
   const toolName = (mode: string) => (mode === "chat" ? "שיחות איתי" : TOOLS.find((t) => t.id === mode)?.title ?? "שיחות איתי");
   let ok = 0;
@@ -103,6 +104,7 @@ export async function GET(req: Request) {
         ref_link: refLink(job.userId, app),
         webinar: webinarLabel(wDate),
         webinar_time: WEBINAR_TIME,
+        webinar_next: webinarLabel(wm?.next ?? nextWebinar()),
         webinar_url: wLink || `${app}/w`,
         top_tool: "",
       };

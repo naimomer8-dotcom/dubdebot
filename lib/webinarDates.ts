@@ -22,12 +22,21 @@ export function nextWebinar(now = Date.now()): string {
   return ilDate(start + n * WEBINAR_EVERY_DAYS * DAY);
 }
 
-/** "eve" the day before a webinar, "day" on the day itself, otherwise null. */
-export function webinarMoment(now = Date.now()): { kind: "eve" | "day"; date: string } | null {
+/**
+ * Where today sits relative to the webinars: a week before ("week"), the day before ("eve"),
+ * the day itself ("day") or the day after the last one ("after"). Otherwise null.
+ */
+export type WebinarKind = "week" | "eve" | "day" | "after";
+export function webinarMoment(now = Date.now()): { kind: WebinarKind; date: string; next: string } | null {
   const today = ilDate(now);
   const next = nextWebinar(now);
-  if (next === today) return { kind: "day", date: next };
-  if (ilDate(Date.parse(next + "T12:00:00Z") - DAY) === today) return { kind: "eve", date: next };
+  const at = (d: string, days: number) => ilDate(Date.parse(d + "T12:00:00Z") + days * DAY);
+  const following = at(next, WEBINAR_EVERY_DAYS);
+  if (next === today) return { kind: "day", date: next, next: following };
+  if (at(next, -1) === today) return { kind: "eve", date: next, next };
+  if (at(next, -7) === today) return { kind: "week", date: next, next };
+  const prev = at(next, -WEBINAR_EVERY_DAYS);
+  if (Date.parse(prev + "T12:00:00Z") >= Date.parse(WEBINAR_FIRST + "T12:00:00Z") && at(prev, 1) === today) return { kind: "after", date: prev, next };
   return null;
 }
 
