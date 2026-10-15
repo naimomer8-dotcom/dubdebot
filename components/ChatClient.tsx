@@ -433,8 +433,8 @@ export default function ChatClient({
               <button className="icon-btn mobile-only" onClick={() => setSide(true)} aria-label="תפריט"><Icon name="menu" size={20} /></button>
               <Mascot size={42} mood={headMood} />
               <div style={{ minWidth: 0 }}>
-                <b>{busy ? (streaming ? "ניר כותב…" : "חושב…") : activeTool && activeTool.id !== "chat" ? activeTool.title : "ניר דובדבני"}</b>
-                <small><span className="dot-live" /> היועץ העסקי שלך · השיטה של ניר דובדבני</small>
+                <b>{busy ? (streaming ? "ניר כותב…" : "חושב…") : activeTool && activeTool.id !== "chat" ? activeTool.title : "דובדבוט"}</b>
+                <small><span className="dot-live" /> ניר דובדבני · תתייעץ איתי 24/6</small>
               </div>
             </div>
             <div className="topbar-actions">
@@ -736,7 +736,7 @@ function printDeliverable(elementId: string) {
   const el = document.getElementById(elementId);
   const w = window.open("", "_blank");
   if (!w || !el) return;
-  w.document.write(`<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><title>Duvdevani Platform – קבוצת דובדבני</title>
+  w.document.write(`<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><title>דובדבוט – Duvdevani Platform</title>
   <link href="https://fonts.googleapis.com/css2?family=Karantina:wght@700&family=Assistant:wght@400;600;700&display=swap" rel="stylesheet">
   <style>body{font-family:Assistant,Arial,sans-serif;max-width:760px;margin:48px auto;padding:0 28px;color:#16130e;line-height:1.75;font-weight:300}
   header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1px solid #c9a46a;padding-bottom:14px;margin-bottom:34px}
@@ -744,8 +744,8 @@ function printDeliverable(elementId: string) {
   h1,h2,h3{font-family:Karantina;font-weight:700;color:#16130e;font-size:32px;margin:24px 0 8px}strong{font-weight:600}
   table{border-collapse:collapse;width:100%;margin:12px 0;font-size:13.5px}th,td{border-bottom:1px solid #e6dcc8;padding:8px 10px;text-align:right}th{color:#8c6f42;font-weight:600}
   footer{margin-top:48px;font-size:11px;color:#8a8275;border-top:1px solid #e6dcc8;padding-top:12px}</style></head>
-  <body><header><b>Duvdevani Platform</b><span>DUVDEVANI GROUP · RND.ORG.IL</span></header>${el.innerHTML}
-  <footer>הופק על ידי Duvdevani Platform, כלי AI מבית קבוצת דובדבני, על בסיס הנחות שמסרת. לכיוון ראשוני בלבד – אינו תחליף ליועץ עסקי, רו״ח, עו״ד או יועץ השקעות.</footer>
+  <body><header><b>דובדבוט</b><span>DUVDEVANI GROUP · RND.ORG.IL</span></header>${el.innerHTML}
+  <footer>הופק על ידי דובדבוט, כלי AI מבית קבוצת דובדבני, על בסיס הנחות שמסרת. לכיוון ראשוני בלבד – אינו תחליף ליועץ עסקי, רו״ח, עו״ד או יועץ השקעות.</footer>
   <script>document.fonts.ready.then(()=>window.print())</script></body></html>`);
   w.document.close();
 }

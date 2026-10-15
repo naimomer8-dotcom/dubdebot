@@ -24,7 +24,7 @@ export const REGULAR_MONTHLY = 450;
 export const WORKSHOP_VALUE = 470;
 
 const BASE_FEATURES = [
-  "גישה מלאה לפלטפורמה: ניר הדיגיטלי זמין לך 24/6 עם כל הכלים",
+  "גישה מלאה לפלטפורמה: דובדבוט זמין לך 24/6 עם כל הכלים",
   `${COURSES.length} קורסים דיגיטליים של ניר (${COURSES.slice(0, 3).join(", ")} ועוד) + בונוס: ${BONUS_COURSE}`,
   `${BOOKS.length} רבי המכר של ניר בדיגיטל: ${BOOKS.join(", ")}`,
   `4 סדנאות פיזיות בשנה, אחת לרבעון: ${WORKSHOPS.map((w) => `סדנת ${w}`).join(", ")}`,

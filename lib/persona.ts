@@ -275,7 +275,7 @@ business_type, business_name, years_active, monthly_revenue, employees, main_cha
 
 /** Prompt for summarizing a conversation for the sales rep. */
 export const LEAD_SUMMARY_PROMPT = `
-אתה מסכם שיחה בין בעל עסק לבין ניר הדיגיטלי עבור נציג מכירות של קבוצת דובדבני שיתקשר אליו.
+אתה מסכם שיחה בין בעל עסק לבין ניר הדיגיטלי (דובדבוט) עבור נציג מכירות של קבוצת דובדבני שיתקשר אליו.
 כתוב בעברית, קצר וחד, במבנה הבא:
 עסק: (תחום, ותק, גודל אם ידוע)
 מחזור / נתונים: (מה שנאמר)
