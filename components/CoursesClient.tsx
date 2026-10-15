@@ -60,6 +60,7 @@ export default function CoursesClient({ user, conversations, leadSent, links: in
         </div>
         <b className="crs-title">{c.title}</b>
         <p className="crs-blurb">{c.about ?? c.blurb}</p>
+        {c.facts && <div className="crs-facts">{c.facts.map((f) => <span key={f}>{f}</span>)}</div>}
         {c.learn && (
           <details className="crs-more">
             <summary>{c.kind === "book" ? "מה תיקח מהספר" : "מה לומדים בקורס"} <Icon name="chevron" size={14} /></summary>
