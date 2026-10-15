@@ -14,7 +14,7 @@ import type { ConvItem, ShellUser } from "@/lib/data";
 type Done = { status: "rep" | "provider_pending"; total: number; plan: string; via: "self" | "rep" };
 
 const COMPARE: { label: string; on: Tier[] }[] = [
-  { label: "דובדבוט: ניר זמין 24/6 וכל הכלים", on: ["basic", "private", "upgrade", "pro"] },
+  { label: "ניר הדיגיטלי: זמין 24/6 וכל הכלים", on: ["basic", "private", "upgrade", "pro"] },
   { label: `${COURSES.length} קורסים דיגיטליים + בונוס: ${BONUS_COURSE}`, on: ["basic", "private", "upgrade", "pro"] },
   { label: `${BOOKS.length} רבי המכר של ניר בדיגיטל`, on: ["basic", "private", "upgrade", "pro"] },
   { label: "4 סדנאות פיזיות בשנה, אחת לרבעון", on: ["basic", "private", "upgrade", "pro"] },
@@ -94,9 +94,9 @@ export default function PlansClient({ user, conversations, focus, offers = {} }:
   const content = (
     <div className="plans">
       <header className="plans-hero">
-        <span className="eyebrow">מסלולים · דובדבוט</span>
+        <span className="eyebrow">מסלולים · Duvdevani Platform</span>
         <h1 className="h-display">שנה שלמה עם ניר. <span className="gold">אתה בוחר כמה עמוק.</span></h1>
-        <p className="lead">כל המסלולים כוללים את הפלטפורמה להצלחה בעסקים: דובדבוט 24/6, הקורסים הדיגיטליים והספרים של ניר, 4 סדנאות פיזיות בשנה ופגישה אסטרטגית חודשית בזום עם ניר. ההבדל הוא כמה ליווי אישי אתה רוצה.</p>
+        <p className="lead">כל המסלולים כוללים את הפלטפורמה להצלחה בעסקים: ניר הדיגיטלי 24/6, הקורסים הדיגיטליים והספרים של ניר, 4 סדנאות פיזיות בשנה ופגישה אסטרטגית חודשית בזום עם ניר. ההבדל הוא כמה ליווי אישי אתה רוצה.</p>
         <div className="plans-anchor" role="note">
           <span className="pa-tag">מחיר השקה</span>
           <span>מחיר רגיל <s className="num">{ils(REGULAR_MONTHLY)}</s> לחודש</span>
@@ -192,7 +192,7 @@ export default function PlansClient({ user, conversations, focus, offers = {} }:
         </div>
         <div className="plans-value">
           <h4>מה זה שווה, במחיר רגיל</h4>
-          <div className="pv-row"><span>הפלטפורמה ודובדבוט, 12 חודשים × {ils(REGULAR_MONTHLY)}</span><b className="num">{ils(REGULAR_MONTHLY * 12)}</b></div>
+          <div className="pv-row"><span>הפלטפורמה וניר הדיגיטלי, 12 חודשים × {ils(REGULAR_MONTHLY)}</span><b className="num">{ils(REGULAR_MONTHLY * 12)}</b></div>
           <div className="pv-row"><span>4 סדנאות פיזיות של 4 שעות × {ils(WORKSHOP_VALUE)}</span><b className="num">{ils(WORKSHOP_VALUE * 4)}</b></div>
           <div className="pv-row"><span>12 פגישות אסטרטגיות בזום עם ניר</span><b>כלול</b></div>
           <div className="pv-row"><span>{COURSES.length} קורסים דיגיטליים, בונוס ו-{BOOKS.length} ספרים</span><b>כלול</b></div>
@@ -200,7 +200,7 @@ export default function PlansClient({ user, conversations, focus, offers = {} }:
           <div className="pv-row pv-you"><span>אתה משלם במחיר השקה, מנוי שנתי בתשלום אחד</span><b className="num">{ils(priceOf("basic", "onetime").net)}</b></div>
           <a className="pv-more" href="/platform">ההסבר המלא על הפלטפורמה ←</a>
         </div>
-        <p className="plans-renew"><Icon name="clock" size={15} /> * מנוי שנתי: משלמים פעם אחת לשנה (או ב-12 תשלומים). דובדבוט זמין 24/6, כי בשבת אנחנו נחים ומתמקדים במשפחה. אחרי השנה הראשונה המנוי ממשיך אוטומטית ב-{ils(RENEWAL_MONTHLY)} + מע״מ לחודש, בלי לסלוק מחדש. ביטול בכל רגע.</p>
+        <p className="plans-renew"><Icon name="clock" size={15} /> * מנוי שנתי: משלמים פעם אחת לשנה (או ב-12 תשלומים). ניר הדיגיטלי זמין 24/6, כי בשבת אנחנו נחים ומתמקדים במשפחה. אחרי השנה הראשונה המנוי ממשיך אוטומטית ב-{ils(RENEWAL_MONTHLY)} + מע״מ לחודש, בלי לסלוק מחדש. ביטול בכל רגע.</p>
       </section>
 
       <section className="plans-compare" aria-label="השוואת מסלולים">

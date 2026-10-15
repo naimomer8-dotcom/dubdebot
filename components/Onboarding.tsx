@@ -10,7 +10,7 @@ const KEY = "dd.onboarded.v1";
 const STEPS: { pose: Pose; eyebrow: string; title: string; gold: string; text: string; points?: { icon: IconName; b: string; s: string }[] }[] = [
   {
     pose: "welcome",
-    eyebrow: "ברוך הבא לדובדבוט",
+    eyebrow: "ברוך הבא ל-Duvdevani Platform",
     title: "אני ניר.",
     gold: "30 יום אני זמין לך.",
     text: "כל מה שלמדתי ב-22 שנה של ליווי עסקים, זמין לך 24/6. שואלים אותי כמו שהיית שואל בפגישה, ואני עונה על העסק שלך, לא באופן כללי.",

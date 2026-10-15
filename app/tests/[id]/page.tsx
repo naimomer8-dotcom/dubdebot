@@ -7,7 +7,7 @@ import QuizClient from "@/components/QuizClient";
 import { QUIZZES, type QuizId } from "@/lib/quizzes";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "מבחנים | דובדבוט" };
+export const metadata: Metadata = { title: "מבחנים | Duvdevani Platform" };
 
 export default async function QuizPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

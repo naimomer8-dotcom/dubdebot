@@ -10,7 +10,7 @@ export default function WebinarPage() {
       <h1>הוובינר הפתוח הבא עם ניר</h1>
       <p style={{ fontSize: 22 }}>יום שני, {webinarLabel(d)} בשעה {WEBINAR_TIME}</p>
       <p>קישור הכניסה יעלה לכאן ויישלח אליך בוואטסאפ ובמייל ביום הוובינר.</p>
-      <p><a href="/">חזרה לדובדבוט</a></p>
+      <p><a href="/">חזרה ל-Duvdevani Platform</a></p>
     </main>
   );
 }

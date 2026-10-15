@@ -7,7 +7,7 @@ import ExpiredScreen from "@/components/ExpiredScreen";
 import CoursesClient from "@/components/CoursesClient";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "הקורסים שלי | דובדבוט" };
+export const metadata: Metadata = { title: "הקורסים שלי | Duvdevani Platform" };
 
 export default async function CoursesPage() {
   const userId = await getSessionUserId();

@@ -12,8 +12,22 @@ export function webinarDates(count = 26): string[] {
   return Array.from({ length: count }, (_, i) => ilDate(start + i * WEBINAR_EVERY_DAYS * DAY));
 }
 
-/** The next webinar on or after today (Israel date). */
+export const WEBINAR_ENDS = "22:15"; // after this, "next" already means the following webinar
+
+const ilTime = (t: number) => new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Jerusalem", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(t)); // HH:MM
+
+/**
+ * The next webinar still ahead (Israel time). Once tonight's webinar is over, it rolls to the following one,
+ * so a page or link opened after 30.11 at 22:15 already shows 14.12.
+ */
 export function nextWebinar(now = Date.now()): string {
+  const d = nextWebinarDate(now);
+  if (d === ilDate(now) && ilTime(now) >= WEBINAR_ENDS) return ilDate(Date.parse(d + "T12:00:00Z") + WEBINAR_EVERY_DAYS * DAY);
+  return d;
+}
+
+/** The next webinar on or after today, by date only (used for the reminder schedule). */
+function nextWebinarDate(now: number): string {
   const today = ilDate(now);
   const start = Date.parse(WEBINAR_FIRST + "T12:00:00Z");
   const t = Date.parse(today + "T12:00:00Z");
@@ -29,7 +43,7 @@ export function nextWebinar(now = Date.now()): string {
 export type WebinarKind = "week" | "eve" | "day" | "after";
 export function webinarMoment(now = Date.now()): { kind: WebinarKind; date: string; next: string } | null {
   const today = ilDate(now);
-  const next = nextWebinar(now);
+  const next = nextWebinarDate(now);
   const at = (d: string, days: number) => ilDate(Date.parse(d + "T12:00:00Z") + days * DAY);
   const following = at(next, WEBINAR_EVERY_DAYS);
   if (next === today) return { kind: "day", date: next, next: following };

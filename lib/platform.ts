@@ -1,7 +1,7 @@
 /**
  * "הפלטפורמה להצלחה בעסקים" – the platform story, in Nir's words (meeting with Nir and Nadav, 14.10.2026).
  * One source for the landing page, the /platform page and the login screen.
- * The bot (דובדבוט) is one part of the platform, not the platform itself.
+ * The bot (ניר הדיגיטלי) is one part of the platform, not the platform itself.
  */
 import type { IconName } from "@/components/Icon";
 
@@ -36,7 +36,7 @@ export const ACTIVE_CHECKS = [
 
 /** The five ways the platform works with you. */
 export const MODES: { t: string; d: string }[] = [
-  { t: "אישי", d: "דובדבוט: ניר זמין לך 24/6, מכיר את העסק ובונה איתך תוצרים" },
+  { t: "אישי", d: "ניר הדיגיטלי: זמין לך 24/6, מכיר את העסק ובונה איתך תוצרים" },
   { t: "אחד על אחד", d: "יועץ בכיר מהצוות של ניר, או ניר בעצמו, לפי המסלול" },
   { t: "קבוצתי", d: "4 סדנאות פיזיות בשנה, נטוורקינג וקהילה" },
   { t: "היברידי", d: "פגישה אסטרטגית חודשית בזום עם ניר" },

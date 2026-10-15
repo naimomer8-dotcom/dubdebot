@@ -10,7 +10,7 @@ export async function GET(req: Request) {
   if (!admin) return json({ error: "unauthorized" }, 401);
   const spent = await spentThisMonth();
   const test = new URL(req.url).searchParams.get("test") === "1"
-    ? await alert(`test:${Date.now()}`, "בדיקת התראות", ["זו הודעת בדיקה ממערכת ההתראות של דובדבוט.", `תקציב AI החודש: ₪${spent.toFixed(2)} מתוך ₪${BUDGET_ILS}.`], 0)
+    ? await alert(`test:${Date.now()}`, "בדיקת התראות", ["זו הודעת בדיקה ממערכת ההתראות של Duvdevani Platform.", `תקציב AI החודש: ₪${spent.toFixed(2)} מתוך ₪${BUDGET_ILS}.`], 0)
     : null;
   return json({ month: monthKey(), spent_ils: Number(spent.toFixed(2)), budget_ils: BUDGET_ILS, pct: Number(((spent / BUDGET_ILS) * 100).toFixed(1)), alert_email: process.env.ALERT_EMAIL || "omern@rnd.org.il", test });
 }

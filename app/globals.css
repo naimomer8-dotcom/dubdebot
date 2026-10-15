@@ -1339,7 +1339,7 @@ body { font-size: 18px; }
 .side { border-inline-end: 0; }
 .side::after { content: ""; position: absolute; top: 0; bottom: 0; inset-inline-end: 0; width: 1px; background: linear-gradient(180deg, transparent, rgba(226,198,142,.4) 25%, rgba(226,198,142,.18) 75%, transparent); pointer-events: none; }
 .brand b { background: var(--grad-text); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.brand small { font-size: 11px; color: var(--gold-3); white-space: nowrap; }
+.brand small { font-size: 11px; color: var(--gold-3); white-space: nowrap; letter-spacing: 0; }
 .side-new { font-size: 16.5px; border-color: rgba(226,198,142,.35); background: linear-gradient(180deg, rgba(226,198,142,.10), rgba(226,198,142,.03)); }
 .side-new:hover { border-color: rgba(226,198,142,.6); box-shadow: var(--glow-gold); }
 .side-link { font-size: 16.5px; padding: 9px 10px; }

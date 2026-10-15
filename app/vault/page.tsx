@@ -9,7 +9,7 @@ import type { Scores } from "@/lib/xray";
 import type { FinRow } from "@/lib/financials";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "התיק העסקי שלי | דובדבוט" };
+export const metadata: Metadata = { title: "התיק העסקי שלי | Duvdevani Platform" };
 
 export default async function VaultPage() {
   const userId = await getSessionUserId();

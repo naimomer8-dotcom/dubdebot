@@ -8,7 +8,7 @@ import { Brand } from "@/components/BrandBar";
 import { QUIZZES } from "@/lib/quizzes";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "מבחנים | דובדבוט" };
+export const metadata: Metadata = { title: "מבחנים | Duvdevani Platform" };
 
 const ALL = [
   { href: "/xray", title: "רנטגן עסקי", sub: "12 השאלות שניר שואל בפגישה הראשונה – ציון על 6 צירים", minutes: 3, icon: "scan" as const },

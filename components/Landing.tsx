@@ -81,7 +81,7 @@ export default function Landing() {
               <span className="line"><span>הפלטפורמה</span></span>
               <span className="line"><span className="gold">להצלחה בעסקים.</span></span>
             </h1>
-            <p className="lead">פלטפורמה היברידית ואקטיבית על בסיס שיטת האלפא של ניר דובדבני. דובדבוט זמין לך 24/6 ובונה איתך תחזית, תוכנית ותסריט מכירה, ומסביבו קורסים דיגיטליים, 4 סדנאות פיזיות בשנה ופגישה אסטרטגית חודשית בזום עם ניר.</p>
+            <p className="lead">פלטפורמה היברידית ואקטיבית על בסיס שיטת האלפא של ניר דובדבני. ניר הדיגיטלי זמין לך 24/6 ובונה איתך תחזית, תוכנית ותסריט מכירה, ומסביבו קורסים דיגיטליים, 4 סדנאות פיזיות בשנה ופגישה אסטרטגית חודשית בזום עם ניר.</p>
             <div className="hero-mcta">
               <button className="btn btn-primary btn-lg" onClick={() => goSignup()}>להתחיל 30 יום במתנה <Icon name="arrow" size={18} className="ico-move" /></button>
               <a className="btn btn-glass btn-lg" href="/platform">מה זה הפלטפורמה</a>
@@ -110,11 +110,11 @@ export default function Landing() {
             <div className="sec-head reveal">
               <span className="eyebrow">הפלטפורמה להצלחה בעסקים</span>
               <h2 className="h-display">לא עוד קורס. <span className="gold">פלטפורמה שעובדת איתך.</span></h2>
-              <p className="lead">דובדבוט הוא חלק אחד ממנה. סביבו יש קורסים, סדנאות, פגישות עם ניר, והשיטה שעבדה עם 23,000 עסקים.</p>
+              <p className="lead">ניר הדיגיטלי הוא חלק אחד ממנה. סביבו יש קורסים, סדנאות, פגישות עם ניר, והשיטה שעבדה עם 23,000 עסקים.</p>
             </div>
             <div className="steps3 plat4">
               {[
-                ["היברידית", "דיגיטל ופיזי ביחד: דובדבוט, 8 קורסים דיגיטליים, 4 סדנאות פיזיות בשנה ופגישה אסטרטגית חודשית בזום עם ניר."],
+                ["היברידית", "דיגיטל ופיזי ביחד: ניר הדיגיטלי 24/6, 8 קורסים דיגיטליים, 4 סדנאות פיזיות בשנה ופגישה אסטרטגית חודשית בזום עם ניר."],
                 ["אקטיבית, לא פסיבית", "הפלטפורמה לא מחכה שתיזכר. היא שולחת לך הודעות, בונה איתך תחזית ותוכנית עבודה, ובודקת שזה קורה."],
                 ["שיטת אלפא", "22 שנה של ליווי עסקים ו-23,000 עסקים שעברו את השיטה. אותה שיטה, זמינה לך 24/6."],
                 ["אנשים כשצריך", "כשההחלטה גדולה, יועץ בכיר מהצוות של ניר יושב איתך, או ניר עצמו. בשבת אנחנו נחים ומתמקדים במשפחה."],
@@ -167,7 +167,7 @@ export default function Landing() {
         <section className="section" id="inside">
           <div className="wrap">
             <div className="sec-head reveal">
-              <span className="eyebrow">מה מחכה לך בדובדבוט</span>
+              <span className="eyebrow">מה מחכה לך ב-Duvdevani Platform</span>
               <h2 className="h-display">כל מה שקורה בפגישה עם ניר. <span className="gold">מתי שצריך.</span></h2>
             </div>
             <div className="feat-grid">
@@ -213,7 +213,7 @@ export default function Landing() {
           <div className="wrap">
             <div className="vision reveal">
               <div className="vision-photo"><NirPose pose="welcome" width={340} /><Mascot size={72} mood="wink" track={false} /></div>
-              <blockquote className="h-display">״החזון שלי: שלא יהיה עסק בישראל <span className="gold">בלי דובדבוט.</span>״</blockquote>
+              <blockquote className="h-display">״החזון שלי: שלא יהיה עסק בישראל <span className="gold">בלי Duvdevani Platform.</span>״</blockquote>
               <cite>ניר דובדבני · מייסד קבוצת דובדבני</cite>
               <button className="btn btn-primary btn-lg" onClick={() => goSignup()}>להתחיל 30 יום במתנה <Icon name="arrow" size={18} className="ico-move" /></button>
             </div>
