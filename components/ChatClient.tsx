@@ -7,6 +7,7 @@ import remarkGfm from "remark-gfm";
 import Mascot, { Mood } from "./Mascot";
 import Spotlight from "./Spotlight";
 import Onboarding from "./Onboarding";
+import WebinarBar from "./WebinarBar";
 import WelcomePaid from "./WelcomePaid";
 import Sidebar from "./Sidebar";
 import NirPhoto from "./NirPhoto";
@@ -449,6 +450,7 @@ export default function ChatClient({
               )}
             </div>
           </header>
+          <WebinarBar />
 
           <div
             className="thread"
@@ -577,7 +579,7 @@ export default function ChatClient({
                           </>
                         ) : (
                           <>
-                            <p>ביום שני, {webinarLabel(nextWebinar())} ב-{WEBINAR_TIME}, אני עולה לוובינר פתוח לבעלי עסקים. תבוא עם השאלה הזאת, ואני עונה עליה מול כולם.</p>
+                            <p>ביום ראשון, {webinarLabel(nextWebinar())} ב-{WEBINAR_TIME}, אני עולה לוובינר חי: מנועי צמיחה לעסק שלך לשנת 2027. תבוא עם השאלה הזאת, ואני עונה עליה מול כולם.</p>
                             <div className="cta-actions">
                               <a className="btn btn-primary btn-sm" href="/w" target="_blank" rel="noopener noreferrer" onClick={() => track("cta_webinar", { trigger: m.cta })}>שמור לי מקום בוובינר</a>
                               <button className="link-btn" onClick={() => openLead("advisor", m.cta ?? null)}>שנציג יחזור אליי?</button>

@@ -1,4 +1,4 @@
-import { nextWebinar, webinarLinks } from "@/lib/webinars";
+import { nextWebinar, webinarLinks, WEBINAR_ZOOM_URL } from "@/lib/webinars";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -7,5 +7,5 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   const date = nextWebinar();
   const link = (await webinarLinks().catch(() => ({} as Record<string, string>)))[date];
-  return Response.redirect(link || new URL("/webinar", req.url).toString(), 302);
+  return Response.redirect(link || WEBINAR_ZOOM_URL || new URL("/webinar", req.url).toString(), 302);
 }

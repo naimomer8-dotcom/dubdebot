@@ -5,7 +5,7 @@ import { PLANS } from "@/lib/plans";
 import { refLink } from "@/lib/referral";
 import { alert } from "@/lib/alerts";
 import { TOOLS } from "@/lib/persona";
-import { webinarMoment, nextWebinar, webinarLabel, webinarLinks, WEBINAR_TIME } from "@/lib/webinars";
+import { webinarMoment, nextWebinar, webinarLabel, webinarLinks, WEBINAR_TIME, WEBINAR_WA_GROUP } from "@/lib/webinars";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -106,6 +106,7 @@ export async function GET(req: Request) {
         webinar_time: WEBINAR_TIME,
         webinar_next: webinarLabel(wm?.next ?? nextWebinar()),
         webinar_url: wLink || `${app}/w`,
+        wa_group: WEBINAR_WA_GROUP,
         top_tool: "",
       };
       if (st.text.includes("{{top_tool}}")) {

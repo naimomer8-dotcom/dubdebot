@@ -1,7 +1,13 @@
-/** Open webinar with Nir: every 14 days from Monday 30.11.2026, 20:30 Israel time. */
-export const WEBINAR_FIRST = "2026-11-30";
+/** Live webinar with Nir ("מנועי צמיחה לעסק שלך לשנת 2027"): every 14 days from Sunday 15.11.2026, 21:00 Israel time. */
+export const WEBINAR_FIRST = "2026-11-15";
 export const WEBINAR_EVERY_DAYS = 14;
-export const WEBINAR_TIME = "20:30";
+export const WEBINAR_TIME = "21:00";
+export const WEBINAR_DAY = "יום ראשון";
+export const WEBINAR_TITLE = "מנועי צמיחה לעסק שלך לשנת 2027";
+/** One recurring Zoom webinar (Evyatar's account, Nir as panelist): the same link for every date. */
+export const WEBINAR_ZOOM_URL = "https://us06web.zoom.us/j/89252241486?pwd=aw4X5I1bshc4DvNKuhYY1GC3gEnSLv.1";
+/** Quiet WhatsApp group for webinar updates. */
+export const WEBINAR_WA_GROUP = "https://chat.whatsapp.com/Bq0CfCyS9uI6g3lFS57eKX";
 
 const DAY = 86400_000;
 const ilDate = (t: number) => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jerusalem" }).format(new Date(t)); // YYYY-MM-DD
@@ -12,13 +18,13 @@ export function webinarDates(count = 26): string[] {
   return Array.from({ length: count }, (_, i) => ilDate(start + i * WEBINAR_EVERY_DAYS * DAY));
 }
 
-export const WEBINAR_ENDS = "22:15"; // after this, "next" already means the following webinar
+export const WEBINAR_ENDS = "22:45"; // after this, "next" already means the following webinar
 
 const ilTime = (t: number) => new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Jerusalem", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(t)); // HH:MM
 
 /**
  * The next webinar still ahead (Israel time). Once tonight's webinar is over, it rolls to the following one,
- * so a page or link opened after 30.11 at 22:15 already shows 14.12.
+ * so a page or link opened after 15.11 at 22:45 already shows 29.11.
  */
 export function nextWebinar(now = Date.now()): string {
   const d = nextWebinarDate(now);
@@ -54,5 +60,5 @@ export function webinarMoment(now = Date.now()): { kind: WebinarKind; date: stri
   return null;
 }
 
-/** 30.11 style label */
+/** 15.11 style label */
 export const webinarLabel = (d: string) => { const [, m, day] = d.split("-"); return `${Number(day)}.${Number(m)}`; };
