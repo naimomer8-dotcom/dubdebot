@@ -1,5 +1,6 @@
 import { createHmac } from "crypto";
 import { db } from "./supabase";
+import { emailParts } from "./journeys";
 
 /**
  * Ops alerts by email to the team (ALERT_EMAIL, default omern@rnd.org.il).
@@ -22,7 +23,7 @@ export async function alert(key: string, subject: string, lines: string[], every
       at: new Date().toISOString(),
       app: process.env.PUBLIC_APP_URL || "https://dubdebot.vercel.app",
       contact: { id: "ops-alert", first_name: "צוות", full_name: "התראות Duvdevani Platform", email, phone: "", plan: "trial" },
-      data: { stage: `alert:${key}`, track: "ops", whatsapp_template: "", email_subject: `⚠️ Duvdevani Platform: ${subject}`, text, email_parts: [text, "", "", ""], vars: { plans_url: `${process.env.PUBLIC_APP_URL || "https://dubdebot.vercel.app"}/admin` }, transactional: true },
+      data: { stage: `alert:${key}`, track: "ops", whatsapp_template: "", email_subject: `⚠️ Duvdevani Platform: ${subject}`, text, email_parts: emailParts(text), vars: { plans_url: `${process.env.PUBLIC_APP_URL || "https://dubdebot.vercel.app"}/admin` }, transactional: true },
     });
     const secret = process.env.AUTOMATION_SECRET || process.env.SESSION_SECRET || "";
     const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json", "X-Signature": createHmac("sha256", secret).update(body).digest("hex") }, body, signal: AbortSignal.timeout(8000) });

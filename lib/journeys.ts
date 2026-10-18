@@ -125,7 +125,16 @@ export function render(text: string, vars: Record<string, string>) {
  * Rav Messer personal fields hold at most 255 chars, so the journey email body travels to Make
  * as 4 chunks (dp_body, dp_b2, dp_b3, dp_b4), split on line boundaries. Always returns 4 strings.
  */
+/**
+ * Rav Messer stores personal fields as 3-byte UTF-8: anything outside the BMP (most emoji: 🔥 👇 🎥 📲 🎁)
+ * cuts the field off at that character. Email copy drops them (WhatsApp keeps them).
+ */
+export function noAstral(text: string) {
+  return text.replace(/[\u{10000}-\u{10FFFF}]\uFE0F?/gu, "").replace(/[ \t]{2,}/g, " ").replace(/ +\n/g, "\n").replace(/\n +/g, "\n").trim();
+}
+
 export function emailParts(text: string, max = 250, slots = 4): string[] {
+  text = noAstral(text);
   const units: string[] = [];
   for (const line of text.split("\n")) {
     if (line.length <= max) { units.push(line); continue; }
