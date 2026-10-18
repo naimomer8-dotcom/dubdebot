@@ -16,7 +16,8 @@ export type AutomationEvent =
   | "upgrade"
   | "rep_requested"
   | "referral_reward" // a friend who joined via this member's link paid → sales workshop seat
-  | "journey"; // a scheduled journey stage (see lib/journeys.ts)
+  | "journey" // a scheduled journey stage (see lib/journeys.ts)
+  | "password_reset"; // service email: reset link (never stored in `events`, the link is a credential)
 
 export async function contactOf(userId: string) {
   const { data } = await db()
@@ -46,7 +47,8 @@ export async function contactOf(userId: string) {
 
 export async function emit(event: AutomationEvent, userId: string, data: Record<string, unknown> = {}) {
   try {
-    await db().from("events").insert({ user_id: userId, type: `auto:${event === "journey" ? `journey:${data.stage}` : event}`, meta: data });
+    const meta = event === "password_reset" ? {} : data;
+    await db().from("events").insert({ user_id: userId, type: `auto:${event === "journey" ? `journey:${data.stage}` : event}`, meta });
   } catch {}
   const url = process.env.MAKE_EVENTS_WEBHOOK_URL;
   if (!url) return { sent: false, reason: "MAKE_EVENTS_WEBHOOK_URL not set" };

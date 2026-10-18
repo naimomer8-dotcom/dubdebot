@@ -2,11 +2,15 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/supabase";
 import { newToken, sha256 } from "@/lib/password";
 import { clientIp, hit, limited } from "@/lib/ratelimit";
-import { sendToMake } from "@/lib/make";
+import { emit } from "@/lib/automation";
+import { emailParts } from "@/lib/journeys";
 
 export const runtime = "nodejs";
 
-/** Always answers the same way (no account enumeration). Sends a 60-minute reset link via the Make auth webhook. */
+/**
+ * Always answers the same way (no account enumeration). Sends a 60-minute reset link by email
+ * through the Make events webhook (route "password_reset" → Rav Messer).
+ */
 export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
   const email = String(body.email ?? "").trim().toLowerCase();
@@ -17,7 +21,7 @@ export async function POST(req: Request) {
   await Promise.all([hit(`e:${email}`, "reset"), hit(`ip:${ip}`, "reset")]);
 
   const supabase = db();
-  const { data: user } = await supabase.from("users").select("id, full_name, email, phone").eq("email", email).maybeSingle();
+  const { data: user } = await supabase.from("users").select("id, full_name, email").eq("email", email).maybeSingle();
   if (!user) return generic;
 
   const token = newToken();
@@ -28,16 +32,25 @@ export async function POST(req: Request) {
     ip,
   });
   const origin = process.env.PUBLIC_APP_URL || new URL(req.url).origin;
-  await sendToMake(process.env.MAKE_AUTH_WEBHOOK_URL, {
-    type: "password_reset",
-    email: user.email,
-    full_name: user.full_name,
-    first_name: user.full_name.split(" ")[0],
-    phone: user.phone,
-    reset_url: `${origin}/reset?token=${token}`,
+  const resetUrl = `${origin}/reset?token=${token}`;
+  const firstName = String(user.full_name ?? "").split(" ")[0];
+  const text = [
+    `${firstName}, ביקשת לקבוע סיסמה חדשה ל-Duvdevani Platform.`,
+    "לוחצים על הכפתור, בוחרים סיסמה, וממשיכים מאיפה שהפסקת.",
+    "הקישור תקף לשעה אחת. אם לא ביקשת, אפשר להתעלם מהמייל הזה.",
+    `הקישור: ${resetUrl}`,
+  ].join("\n");
+  const r = await emit("password_reset", user.id, {
+    stage: "password_reset",
+    track: "service",
+    whatsapp_template: "",
+    email_subject: "Duvdevani Platform: קישור לקביעת סיסמה",
+    text,
+    email_parts: emailParts(text),
+    vars: { plans_url: resetUrl },
     expires_minutes: 60,
-    subject: "Duvdevani Platform – קישור לקביעת סיסמה",
+    transactional: true,
   });
-  if (!process.env.MAKE_AUTH_WEBHOOK_URL) console.warn("MAKE_AUTH_WEBHOOK_URL not set – reset email not sent");
+  if (!r.sent) console.warn("password reset email not sent", r);
   return generic;
 }
