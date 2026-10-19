@@ -43,7 +43,7 @@ function nextWebinarDate(now: number): string {
 }
 
 /**
- * Where today sits relative to the webinars: a week before ("week"), the day before ("eve"),
+ * Where today sits relative to the webinars: a week before ("week"), Friday before ("eve": the day before is Shabbat, so the reminder goes out Friday morning),
  * the day itself ("day") or the day after the last one ("after"). Otherwise null.
  */
 export type WebinarKind = "week" | "eve" | "day" | "after";
@@ -53,7 +53,7 @@ export function webinarMoment(now = Date.now()): { kind: WebinarKind; date: stri
   const at = (d: string, days: number) => ilDate(Date.parse(d + "T12:00:00Z") + days * DAY);
   const following = at(next, WEBINAR_EVERY_DAYS);
   if (next === today) return { kind: "day", date: next, next: following };
-  if (at(next, -1) === today) return { kind: "eve", date: next, next };
+  if (at(next, -2) === today) return { kind: "eve", date: next, next }; // Friday morning (Shabbat is skipped)
   if (at(next, -7) === today) return { kind: "week", date: next, next };
   const prev = at(next, -WEBINAR_EVERY_DAYS);
   if (Date.parse(prev + "T12:00:00Z") >= Date.parse(WEBINAR_FIRST + "T12:00:00Z") && at(prev, 1) === today) return { kind: "after", date: prev, next };
