@@ -46,7 +46,29 @@ export async function POST(req: Request) {
   await hit(`ip:${ip ?? "unknown"}`, "signup");
 
   const supabase = db();
-  const { data: existing } = await supabase.from("users").select("id").eq("email", email).maybeSingle();
+  const { data: existing } = await supabase.from("users").select("id, phone, password_hash").eq("email", email).maybeSingle();
+  // pre-registered from the Meta lead form (no password yet): the same email + phone claims the account
+  if (existing && !existing.password_hash && existing.phone === phone) {
+    await supabase
+      .from("users")
+      .update({
+        full_name: fullName,
+        password_hash: await hashPassword(password),
+        password_set_at: now,
+        marketing_consent: marketingConsent,
+        marketing_consent_at: marketingConsent ? now : null,
+        consent_text: marketingConsent ? MARKETING_CONSENT_TEXT : null,
+        terms_accepted_at: now,
+        privacy_version: PRIVACY_VERSION,
+        signup_ip: ip,
+        user_agent: ua,
+        access_until: new Date(Date.now() + 30 * 86400_000).toISOString(), // the gift month starts when they start
+      })
+      .eq("id", existing.id);
+    await emit("signup", existing.id, { marketing_consent: marketingConsent, utm, claimed: true });
+    await setSession(existing.id);
+    return NextResponse.json({ ok: true, claimed: true });
+  }
   if (existing) {
     // never log someone into an existing account from the signup form
     return NextResponse.json(
