@@ -22,7 +22,7 @@ export default function Sidebar({
   open,
   onClose,
 }: {
-  active: "chat" | "vault" | "plans" | "courses";
+  active: "chat" | "vault" | "plans" | "courses" | "money";
   mode?: ToolMode;
   onTool?: (id: ToolMode) => void;
   conversations: ConvItem[];
@@ -191,6 +191,7 @@ export default function Sidebar({
         <nav aria-label="עמודים">
           <Link className="side-link" href="/chat" aria-current={active === "chat" && (!mode || mode === "chat") ? "true" : undefined}><Icon name="chat" size={18} /> שיחה עם ניר</Link>
           <Link className="side-link" href="/vault" aria-current={active === "vault" ? "true" : undefined}><Icon name="vault" size={18} /> התיק העסקי שלי</Link>
+          <Link className="side-link" href="/money" aria-current={active === "money" ? "true" : undefined}><Icon name="coin" size={18} /> כסף <span className="new-tag">חדש</span></Link>
           <Link className="side-link" href="/courses" aria-current={active === "courses" ? "true" : undefined}><Icon name="layers" size={18} /> הקורסים שלי</Link>
           <Link className="side-link" href="/plans" aria-current={active === "plans" ? "true" : undefined}><Icon name="gem" size={18} /> מסלולים ומנוי</Link>
         </nav>

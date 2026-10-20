@@ -32,7 +32,7 @@ export default function WelcomePaid({ firstName, access }: { firstName: string; 
           <h2 id="wp-h" className="h-display">בשעה טובה, {firstName}! <span className="gold">אתה בפנים.</span></h2>
           <ul className="ob-points">
             <li><span className="tl-ico"><Icon name="layers" size={18} /></span><span><b>הקורסים והספרים נפתחו לך</b><small>הכל מחכה בעמוד "הקורסים שלי", בלחיצה אחת.</small></span></li>
-            <li><span className="tl-ico"><Icon name="calendar" size={18} /></span><span><b>4 סדנאות פיזיות וזום חודשי עם ניר</b><small>ההזמנות יגיעו אליך בוואטסאפ ובמייל.</small></span></li>
+            <li><span className="tl-ico"><Icon name="calendar" size={18} /></span><span><b>הסדנה &quot;להעיר את הכסף שבך&quot; וזום חודשי עם ניר</b><small>ההזמנות יגיעו אליך בוואטסאפ ובמייל.</small></span></li>
             {meeting && <li><span className="tl-ico"><Icon name="phone" size={18} /></span><span><b>נציג יחזור אליך תוך 24 שעות</b><small>לתאם את הפגישה שכלולה במסלול שלך.</small></span></li>}
           </ul>
         </div>

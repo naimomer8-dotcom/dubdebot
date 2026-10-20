@@ -7,7 +7,7 @@ export const refLink = (userId: string, app = process.env.PUBLIC_APP_URL || "htt
 
 /**
  * Called when someone pays for the first time. If they signed up through a friend's link,
- * the friend earns a seat at Nir's physical sales workshop (recorded + pushed to Make → WhatsApp/Fireberry).
+ * the friend earns a seat at Nir's quarterly workshop "להעיר את הכסף שבך" (recorded + pushed to Make → WhatsApp/Fireberry).
  */
 export async function rewardReferrer(buyerId: string) {
   const supabase = db();

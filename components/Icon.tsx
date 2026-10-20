@@ -3,7 +3,7 @@ export type IconName =
   | "chart" | "map" | "target" | "flask" | "shield" | "spark" | "scan" | "vault" | "phone" | "mic" | "clip"
   | "send" | "plus" | "close" | "copy" | "check" | "thumbUp" | "thumbDown" | "download" | "bookmark" | "arrow"
   | "arrowLeft" | "chat" | "user" | "calendar" | "share" | "image" | "file" | "menu" | "stop" | "wave" | "crown"
-  | "bolt" | "layers" | "clock" | "lock" | "trash" | "sound" | "mute" | "home" | "list" | "eye" | "logout" | "mail" | "radar" | "link" | "alert" | "pin" | "folder" | "edit" | "more" | "search" | "chevron" | "gem";
+  | "bolt" | "layers" | "clock" | "lock" | "trash" | "sound" | "mute" | "home" | "list" | "eye" | "logout" | "mail" | "radar" | "link" | "alert" | "pin" | "folder" | "edit" | "more" | "search" | "chevron" | "gem" | "coin";
 
 const P: Record<IconName, React.ReactNode> = {
   pin: <><path d="M9 4h6l-1 5 3 3v2H7v-2l3-3-1-5Z" /><path d="M12 14v6" /></>,
@@ -12,6 +12,7 @@ const P: Record<IconName, React.ReactNode> = {
   more: <><circle cx="5" cy="12" r="1.3" fill="currentColor" /><circle cx="12" cy="12" r="1.3" fill="currentColor" /><circle cx="19" cy="12" r="1.3" fill="currentColor" /></>,
   search: <><circle cx="11" cy="11" r="6.5" /><path d="m20 20-4.2-4.2" /></>,
   chevron: <><path d="m6 9 6 6 6-6" /></>,
+  coin: <><ellipse cx="12" cy="7" rx="7" ry="3" /><path d="M5 7v5c0 1.7 3.1 3 7 3s7-1.3 7-3V7" /><path d="M5 12v5c0 1.7 3.1 3 7 3s7-1.3 7-3v-5" /></>,
   gem: <><path d="M6 4h12l3 5-9 11L3 9l3-5Z" /><path d="M3 9h18M9 4l3 16 3-16" /></>,
   chart: <><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></>,
   map: <><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z" /><path d="M9 4v14M15 6v14" /></>,

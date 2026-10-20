@@ -3,6 +3,7 @@ import { getAdmin, json } from "@/lib/adminAuth";
 import { accessOf } from "@/lib/session";
 import { activateSubscription } from "@/lib/subscription";
 import { PLANS, type Billing, type Tier } from "@/lib/plans";
+import { moneyFromProfile } from "@/lib/money";
 
 export const runtime = "nodejs";
 
@@ -53,6 +54,8 @@ export async function GET() {
       answersToday: use.get(u.id)?.answers_today ?? 0,
       cost30: costIls(Number(use.get(u.id)?.tokens_in ?? 0), Number(use.get(u.id)?.tokens_out ?? 0)),
       lastActive: st?.last ?? null,
+      money: moneyFromProfile(profile)?.score ?? null,
+      moneyLevel: moneyFromProfile(profile)?.levelLabel ?? null,
     };
   });
   return json({ admin, users: rows, leads: leads ?? [] });

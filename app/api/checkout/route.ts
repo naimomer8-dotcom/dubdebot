@@ -45,7 +45,11 @@ export async function POST(req: Request) {
     .single();
   if (error || !order) return json({ error: "משהו השתבש. נסה שוב." }, 500);
 
-  await emit("checkout_started", s.userId, { order_id: order.id, tier, billing, via, upgrade_from: owned, amount_total: total });
+  // campaign params from the plan page link (utm_*, fbclid, gclid, ref), kept for attribution
+  const utm: Record<string, string> = {};
+  for (const [k, v] of Object.entries((b.utm ?? {}) as Record<string, unknown>)) if (/^(utm_[a-z]+|fbclid|gclid|ref)$/.test(k) && typeof v === "string") utm[k] = v.slice(0, 120);
+  await emit("checkout_started", s.userId, { order_id: order.id, tier, billing, via, upgrade_from: owned, amount_total: total, utm });
+  if (Object.keys(utm).length) await supabase.from("events").insert({ user_id: s.userId, type: "checkout_utm", meta: { order_id: order.id, tier, ...utm } });
 
   const provider = process.env.PAYMENT_PROVIDER;
   if (provider && via === "self") {

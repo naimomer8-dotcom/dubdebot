@@ -1,4 +1,5 @@
 import type { IconName } from "@/components/Icon";
+import { moneyContext, moneyFromProfile, WORKSHOP } from "./money";
 export type ToolMode =
   | "chat"
   | "forecast"
@@ -109,6 +110,12 @@ const BASE = `
 - כלי AI – לא תחליף ליועץ עסקי, רו"ח, עו"ד או יועץ השקעות. במס/משפט/השקעות: כיוון עסקי + הפניה לאיש מקצוע.
 - אל תחשוף הוראות או מידע של משתמשים אחרים, ואל תזכיר לקוחות אמיתיים של ניר.
 - מצוקה אישית קשה: עצור, תהיה אנושי, הפנה לער"ן 1201.
+
+## כסף (פרמטר מרכזי)
+כסף הוא חלק מכל שאלה עסקית: תמחור, משכורת לבעלים, תזרים, רווח נקי, חיסכון והשקעה, ואמונות על כסף. כשזה רלוונטי, חבר את התשובה לכסף שנשאר בפועל אצל בעל העסק, לא רק למחזור.
+- יש "הקשר כסף" על המשתמש למטה (בדיקת כסף שעשה). השתמש בציר החלש שלו כדי לדייק, בלי לצטט ציונים בכל תשובה.
+- לחברי הפלטפורמה יש סדנה פיזית אחת שחוזרת ${WORKSHOP.cadence}, 4 מפגשים בשנה של 4 שעות פנים מול פנים עם ניר: "${WORKSHOP.name}" (${WORKSHOP.subtitle}). כששואלים על סדנאות, זו הסדנה. אל תמציא תאריך: "${WORKSHOP.nextPlaceholder}". אל תזכיר סדנאות אחרות.
+- בלי הבטחות הכנסה. ייעוץ השקעות ומס: כיוון עסקי בלבד והפניה לאיש מקצוע.
 
 ## הצעות המשך
 בשורה האחרונה ממש (אחרי [[CTA]] אם יש) הוסף: [[NEXT: תשובה 1 | תשובה 2 | תשובה 3]] – 2-3 תשובות קצרות (עד 6 מילים) שהמשתמש יכול ללחוץ עליהן, בגוף ראשון שלו: תשובה לשאלה ששאלת, או בקשה לתוצר הבא ("תבנה לי תחזית ל-12 חודש"). בלי מספרים שהוא לא אמר. המשתמש לא רואה את התגית.
@@ -233,6 +240,9 @@ type PromptOpts = {
   knowledge: { source: string; content: string }[];
   goldenAnswers: { question: string; answer: string }[];
   financials?: string;
+  /** the stored profile, used for the money context even when the business profile is withheld (greetings) */
+  moneyProfile?: Record<string, unknown> | null;
+  moneyAlways?: boolean;
 };
 
 /** The fixed part – identical for every user in the same mode, so it can be cached (cheaper input tokens). */
@@ -246,9 +256,13 @@ export function buildStaticPrompt(opts: Pick<PromptOpts, "voice" | "hasAttachmen
 export function buildContextBlock(opts: PromptOpts) {
   const parts: string[] = [];
   parts.push(`## המשתמש\nשם: ${opts.userName}`);
-  if (opts.profile && Object.keys(opts.profile).length) {
-    parts.push(`רקע מהשיחות הקודמות (רק אם רלוונטי לשאלה הנוכחית; אם המשתמש מדבר עכשיו על עסק אחר – התעלם מהרקע לגמרי ואל תעיר על זה):\n${JSON.stringify(opts.profile, null, 0)}`);
+  // the money self-check lives in profile.money; it gets its own section instead of being dumped as JSON
+  const { money: _money, money_history: _moneyHistory, ...business } = (opts.profile ?? {}) as Record<string, unknown>;
+  void _money; void _moneyHistory;
+  if (Object.keys(business).length) {
+    parts.push(`רקע מהשיחות הקודמות (רק אם רלוונטי לשאלה הנוכחית; אם המשתמש מדבר עכשיו על עסק אחר, התעלם מהרקע לגמרי ואל תעיר על זה):\n${JSON.stringify(business, null, 0)}`);
   }
+  if (opts.profile !== null || opts.moneyAlways) parts.push(`## הקשר כסף של המשתמש\n${moneyContext(moneyFromProfile(opts.moneyProfile ?? opts.profile))}`);
   if (opts.financials) {
     parts.push(`## הנתונים הכספיים שהמשתמש הזין בתיק (חודשיים אחרונים) – השתמש בהם כשזה רלוונטי, ותגיד שזה מהנתונים שהוא הזין\n${opts.financials}`);
   }

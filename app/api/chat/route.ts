@@ -230,6 +230,8 @@ export async function POST(req: Request) {
     knowledge: knowledge.map((k) => ({ source: k.source, content: k.content.length > 700 ? k.content.slice(0, 700) + "…" : k.content })),
     goldenAnswers: golden,
     financials: trivial ? "" : toPrompt(((finRows ?? []) as FinRow[]).slice().reverse()),
+    moneyProfile: (user.profile as Record<string, unknown>) ?? null,
+    moneyAlways: !trivial,
   });
 
   const route = route0;
@@ -456,7 +458,10 @@ async function updateProfile(userId: string, current: Record<string, unknown>, t
       if ((typeof v === "string" || typeof v === "number") && String(v).trim()) extracted[k] = String(v).trim().slice(0, 160);
     }
     if (Object.keys(extracted).length) {
-      await db().from("users").update({ profile: { ...current, ...extracted } }).eq("id", userId);
+      // re-read right before writing, so fields saved meanwhile (e.g. the money self-check) are kept
+      const { data: fresh } = await db().from("users").select("profile").eq("id", userId).maybeSingle();
+      const base = { ...current, ...((fresh?.profile as Record<string, unknown>) ?? {}) };
+      await db().from("users").update({ profile: { ...base, ...extracted } }).eq("id", userId);
     }
   } catch (e) {
     console.error("profile update failed", e);

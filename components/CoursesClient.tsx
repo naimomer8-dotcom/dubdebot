@@ -7,6 +7,7 @@ import Spotlight from "./Spotlight";
 import PlanCube from "./PlanCube";
 import Icon from "./Icon";
 import { LIBRARY, type Course } from "@/lib/courses";
+import { WORKSHOP } from "@/lib/money";
 import type { ConvItem, ShellUser } from "@/lib/data";
 
 export default function CoursesClient({ user, conversations, leadSent, links: initialLinks }: { user: ShellUser; conversations: ConvItem[]; leadSent: boolean; links: Record<string, string> }) {
@@ -106,6 +107,12 @@ export default function CoursesClient({ user, conversations, leadSent, links: in
                     : "8 קורסים דיגיטליים, קורס בונוס ורבי המכר של ניר מחכים לך. הם נפתחים אוטומטית ברגע שמצטרפים לפלטפורמה."}
                 </p>
               </div>
+
+              <Link className="ws-strip gb" href="/money">
+                <span className="ws-strip-ico"><Icon name="coin" size={20} /></span>
+                <span><small>הסדנה הרבעונית · {WORKSHOP.perYear} מפגשים בשנה, {WORKSHOP.hours} שעות פנים מול פנים עם ניר</small><b>{WORKSHOP.name} · {WORKSHOP.subtitle}</b></span>
+                <Icon name="arrowLeft" size={18} className="ico-move" />
+              </Link>
 
               {!paid && (
                 <div className="crs-unlock">

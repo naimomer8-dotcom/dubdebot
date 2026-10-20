@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Brand } from "../BrandBar";
 import Icon from "../Icon";
 import AnswerBank from "./AnswerBank";
+import Spotlight from "../Spotlight";
 import { PLANS, planById, priceOf, ils } from "@/lib/plans";
 
 type Row = {
@@ -12,20 +13,22 @@ type Row = {
   paidAt: string | null; paidBy: string | null; renewalRequestedAt: string | null; note: string | null;
   business: string | null; conversations: number; lastActive: string | null;
   answers30: number; answersToday: number; cost30: number;
+  money?: number | null; moneyLevel?: string | null;
 };
 type Lead = { id: string; user_id: string | null; meeting_type: string; full_name: string; phone: string; email: string | null; note: string | null; created_at: string; status: string };
 type Tab = "requests" | "all" | "trial" | "paid" | "expired" | "leads" | "bank";
 
 const STATUS: Record<Row["status"], string> = { trial: "מתנה 30 יום", paid: "מנוי שנתי", expired: "חסום" };
-const d = (s: string | null) => (s ? new Date(s).toLocaleDateString("he-IL", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "—");
+const d = (s: string | null) => (s ? new Date(s).toLocaleDateString("he-IL", { day: "2-digit", month: "2-digit", year: "2-digit" }) : "אין");
 const MEET: Record<string, string> = { renewal: "חידוש / מנוי", nir: "פגישה עם ניר", advisor: "פגישת יועץ" };
 
-export default function AdminDashboard({ adminName }: { adminName: string }) {
-  const [rows, setRows] = useState<Row[]>([]);
-  const [leads, setLeads] = useState<Lead[]>([]);
+export default function AdminDashboard({ adminName, preview }: { adminName: string; preview?: { users: Row[]; leads: Lead[] } }) {
+  const [rows, setRows] = useState<Row[]>(preview?.users ?? []);
+  const [leads, setLeads] = useState<Lead[]>(preview?.leads ?? []);
+  const [dl, setDl] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("requests");
   const [q, setQ] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!preview);
   const [busy, setBusy] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<{ row: Row; action: string } | null>(null);
   const [toast, setToast] = useState("");
@@ -33,6 +36,7 @@ export default function AdminDashboard({ adminName }: { adminName: string }) {
   const [payBilling, setPayBilling] = useState<"onetime" | "installments">("onetime");
 
   const load = useCallback(async () => {
+    if (preview) return setLoading(false);
     const r = await fetch("/api/backoffice/users", { cache: "no-store" }).catch(() => null);
     if (r?.status === 401) return (window.location.href = "/admin/login");
     const j = r?.ok ? await r.json() : null;
@@ -41,7 +45,7 @@ export default function AdminDashboard({ adminName }: { adminName: string }) {
       setLeads(j.leads);
     }
     setLoading(false);
-  }, []);
+  }, [preview]);
   useEffect(() => {
     load();
   }, [load]);
@@ -76,6 +80,28 @@ export default function AdminDashboard({ adminName }: { adminName: string }) {
     flash(action === "paid" ? `${planById(payTier)?.name} נפתח ל${row.name}` : action === "extend30" ? `הוארך ב-30 יום ל${row.name}` : action === "block" ? `הגישה של ${row.name} נחסמה` : "נשמר");
     load();
   }
+  /** Download the full business file (.docx). Same admin cookie as every back-office call. */
+  async function dossier(row: Row) {
+    setDl(row.id);
+    try {
+      const r = await fetch(`/api/backoffice/dossier?userId=${row.id}`, { cache: "no-store" });
+      if (r.status === 401) return void (window.location.href = "/admin/login");
+      if (!r.ok) throw new Error();
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `התיק-העסקי-${row.name.replace(/\s+/g, "-")}.docx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+      flash(`התיק העסקי של ${row.name} ירד`);
+    } catch {
+      flash("לא הצלחנו להפיק את התיק. נסה שוב.");
+    }
+    setDl(null);
+  }
   function flash(t: string) {
     setToast(t);
     setTimeout(() => setToast(""), 2600);
@@ -88,6 +114,8 @@ export default function AdminDashboard({ adminName }: { adminName: string }) {
   const TABS: [Tab, string][] = [["requests", "ביקשו להמשיך"], ["all", "כל המשתמשים"], ["trial", "במתנה"], ["paid", "משלמים"], ["expired", "חסומים"], ["leads", "כל הפניות"], ["bank", "מאגר תשובות"]];
 
   return (
+    <>
+    <Spotlight />
     <div className="adm">
       <header className="adm-top">
         <Brand sub={false} size={30} href="/admin" />
@@ -116,14 +144,18 @@ export default function AdminDashboard({ adminName }: { adminName: string }) {
             <button key={k} role="tab" aria-selected={tab === k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>{l} {k !== "bank" && <small>{counts[k]}</small>}</button>
           ))}
         </div>
-        <div className="adm-search"><Icon name="eye" size={16} /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="חיפוש לפי שם, טלפון, מייל או עסק" /></div>
+        <div className="adm-search"><Icon name="search" size={16} /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="חיפוש לפי שם, טלפון, מייל או עסק" /></div>
         <button className="btn btn-glass btn-sm" onClick={() => { setLoading(true); load(); }}>רענון</button>
       </div>
 
       {tab === "bank" ? (
         <AnswerBank flash={flash} />
       ) : loading ? (
-        <div className="adm-empty shimmer">טוען…</div>
+        <div className="adm-list" aria-busy="true" aria-label="טוען משתמשים">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="adm-card glass edge skel-card"><span className="skel" style={{ width: "40%" }} /><span className="skel" style={{ width: "70%" }} /><span className="skel" style={{ width: "55%" }} /></div>
+          ))}
+        </div>
       ) : tab === "leads" ? (
         <div className="adm-table glass edge">
           <table>
@@ -135,7 +167,7 @@ export default function AdminDashboard({ adminName }: { adminName: string }) {
                   <td><span className={`pill ${l.meeting_type === "renewal" ? "cherry" : ""}`}>{MEET[l.meeting_type] ?? l.meeting_type}</span></td>
                   <td>{l.full_name}</td>
                   <td><a href={`tel:${l.phone}`} dir="ltr">{l.phone}</a></td>
-                  <td dir="ltr">{l.email ?? "—"}</td>
+                  <td dir="ltr">{l.email ?? ""}</td>
                   <td className="muted">{l.note ?? ""}</td>
                 </tr>
               ))}
@@ -143,14 +175,14 @@ export default function AdminDashboard({ adminName }: { adminName: string }) {
           </table>
         </div>
       ) : shown.length === 0 ? (
-        <div className="adm-empty glass edge">{tab === "requests" ? "אין כרגע בקשות פתוחות. 🎉" : "אין משתמשים בתצוגה הזו."}</div>
+        <div className="adm-empty glass edge">{tab === "requests" ? "אין כרגע בקשות פתוחות. הכל טופל." : "אין משתמשים בתצוגה הזו."}</div>
       ) : (
         <div className="adm-list">
           {shown.map((r) => (
             <article key={r.id} className={`adm-card glass edge ${r.renewalRequestedAt ? "req" : ""}`}>
               <div className="adm-who">
                 <b>{r.name}</b>
-                <span className="muted">{r.business ?? "—"}</span>
+                <span className="muted">{r.business ?? "העסק עוד לא ידוע"}</span>
                 <span className="adm-contact">
                   <a href={`tel:${r.phone}`} dir="ltr">{r.phone}</a>
                   <a href={`https://wa.me/972${r.phone.replace(/^0/, "")}`} target="_blank" rel="noreferrer">וואטסאפ</a>
@@ -158,7 +190,10 @@ export default function AdminDashboard({ adminName }: { adminName: string }) {
                 </span>
               </div>
               <div className="adm-meta">
-                <span className={`pill ${r.status}`}>{r.status === "paid" ? planById(r.tier)?.name ?? STATUS.paid : STATUS[r.status]}</span>
+                <span className="adm-pills">
+                  <span className={`pill ${r.status}`}>{r.status === "paid" ? planById(r.tier)?.name ?? STATUS.paid : STATUS[r.status]}</span>
+                  {r.money != null && <span className="pill money" title={r.moneyLevel ?? ""}>כסף {r.money}/100{r.moneyLevel ? ` · ${r.moneyLevel}` : ""}</span>}
+                </span>
                 <span>{r.status === "expired" ? `הסתיים ${d(r.accessUntil)}` : `עד ${d(r.accessUntil)} · ${r.daysLeft} ימים`}</span>
                 <span className="muted">נרשם {d(r.createdAt)} · {r.conversations} שיחות · פעיל לאחרונה {d(r.lastActive)}</span>
                 <span className={r.cost30 >= 10 ? "adm-req" : "muted"}>שימוש 30 יום: {r.answers30} תשובות ({r.answersToday} היום) · עלות AI משוערת ₪{r.cost30.toFixed(2)}</span>
@@ -166,7 +201,8 @@ export default function AdminDashboard({ adminName }: { adminName: string }) {
                 {r.renewalRequestedAt && <span className="adm-req"><Icon name="bolt" size={14} /> ביקש להמשיך ב-{d(r.renewalRequestedAt)}</span>}
               </div>
               <div className="adm-actions">
-                <button className="btn btn-primary btn-sm" disabled={!!busy} onClick={() => { setPayTier(r.tier && r.status === "paid" ? r.tier : "basic"); setConfirm({ row: r, action: "paid" }); }}><Icon name="check" size={16} /> {r.status === "paid" ? "שדרוג / חידוש" : "שולם – פתיחת מסלול"}</button>
+                <button className="btn btn-glass btn-sm adm-file" disabled={dl === r.id} onClick={() => dossier(r)} aria-label={`הורדת התיק העסקי של ${r.name}`}><Icon name="download" size={16} /> {dl === r.id ? "מפיק את התיק…" : "הורדת התיק העסקי"}</button>
+                <button className="btn btn-primary btn-sm" disabled={!!busy} onClick={() => { setPayTier(r.tier && r.status === "paid" ? r.tier : "basic"); setConfirm({ row: r, action: "paid" }); }}><Icon name="check" size={16} /> {r.status === "paid" ? "שדרוג / חידוש" : "שולם: פתיחת מסלול"}</button>
                 <button className="btn btn-glass btn-sm" disabled={!!busy} onClick={() => act(r, "extend30")}>+30 יום</button>
                 {r.renewalRequestedAt && <button className="btn btn-ghost btn-sm" disabled={!!busy} onClick={() => act(r, "clear_request")}>טופל</button>}
                 {r.status !== "expired" && <button className="btn btn-ghost btn-sm danger" disabled={!!busy} onClick={() => setConfirm({ row: r, action: "block" })}>חסימה</button>}
@@ -208,5 +244,6 @@ export default function AdminDashboard({ adminName }: { adminName: string }) {
       )}
       {toast && <div className="saved-toast" role="status">{toast}</div>}
     </div>
+    </>
   );
 }

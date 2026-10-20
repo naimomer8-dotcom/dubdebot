@@ -90,7 +90,7 @@ export default function AuthClient({ initialMode, email: initialEmail = "", toke
                 <p className="auth-alt" style={{ marginTop: 22 }}>עוד אין לך חשבון? <Link href="/#signup">הרשמה חינם</Link></p>
                 <div className="auth-plat">
                   <b>הפלטפורמה להצלחה בעסקים</b>
-                  <span>דובדבוט 24/6 · קורסים דיגיטליים · 4 סדנאות פיזיות בשנה · פגישה חודשית בזום עם ניר</span>
+                  <span>דובדבוט 24/6 · קורסים דיגיטליים · סדנת "להעיר את הכסף שבך" · פגישה חודשית בזום עם ניר</span>
                   <Link href="/platform">מה כולל המנוי ←</Link>
                 </div>
               </>

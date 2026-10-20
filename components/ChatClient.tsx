@@ -4,7 +4,7 @@ import { nextWebinar, webinarLabel, WEBINAR_TIME } from "@/lib/webinarDates";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown, { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
-import Mascot, { Mood } from "./Mascot";
+import Mascot from "./Mascot";
 import Spotlight from "./Spotlight";
 import Onboarding from "./Onboarding";
 import WebinarBar from "./WebinarBar";
@@ -19,6 +19,8 @@ import LeadModal, { MeetingType } from "./LeadModal";
 import ForecastStudio from "./ForecastStudio";
 import VoiceCall from "./VoiceCall";
 import Confetti from "./Confetti";
+import AiCore, { type CoreState } from "./AiCore";
+import { MONEY_STARTERS } from "@/lib/money";
 import { TOOLS, ToolMode } from "@/lib/persona";
 import { ForecastInput, toPrompt } from "@/lib/forecast";
 import { toPrompt as xrayPrompt } from "@/lib/xray";
@@ -292,6 +294,12 @@ export default function ChatClient({
         send(toPrompt(JSON.parse(fc) as ForecastInput), "forecast");
         return;
       }
+      const ask = sessionStorage.getItem("dd_ask");
+      if (ask) {
+        sessionStorage.removeItem("dd_ask");
+        send(ask, "chat");
+        return;
+      }
       const pr = sessionStorage.getItem("dd_prompt");
       if (pr) {
         sessionStorage.removeItem("dd_prompt");
@@ -402,7 +410,7 @@ export default function ChatClient({
     setMessages((m) => [...m, { id: null, role: "user", content: `🎙️ ${u}` }, { id: meta.messageId ?? null, role: "assistant", content: a }]);
   }, []);
 
-  const headMood: Mood = streaming ? "talking" : busy ? "thinking" : recording ? "curious" : "idle";
+  const coreState: CoreState = streaming ? "answering" : busy ? "thinking" : "idle";
   const activeTool = TOOLS.find((t) => t.id === mode);
   const lastIdx = messages.length - 1;
   const canSend = !busy && !fileBusy && (!!input.trim() || files.length > 0);
@@ -432,7 +440,7 @@ export default function ChatClient({
           <header className="topbar">
             <div className="who">
               <button className="icon-btn mobile-only" onClick={() => setSide(true)} aria-label="תפריט"><Icon name="menu" size={20} /></button>
-              <Mascot size={42} mood={headMood} />
+              <AiCore size={44} state={coreState} label={busy ? (streaming ? "ניר עונה" : "ניר חושב") : "דובדבוט זמין"} />
               <div style={{ minWidth: 0 }}>
                 <b>{busy ? (streaming ? "ניר כותב…" : "חושב…") : activeTool && activeTool.id !== "chat" ? activeTool.title : "דובדבוט"}</b>
                 <small><span className="dot-live" /> ניר דובדבני · תתייעץ איתי 24/6</small>
@@ -463,11 +471,11 @@ export default function ChatClient({
             <div className="thread-col">
               {messages.length === 0 && (
                 <div className="welcome">
-                  <div className="welcome-hero"><NirPose pose="welcome" width={230} eager /><Mascot size={64} mood="wink" /></div>
+                  <div className="welcome-hero"><span className="welcome-core"><AiCore size={120} state="idle" /></span><NirPose pose="welcome" width={230} eager /></div>
                   <h2 className="h-display">
                     {user.firstName}, <span className="gold">מה בונים היום?</span>
                   </h2>
-                  <p>22 שנה אני רואה עסקים נתקעים באותם מקומות. ספר לי מה קורה אצלך, שלח לי דוח או צילום – או תתחיל מאחד מאלה.</p>
+                  <p>22 שנה אני רואה עסקים נתקעים באותם מקומות. ספר לי מה קורה אצלך, שלח לי דוח או צילום, או תתחיל מאחד מאלה.</p>
                   <div className="welcome-label">שאלות שבעלי עסקים שואלים אותי</div>
                   <div className="starter-grid">
                     {QUICK_STARTS.map((q) => (
@@ -476,6 +484,12 @@ export default function ChatClient({
                         <span>{q.s}</span>
                         <Icon name="arrow" size={18} />
                       </button>
+                    ))}
+                  </div>
+                  <div className="welcome-label welcome-label-row"><span>כסף בעסק</span><a href="/money">בדיקת כסף ב-2 דקות <Icon name="arrowLeft" size={14} /></a></div>
+                  <div className="money-chips">
+                    {MONEY_STARTERS.map((q) => (
+                      <button key={q.b} className="next-chip money-chip" onClick={() => send(q.t)}><Icon name="coin" size={15} /> {q.b}</button>
                     ))}
                   </div>
                   <div className="welcome-label">או כלי מהיר</div>
@@ -507,11 +521,11 @@ export default function ChatClient({
                   ) : (
                     <div className="msg bot">
                       <span className="avatar-bot">
-                        <Mascot size={28} mood={streaming && i === lastIdx ? "talking" : busy && i === lastIdx ? "thinking" : "idle"} track={false} />
+                        <AiCore size={30} state={i === lastIdx ? coreState : "idle"} />
                       </span>
                       <div className="body">
                         <div className="name"><b>ניר</b></div>
-                        <div className="md" id={`msg-${i}`}>
+                        <div className={`md ${streaming && i === lastIdx ? "is-streaming" : ""}`} id={`msg-${i}`}>
                           {m.content ? (
                             <>
                               <ReactMarkdown remarkPlugins={[remarkGfm]} components={MD}>{m.content}</ReactMarkdown>
@@ -620,7 +634,7 @@ export default function ChatClient({
                   if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
                 }}
               >
-                {drag && <div className="drop-hint">שחרר כאן – ניר יקרא את זה</div>}
+                {drag && <div className="drop-hint">שחרר כאן, וניר יקרא את זה</div>}
                 {(files.length > 0 || fileBusy) && (
                   <div className="attach-row" style={{ padding: "8px 8px 0" }}>
                     {files.map((f) => (
@@ -738,7 +752,7 @@ function printDeliverable(elementId: string) {
   const el = document.getElementById(elementId);
   const w = window.open("", "_blank");
   if (!w || !el) return;
-  w.document.write(`<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><title>דובדבוט – Duvdevani Platform</title>
+  w.document.write(`<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><title>דובדבוט · Duvdevani Platform</title>
   <link href="https://fonts.googleapis.com/css2?family=Karantina:wght@700&family=Assistant:wght@400;600;700&display=swap" rel="stylesheet">
   <style>body{font-family:Assistant,Arial,sans-serif;max-width:760px;margin:48px auto;padding:0 28px;color:#16130e;line-height:1.75;font-weight:300}
   header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1px solid #c9a46a;padding-bottom:14px;margin-bottom:34px}
@@ -747,7 +761,7 @@ function printDeliverable(elementId: string) {
   table{border-collapse:collapse;width:100%;margin:12px 0;font-size:13.5px}th,td{border-bottom:1px solid #e6dcc8;padding:8px 10px;text-align:right}th{color:#8c6f42;font-weight:600}
   footer{margin-top:48px;font-size:11px;color:#8a8275;border-top:1px solid #e6dcc8;padding-top:12px}</style></head>
   <body><header><b>דובדבוט</b><span>DUVDEVANI GROUP · RND.ORG.IL</span></header>${el.innerHTML}
-  <footer>הופק על ידי דובדבוט, כלי AI מבית קבוצת דובדבני, על בסיס הנחות שמסרת. לכיוון ראשוני בלבד – אינו תחליף ליועץ עסקי, רו״ח, עו״ד או יועץ השקעות.</footer>
+  <footer>הופק על ידי דובדבוט, כלי AI מבית קבוצת דובדבני, על בסיס הנחות שמסרת. לכיוון ראשוני בלבד, אינו תחליף ליועץ עסקי, רו״ח, עו״ד או יועץ השקעות.</footer>
   <script>document.fonts.ready.then(()=>window.print())</script></body></html>`);
   w.document.close();
 }

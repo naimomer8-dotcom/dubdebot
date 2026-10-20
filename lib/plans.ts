@@ -1,3 +1,5 @@
+import { WORKSHOP } from "./money";
+
 /** Duvdevani Platform – subscription tiers. All prices are before VAT; VAT is added on top. */
 export const VAT = 0.18;
 export type Tier = "basic" | "private" | "upgrade" | "pro";
@@ -16,7 +18,6 @@ export const COURSES = [
 ];
 export const BONUS_COURSE = "מקצוען בנדל״ן";
 export const BOOKS = ["להיות אלפא בעסקים", "המחיר למשתפן", "בסוף יצא לך ארנב", "האדם מחפש עצמאות"];
-export const WORKSHOPS = ["פשוט למכור יותר", "מקסימום שיווק", "פשוט להיות אלפא בעסקים", "ניהול וצמיחה"];
 
 /** Regular (anchor) price per month, before VAT. The launch prices below are the "מחיר השקה". */
 export const REGULAR_MONTHLY = 450;
@@ -27,7 +28,7 @@ const BASE_FEATURES = [
   "גישה מלאה לפלטפורמה: דובדבוט זמין לך 24/6 עם כל הכלים",
   `${COURSES.length} קורסים דיגיטליים של ניר (${COURSES.slice(0, 3).join(", ")} ועוד) + בונוס: ${BONUS_COURSE}`,
   `${BOOKS.length} רבי המכר של ניר בדיגיטל: ${BOOKS.join(", ")}`,
-  `4 סדנאות פיזיות בשנה, אחת לרבעון: ${WORKSHOPS.map((w) => `סדנת ${w}`).join(", ")}`,
+  `הסדנה הפיזית "${WORKSHOP.name}" (${WORKSHOP.subtitle}), ${WORKSHOP.cadence}: ${WORKSHOP.perYear} מפגשים בשנה`,
   "פגישה אסטרטגית חודשית בזום עם ניר: מנועי צמיחה + שאלות ותשובות",
 ];
 

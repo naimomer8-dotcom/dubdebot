@@ -1,7 +1,8 @@
 "use client";
 import { useEffect } from "react";
+import NeuralField from "./NeuralField";
 
-/** Ambient light blobs + a soft champagne light that follows the pointer. */
+/** Background stack for every page: aurora, a quiet neural field, ambient light, and a soft light that follows the pointer. */
 export default function Spotlight() {
   useEffect(() => {
     let raf = 0;
@@ -17,7 +18,9 @@ export default function Spotlight() {
   }, []);
   return (
     <>
+      <div className="aurora" aria-hidden="true"><i /><i /><i /></div>
       <div className="ambient" aria-hidden="true" />
+      <NeuralField />
       <div className="spot" aria-hidden="true" />
     </>
   );

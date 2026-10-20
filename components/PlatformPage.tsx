@@ -8,16 +8,11 @@ import Icon from "./Icon";
 import { Brand, GroupLogo } from "./BrandBar";
 import { useReveal } from "./useReveal";
 import { LIBRARY } from "@/lib/courses";
-import { PLANS, WORKSHOPS, REGULAR_MONTHLY } from "@/lib/plans";
+import { PLANS, REGULAR_MONTHLY } from "@/lib/plans";
+import { WORKSHOP, workshopDateLabel } from "@/lib/money";
 import { PLATFORM_NAME, WHY, READS, OUTPUTS, VERTICALS, ACTIVE_CHECKS, MODES, PERSONAS, SHABBAT_NOTE } from "@/lib/platform";
 import { DISCLAIMER_LONG } from "@/lib/disclaimer";
 
-const WORKSHOP_D: Record<string, string> = {
-  "פשוט למכור יותר": "סדנת המכירות של ניר: מהשיחה הראשונה ועד הסגירה, בכיתה, עם תרגול חי.",
-  "מקסימום שיווק": "איך מביאים לקוחות בלי לשרוף כסף: מסרים, משפכים וקמפיינים שעובדים.",
-  "פשוט להיות אלפא בעסקים": "השיטה המלאה של ניר, מול ניר: אסטרטגיה, מבנה ומפת האלפא.",
-  "ניהול וצמיחה": "צוות, תהליכים וניהול שמאפשרים לעסק לגדול בלי שהכל ייפול עליך.",
-};
 
 export default function PlatformPage({ signedIn }: { signedIn: boolean }) {
   const [scrolled, setScrolled] = useState(false);
@@ -154,16 +149,21 @@ export default function PlatformPage({ signedIn }: { signedIn: boolean }) {
             <div className="sec-head reveal">
               <span className="eyebrow">היברידית</span>
               <h2 className="h-display">דיגיטל ביום-יום. <span className="gold">ניר בכיתה.</span></h2>
-              <p className="lead">פעם ברבעון נפגשים פיזית, כל פעם על נושא אחר. מעבר לנטוורקינג והקהילה, אפשר לשאול את ניר כל שאלה בכיתה, וניר מנתח איתך את העסק לפי מנועי הצמיחה ומפת האלפא.</p>
+              <p className="lead">פעם ברבעון נפגשים פיזית בסדנה "להעיר את הכסף שבך". מעבר לנטוורקינג והקהילה, שואלים את ניר כל שאלה בכיתה, וניר מנתח איתך את העסק ואת הכסף שלו.</p>
             </div>
-            <div className="plat-ws">
-              {WORKSHOPS.map((w, i) => (
-                <div key={w} className="step3 reveal" style={{ transitionDelay: `${i * 70}ms` }}>
-                  <span className="step3-n">Q{i + 1}</span>
-                  <h4>סדנת {w}</h4>
-                  <p>{WORKSHOP_D[w] ?? ""}</p>
-                </div>
-              ))}
+            <div className="ws-feature gb reveal">
+              <div className="ws-copy">
+                <span className="ws-tag"><Icon name="calendar" size={15} /> {WORKSHOP.cadence} · {WORKSHOP.hours} שעות · בכיתה עם ניר</span>
+                <h3 className="h-display">{WORKSHOP.name}</h3>
+                <p className="ws-sub gold">{WORKSHOP.subtitle}</p>
+                <p>{WORKSHOP.about}</p>
+                <span className="ws-date"><Icon name="clock" size={15} /> {workshopDateLabel()}</span>
+              </div>
+              <ul className="ws-topics">
+                {WORKSHOP.topics.map((t, i) => (
+                  <li key={t}><span className="num">{String(i + 1).padStart(2, "0")}</span>{t}</li>
+                ))}
+              </ul>
             </div>
             <div className="plat-zoom glass edge reveal">
               <div>
@@ -258,7 +258,7 @@ export default function PlatformPage({ signedIn }: { signedIn: boolean }) {
               {[
                 ["30 יום במתנה", "נרשמים בחצי דקה, בלי כרטיס אשראי, ומתחילים לעבוד עם דובדבוט כבר היום."],
                 ["בוחרים מסלול", "מתי שמתאים לך, בתוך חודש המתנה או אחריו. משלמים פעם אחת או ב-12 תשלומים."],
-                ["הכל נפתח מיד", "הקורסים, הספרים והכלים נפתחים תוך דקות, ואתה מוזמן לזום ולסדנה הקרובים."],
+                ["הכל נפתח מיד", "הקורסים, הספרים והכלים נפתחים תוך דקות, ואתה מוזמן לזום הקרוב ולסדנה \"להעיר את הכסף שבך\"."],
               ].map(([t, d], i) => (
                 <div className="step3 reveal" key={t} style={{ transitionDelay: `${i * 80}ms` }}>
                   <span className="step3-n">0{i + 1}</span>

@@ -2,13 +2,15 @@
 
 import Link from "next/link";
 import { PERSONAS } from "@/lib/platform";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { carried, ctaHref } from "@/lib/planPages";
 import Spotlight from "./Spotlight";
 import Sidebar from "./Sidebar";
 import Icon from "./Icon";
 import ReferralCard from "./ReferralCard";
 import { Brand } from "./BrandBar";
-import { BONUS_COURSE, BOOKS, COURSES, PLANS, REGULAR_MONTHLY, RENEWAL_MONTHLY, WORKSHOPS, WORKSHOP_VALUE, TIER_RANK, VAT, ils, priceOf, type Billing, type Offers, type Plan, type Tier } from "@/lib/plans";
+import { WORKSHOP } from "@/lib/money";
+import { BONUS_COURSE, BOOKS, COURSES, PLANS, REGULAR_MONTHLY, RENEWAL_MONTHLY, WORKSHOP_VALUE, TIER_RANK, VAT, ils, priceOf, type Billing, type Offers, type Plan, type Tier } from "@/lib/plans";
 import type { ConvItem, ShellUser } from "@/lib/data";
 
 type Done = { status: "rep" | "provider_pending"; total: number; plan: string; via: "self" | "rep" };
@@ -17,7 +19,7 @@ const COMPARE: { label: string; on: Tier[] }[] = [
   { label: "דובדבוט: ניר זמין 24/6 וכל הכלים", on: ["basic", "private", "upgrade", "pro"] },
   { label: `${COURSES.length} קורסים דיגיטליים + בונוס: ${BONUS_COURSE}`, on: ["basic", "private", "upgrade", "pro"] },
   { label: `${BOOKS.length} רבי המכר של ניר בדיגיטל`, on: ["basic", "private", "upgrade", "pro"] },
-  { label: "4 סדנאות פיזיות בשנה, אחת לרבעון", on: ["basic", "private", "upgrade", "pro"] },
+  { label: `סדנת "${WORKSHOP.name}", ${WORKSHOP.cadence} (4 בשנה)`, on: ["basic", "private", "upgrade", "pro"] },
   { label: "פגישה אסטרטגית חודשית בזום עם ניר", on: ["basic", "private", "upgrade", "pro"] },
   { label: "פגישת הטמעה של שעתיים וחצי עם יועץ עסקי בכיר", on: ["private", "pro"] },
   { label: "פגישה אישית עם ניר דובדבני", on: ["upgrade", "pro"] },
@@ -43,15 +45,15 @@ const DEALS = (offers: Offers, trial: boolean) => {
     { tag: "חודש המתנה", title: "Platform Private בחצי מחיר", text: offers.privateHalf ? `₪295 במקום ₪590, בתוקף עד ${fmt(offers.privateHalf)}.` : "₪295 במקום ₪590 למי שמצטרף לפני שחודש המתנה נגמר.", live: !!offers.privateHalf || trial },
     { tag: "72 שעות", title: "12 תשלומים במחיר של תשלום אחד", text: offers.installmentsAtOnetime ? `₪229 לחודש במקום ₪299, בתוקף עד ${fmt(offers.installmentsAtOnetime)}.` : "הצעה שנפתחת לזמן קצר, נשלחת בוואטסאפ ובמייל.", live: !!offers.installmentsAtOnetime },
     { tag: "שדרוג", title: "משלמים רק את ההפרש", text: "עוברים למסלול גבוה יותר בכל רגע, והשנה ממשיכה מאותו תאריך.", live: false },
-    { tag: "חבר מביא חבר", title: "סדנת מכירות פיזית עם ניר", text: "על כל חבר שהצטרף דרך הקישור שלך וסולק, מקבלים מקום בסדנת מכירות פיזית עם ניר דובדבני.", live: false },
+    { tag: "חבר מביא חבר", title: `מקום בסדנה "${WORKSHOP.name}"`, text: `על כל חבר שהצטרף דרך הקישור שלך וסולק, מקבלים מקום נוסף בסדנה "${WORKSHOP.name}" עם ניר דובדבני.`, live: false },
     { tag: "שנה שנייה", title: `רק ${ils(RENEWAL_MONTHLY)} לחודש`, text: "אחרי השנה הראשונה הכל ממשיך במחיר סמלי, בלי לסלוק מחדש.", live: false },
   ];
 };
 
 const fmt = (iso: string) => new Date(iso).toLocaleString("he-IL", { timeZone: "Asia/Jerusalem", day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" });
 
-export default function PlansClient({ user, conversations, focus, offers = {} }: { user: ShellUser | null; conversations: ConvItem[]; focus: string | null; offers?: Offers }) {
-  const [billing, setBilling] = useState<Billing>("onetime");
+export default function PlansClient({ user, conversations, focus, offers = {}, autoBuy = false, initialBilling = "onetime" }: { user: ShellUser | null; conversations: ConvItem[]; focus: string | null; offers?: Offers; autoBuy?: boolean; initialBilling?: Billing }) {
+  const [billing, setBilling] = useState<Billing>(initialBilling);
   const [pick, setPick] = useState<Plan | null>(null);
   const [agree, setAgree] = useState(false);
   const [busy, setBusy] = useState<"self" | "rep" | null>(null);
@@ -77,13 +79,24 @@ export default function PlansClient({ user, conversations, focus, offers = {} }:
     return { ...t, net, vat, total: Math.round((net + vat) * 100) / 100 };
   };
 
+  // arrived from a plan page (/plans/<id>): open that plan's checkout right away
+  useEffect(() => {
+    if (!autoBuy || !focus) return;
+    const p = PLANS.find((x) => x.id === focus);
+    if (!p) return;
+    if (owned && TIER_RANK[p.id] <= TIER_RANK[owned]) return;
+    setPick(p);
+    setAgree(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   async function buy(via: "self" | "rep") {
     if (!pick) return;
-    if (!user) { window.location.href = `/?plan=${pick.id}#register`; return; }
+    if (!user) { window.location.href = ctaHref(pick.id, billing, false, carried(new URLSearchParams(window.location.search))); return; }
     if (!agree) { setErr("צריך לאשר את תנאי השימוש ותנאי החידוש."); return; }
     setBusy(via);
     setErr("");
-    const r = await fetch("/api/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tier: pick.id, billing, via }) }).catch(() => null);
+    const r = await fetch("/api/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tier: pick.id, billing, via, utm: carried(new URLSearchParams(window.location.search)) }) }).catch(() => null);
     const j = r ? await r.json().catch(() => ({})) : {};
     setBusy(null);
     if (!r?.ok) { setErr(j.error ?? "משהו השתבש. נסה שוב."); return; }
@@ -96,7 +109,7 @@ export default function PlansClient({ user, conversations, focus, offers = {} }:
       <header className="plans-hero">
         <span className="eyebrow">מסלולים · Duvdevani Platform</span>
         <h1 className="h-display">שנה שלמה עם ניר. <span className="gold">אתה בוחר כמה עמוק.</span></h1>
-        <p className="lead">כל המסלולים כוללים את הפלטפורמה להצלחה בעסקים: דובדבוט 24/6, הקורסים הדיגיטליים והספרים של ניר, 4 סדנאות פיזיות בשנה ופגישה אסטרטגית חודשית בזום עם ניר. ההבדל הוא כמה ליווי אישי אתה רוצה.</p>
+        <p className="lead">כל המסלולים כוללים את הפלטפורמה להצלחה בעסקים: דובדבוט 24/6, הקורסים הדיגיטליים והספרים של ניר, הסדנה "להעיר את הכסף שבך" פעם ברבעון ופגישה אסטרטגית חודשית בזום עם ניר. ההבדל הוא כמה ליווי אישי אתה רוצה.</p>
         <div className="plans-anchor" role="note">
           <span className="pa-tag">מחיר השקה</span>
           <span>מחיר רגיל <s className="num">{ils(REGULAR_MONTHLY)}</s> לחודש</span>
@@ -153,6 +166,7 @@ export default function PlansClient({ user, conversations, focus, offers = {} }:
               <ul className="plan-feats">
                 {p.features.map((f) => <li key={f}><Icon name="check" size={15} /> {f}</li>)}
               </ul>
+              <Link className="plan-more" href={`/plans/${p.id}`}>כל הפרטים על {p.name} <Icon name="arrowLeft" size={14} className="ico-move" /></Link>
               {mine ? (
                 <span className="btn btn-glass btn-block plan-cta" aria-disabled="true">המסלול שלך</span>
               ) : below ? (
@@ -187,17 +201,17 @@ export default function PlansClient({ user, conversations, focus, offers = {} }:
         <div className="incl-grid">
           <div><Icon name="layers" size={18} /><b>{COURSES.length} קורסים דיגיטליים + בונוס</b><span>{COURSES.join(" · ")} · בונוס: {BONUS_COURSE}</span></div>
           <div><Icon name="bookmark" size={18} /><b>{BOOKS.length} רבי המכר של ניר</b><span>{BOOKS.join(" · ")}</span></div>
-          <div><Icon name="user" size={18} /><b>4 סדנאות פיזיות בשנה</b><span>{WORKSHOPS.map((w) => `סדנת ${w}`).join(" · ")}</span></div>
+          <div><Icon name="user" size={18} /><b>סדנת &quot;{WORKSHOP.name}&quot;</b><span>{WORKSHOP.subtitle} · {WORKSHOP.cadence}, {WORKSHOP.hours} שעות בכיתה עם ניר · {WORKSHOP.topics.slice(0, 3).join(" · ")}</span></div>
           <div><Icon name="phone" size={18} /><b>פגישה אסטרטגית חודשית בזום</b><span>ניר על מנועי צמיחה, ואחר כך שאלות ותשובות. שולחים שאלה 24 שעות לפני, וניר עונה עליה בזום</span></div>
         </div>
         <div className="plans-value">
           <h4>מה זה שווה, במחיר רגיל</h4>
           <div className="pv-row"><span>הפלטפורמה ודובדבוט, 12 חודשים × {ils(REGULAR_MONTHLY)}</span><b className="num">{ils(REGULAR_MONTHLY * 12)}</b></div>
-          <div className="pv-row"><span>4 סדנאות פיזיות של 4 שעות × {ils(WORKSHOP_VALUE)}</span><b className="num">{ils(WORKSHOP_VALUE * 4)}</b></div>
+          <div className="pv-row"><span>4 מפגשי סדנה &quot;{WORKSHOP.name}&quot; של 4 שעות × {ils(WORKSHOP_VALUE)}</span><b className="num">{ils(WORKSHOP_VALUE * 4)}</b></div>
           <div className="pv-row"><span>12 פגישות אסטרטגיות בזום עם ניר</span><b>כלול</b></div>
           <div className="pv-row"><span>{COURSES.length} קורסים דיגיטליים, בונוס ו-{BOOKS.length} ספרים</span><b>כלול</b></div>
           <div className="pv-row pv-total"><span>שווי לפחות</span><b className="num">{ils(REGULAR_MONTHLY * 12 + WORKSHOP_VALUE * 4)}</b></div>
-          <div className="pv-row pv-you"><span>אתה משלם במחיר השקה, מנוי שנתי בתשלום אחד</span><b className="num">{ils(priceOf("basic", "onetime").net)}</b></div>
+          <div className="pv-row pv-you"><span>אתה משלם במחיר השקה, מנוי שנתי בתשלום אחד, לא כולל מע״מ</span><b className="num">{ils(priceOf("basic", "onetime").net)}</b></div>
           <a className="pv-more" href="/platform">ההסבר המלא על הפלטפורמה ←</a>
         </div>
         <p className="plans-renew"><Icon name="clock" size={15} /> * מנוי שנתי: משלמים פעם אחת לשנה (או ב-12 תשלומים). דובדבוט זמין 24/6, כי בשבת אנחנו נחים ומתמקדים במשפחה. אחרי השנה הראשונה המנוי ממשיך אוטומטית ב-{ils(RENEWAL_MONTHLY)} + מע״מ לחודש, בלי לסלוק מחדש. ביטול בכל רגע.</p>

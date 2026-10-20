@@ -1,5 +1,7 @@
 "use client";
 
+import { PLANS, type Tier } from "@/lib/plans";
+import { carried, checkoutPath } from "@/lib/planPages";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Mascot, { Mood } from "./Mascot";
@@ -100,8 +102,8 @@ export default function RegisterForm() {
         setLoading(false);
         return;
       }
-      const plan = new URLSearchParams(window.location.search).get("plan");
-      router.push(plan ? `/plans?up=${encodeURIComponent(plan)}` : "/chat");
+      // came from a plan page: go straight back to that plan's checkout, with the campaign params
+      router.push(planReturn() ?? "/chat");
     } catch {
       setErrors({ form: "אין חיבור כרגע. בדוק את האינטרנט ונסה שוב." });
       setLoading(false);
@@ -162,7 +164,7 @@ export default function RegisterForm() {
               <input id="email" className="input" type="email" dir="ltr" autoComplete="email" value={form.email}
                 onChange={(e) => set("email", e.target.value)} aria-invalid={!!errors.email} placeholder="you@business.co.il" style={{ textAlign: "right" }} />
               {errors.email && <span className="err">{errors.email}</span>}
-              {exists && <span className="err"><a href={`/login?email=${encodeURIComponent(form.email)}`}>להתחברות</a> · <a href={`/login?forgot=1&email=${encodeURIComponent(form.email)}`}>שחזור סיסמה</a></span>}
+              {exists && <span className="err"><a href={`/login?email=${encodeURIComponent(form.email)}${loginNext()}`}>להתחברות</a> · <a href={`/login?forgot=1&email=${encodeURIComponent(form.email)}`}>שחזור סיסמה</a></span>}
             </div>
             <PasswordField id="new-password" label="בחר סיסמה" value={form.password} onChange={(v) => set("password", v)} error={errors.password} meter autoComplete="new-password" />
             <div className="step-actions">
@@ -197,7 +199,20 @@ export default function RegisterForm() {
           </div>
         )}
       </form>
-      <p className="auth-alt" style={{ marginTop: 18 }}>כבר רשום? <a href="/login">התחברות</a></p>
+      <p className="auth-alt" style={{ marginTop: 18 }}>כבר רשום? <a href={`/login${loginNext().replace(/^&/, "?")}`}>התחברות</a></p>
     </div>
   );
+}
+
+/** The checkout path to return to after signup / login, when the visitor came from a plan page. */
+function planReturn(): string | null {
+  if (typeof window === "undefined") return null;
+  const sp = new URLSearchParams(window.location.search);
+  const plan = sp.get("plan");
+  if (!plan || !PLANS.some((p) => p.id === plan)) return null;
+  return checkoutPath(plan as Tier, sp.get("billing") === "installments" ? "installments" : "onetime", carried(sp));
+}
+function loginNext(): string {
+  const p = planReturn();
+  return p ? `&next=${encodeURIComponent(p)}` : "";
 }
