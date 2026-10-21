@@ -1,6 +1,7 @@
 "use client";
 
 import { PLANS, type Tier } from "@/lib/plans";
+import { MARKETING_CONSENT_TEXT } from "@/lib/legal";
 import { carried, checkoutPath } from "@/lib/planPages";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -8,8 +9,6 @@ import Mascot, { Mood } from "./Mascot";
 import Icon from "./Icon";
 import PasswordField from "./PasswordField";
 
-const MARKETING_LABEL =
-  "אני מסכים/ה לקבל מקבוצת דובדבני תוכן מקצועי, הזמנות והצעות שיווקיות במייל, SMS ווואטסאפ. אפשר להסיר בכל עת.";
 
 const phoneOk = (p: string) => /^0?5\d{8}$/.test(p.replace(/[^\d]/g, "").replace(/^972/, "0"));
 const emailOk = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e.trim());
@@ -72,8 +71,8 @@ export default function RegisterForm() {
   }
 
   async function submit() {
-    if (!terms) {
-      setErrors({ terms: "צריך לאשר את תנאי השימוש ומדיניות הפרטיות" });
+    if (!terms || !marketing) {
+      setErrors({ ...(terms ? {} : { terms: "צריך לאשר את תנאי השימוש ומדיניות הפרטיות" }), ...(marketing ? {} : { marketing: "צריך לאשר קבלת דיוור כדי להירשם" }) });
       return;
     }
     setLoading(true);
@@ -185,17 +184,18 @@ export default function RegisterForm() {
             </label>
             {errors.terms && <span className="err">{errors.terms}</span>}
             <label className="check">
-              <input type="checkbox" checked={marketing} onChange={(e) => setMarketing(e.target.checked)} />
-              <span>{MARKETING_LABEL}</span>
+              <input type="checkbox" required aria-required="true" checked={marketing} onChange={(e) => { setMarketing(e.target.checked); setErrors({}); }} />
+              <span>{MARKETING_CONSENT_TEXT} <b className="req-mark" aria-hidden="true">*</b></span>
             </label>
+            {errors.marketing && <span className="err">{errors.marketing}</span>}
             {errors.form && <span className="err">{errors.form}</span>}
             <div className="step-actions">
-              <button className="btn btn-primary" type="submit" disabled={loading} style={{ flex: 1 }}>
+              <button className="btn btn-primary" type="submit" disabled={loading || !terms || !marketing} style={{ flex: 1 }}>
                 {loading ? "פותח לך את הפלטפורמה…" : "פתח לי את הפלטפורמה"}
               </button>
               <button type="button" className="btn btn-ghost btn-sm" onClick={() => setStep(1)}>חזרה</button>
             </div>
-            <p className="legal-note">ההסכמה לדיוור אינה תנאי לשימוש. הפרטים נשמרים אצל קבוצת דובדבני לפי מדיניות הפרטיות.</p>
+            <p className="legal-note">שני האישורים נדרשים כדי לפתוח חשבון. הפרטים נשמרים אצל קבוצת דובדבני לפי מדיניות הפרטיות.</p>
           </div>
         )}
       </form>

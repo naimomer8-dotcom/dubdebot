@@ -1,4 +1,4 @@
-import { getSession } from "@/lib/session";
+import { getSession, consentRequired } from "@/lib/session";
 import { db } from "@/lib/supabase";
 import { alert } from "@/lib/alerts";
 import { LIBRARY } from "@/lib/courses";
@@ -12,6 +12,7 @@ export const runtime = "nodejs";
 export async function POST(req: Request) {
   const s = await getSession();
   if (!s) return new Response(null, { status: 204 });
+  if (!s.consent) return consentRequired();
   const { id } = (await req.json().catch(() => ({}))) as { id?: number };
   const course = LIBRARY.find((c) => c.id === Number(id));
   if (!course) return new Response(null, { status: 204 });

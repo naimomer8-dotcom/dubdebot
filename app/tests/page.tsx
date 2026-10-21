@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import ConsentGate from "@/components/ConsentGate";
+import { consentPending } from "@/lib/consent";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSessionUserId } from "@/lib/session";
@@ -18,6 +20,7 @@ const ALL = [
 
 export default async function Tests() {
   if (!(await getSessionUserId())) redirect("/login");
+  if (await consentPending(await getSessionUserId())) return <ConsentGate />;
   return (
     <>
       <Spotlight />

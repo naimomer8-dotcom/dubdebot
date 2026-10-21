@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import ConsentGate from "@/components/ConsentGate";
+import { consentPending } from "@/lib/consent";
 import { getSessionUserId } from "@/lib/session";
 import XrayClient from "@/components/XrayClient";
 
@@ -12,5 +14,6 @@ export const metadata: Metadata = {
 
 export default async function XrayPage() {
   const userId = await getSessionUserId();
+  if (await consentPending(userId)) return <ConsentGate />;
   return <XrayClient loggedIn={!!userId} />;
 }

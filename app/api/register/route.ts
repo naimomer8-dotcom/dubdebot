@@ -6,7 +6,7 @@ import { hit, limited } from "@/lib/ratelimit";
 import { cleanName, isEmail, normalizeIsraeliPhone } from "@/lib/validation";
 import { sendToMake } from "@/lib/make";
 import { emit } from "@/lib/automation";
-import { MARKETING_CONSENT_TEXT, PRIVACY_VERSION } from "@/lib/legal";
+import { PRIVACY_VERSION, MARKETING_CONSENT_VERSION, consentFields, clientIp } from "@/lib/legal";
 
 export const runtime = "nodejs";
 
@@ -33,10 +33,12 @@ export async function POST(req: Request) {
   const pwProblem = passwordProblem(password);
   if (pwProblem) errors.password = pwProblem;
   if (!termsAccepted) errors.terms = "צריך לאשר את התנאים ומדיניות הפרטיות";
+  // marketing consent is required to open an account (checked here, not only in the form)
+  if (!marketingConsent) errors.marketing = "צריך לאשר קבלת דיוור כדי להירשם";
   if (Object.keys(errors).length) return NextResponse.json({ errors }, { status: 422 });
 
   const now = new Date().toISOString();
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
+  const ip = clientIp(req);
   const ua = req.headers.get("user-agent");
 
   // mobile carriers put many people behind one IP – keep this generous; the email check stops duplicates
@@ -55,9 +57,7 @@ export async function POST(req: Request) {
         full_name: fullName,
         password_hash: await hashPassword(password),
         password_set_at: now,
-        marketing_consent: marketingConsent,
-        marketing_consent_at: marketingConsent ? now : null,
-        consent_text: marketingConsent ? MARKETING_CONSENT_TEXT : null,
+        ...consentFields("signup_claim", ip, now),
         terms_accepted_at: now,
         privacy_version: PRIVACY_VERSION,
         signup_ip: ip,
@@ -65,6 +65,7 @@ export async function POST(req: Request) {
         access_until: new Date(Date.now() + 30 * 86400_000).toISOString(), // the gift month starts when they start
       })
       .eq("id", existing.id);
+    await supabase.from("events").insert({ user_id: existing.id, type: "marketing_consent", meta: { source: "signup_claim", version: MARKETING_CONSENT_VERSION } });
     await emit("signup", existing.id, { marketing_consent: marketingConsent, utm, claimed: true });
     await setSession(existing.id);
     return NextResponse.json({ ok: true, claimed: true });
@@ -85,9 +86,7 @@ export async function POST(req: Request) {
       phone,
       password_hash: await hashPassword(password),
       password_set_at: now,
-      marketing_consent: marketingConsent,
-      marketing_consent_at: marketingConsent ? now : null,
-      consent_text: marketingConsent ? MARKETING_CONSENT_TEXT : null,
+      ...consentFields("signup", ip, now),
       terms_accepted_at: now,
       privacy_version: PRIVACY_VERSION,
       signup_ip: ip,
@@ -113,6 +112,7 @@ export async function POST(req: Request) {
     created_at: now,
   });
 
+  await supabase.from("events").insert({ user_id: userId, type: "marketing_consent", meta: { source: "signup", version: MARKETING_CONSENT_VERSION } });
   await emit("signup", userId, { marketing_consent: marketingConsent, utm });
   await setSession(userId);
   return NextResponse.json({ ok: true });

@@ -1,4 +1,4 @@
-import { getSession } from "@/lib/session";
+import { getSession, consentRequired } from "@/lib/session";
 import { db } from "@/lib/supabase";
 import { limited } from "@/lib/ratelimit";
 import { emit } from "@/lib/automation";
@@ -17,6 +17,7 @@ const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: 
 export async function POST(req: Request) {
   const s = await getSession();
   if (!s) return json({ error: "unauthorized" }, 401);
+  if (!s.consent) return consentRequired();
   if (await limited(`u:${s.userId}`, "checkout", 10, 60)) return json({ error: "יותר מדי ניסיונות. נסה שוב בעוד כמה דקות." }, 429);
   const b = await req.json().catch(() => ({}));
   const tier = String(b.tier) as Tier;
@@ -40,7 +41,7 @@ export async function POST(req: Request) {
 
   const { data: order, error } = await supabase
     .from("orders")
-    .insert({ user_id: s.userId, tier, billing, amount_net: net, vat, amount_total: total, status: "pending", channel: via, kind: Object.keys(offers).length ? `annual:offer:${Object.keys(offers).join("+")}` : "annual" })
+    .insert({ user_id: s.userId, tier, billing, amount_net: net, vat, amount_total: total, status: "pending", channel: via, installments: billing === "installments" ? 12 : 1, customer_name: u.full_name, customer_phone: u.phone, customer_email: u.email, source: "checkout", kind: Object.keys(offers).length ? `annual:offer:${Object.keys(offers).join("+")}` : "annual" })
     .select("id")
     .single();
   if (error || !order) return json({ error: "משהו השתבש. נסה שוב." }, 500);

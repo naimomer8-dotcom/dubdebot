@@ -4,6 +4,7 @@ import { db } from "@/lib/supabase";
 import { loadShell } from "@/lib/data";
 import { TOOLS, ToolMode } from "@/lib/persona";
 import ExpiredScreen from "@/components/ExpiredScreen";
+import ConsentGate from "@/components/ConsentGate";
 import ChatClient, { ChatAttachment, ChatMessage } from "@/components/ChatClient";
 
 export const dynamic = "force-dynamic";
@@ -13,6 +14,7 @@ export default async function ChatPage({ searchParams }: { searchParams: Promise
   if (!userId) redirect("/");
   const shell = await loadShell(userId);
   if (!shell) redirect("/");
+  if (!shell.user.consent) return <ConsentGate firstName={shell.user.firstName} />;
   if (shell.user.access.status === "expired") return <ExpiredScreen user={shell.user} />;
 
   const sp = await searchParams;

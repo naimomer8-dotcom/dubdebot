@@ -4,6 +4,7 @@ import { getSessionUserId } from "@/lib/session";
 import { db } from "@/lib/supabase";
 import { loadShell } from "@/lib/data";
 import ExpiredScreen from "@/components/ExpiredScreen";
+import ConsentGate from "@/components/ConsentGate";
 import CoursesClient from "@/components/CoursesClient";
 
 export const dynamic = "force-dynamic";
@@ -14,6 +15,7 @@ export default async function CoursesPage() {
   if (!userId) redirect("/");
   const shell = await loadShell(userId);
   if (!shell) redirect("/");
+  if (!shell.user.consent) return <ConsentGate firstName={shell.user.firstName} />;
   if (shell.user.access.status === "expired") return <ExpiredScreen user={shell.user} />;
   const { data: u } = await db().from("users").select("course_links").eq("id", userId).single();
   return <CoursesClient user={shell.user} conversations={shell.conversations} leadSent={shell.leadSent} links={(u?.course_links as Record<string, string>) ?? {}} />;

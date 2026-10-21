@@ -4,6 +4,7 @@ import { getSessionUserId } from "@/lib/session";
 import { db } from "@/lib/supabase";
 import { loadShell } from "@/lib/data";
 import ExpiredScreen from "@/components/ExpiredScreen";
+import ConsentGate from "@/components/ConsentGate";
 import VaultClient from "@/components/VaultClient";
 import type { Scores } from "@/lib/xray";
 import type { FinRow } from "@/lib/financials";
@@ -16,6 +17,7 @@ export default async function VaultPage() {
   if (!userId) redirect("/");
   const shell = await loadShell(userId);
   if (!shell) redirect("/");
+  if (!shell.user.consent) return <ConsentGate firstName={shell.user.firstName} />;
   if (shell.user.access.status === "expired") return <ExpiredScreen user={shell.user} />;
   const supabase = db();
   const [{ data: u }, { data: xr }, { data: deliverables }, { data: tasks }, { data: fin }] = await Promise.all([

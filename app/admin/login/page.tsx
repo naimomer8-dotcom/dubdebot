@@ -6,7 +6,7 @@ import AdminAuth from "@/components/admin/AdminAuth";
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "ניהול | Duvdevani Platform", robots: { index: false, follow: false } };
 
-export default async function AdminLogin() {
-  if (await getAdmin()) redirect("/admin");
+export default async function AdminLogin({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
+  if (await getAdmin()) redirect((await searchParams).next === "payments" ? "/admin/payments" : "/admin");
   return <AdminAuth mode="login" />;
 }

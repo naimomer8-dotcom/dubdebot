@@ -51,7 +51,7 @@ export function accessOf(row: { plan?: string | null; tier?: string | null; acce
 }
 
 /** Verifies the cookie and returns the user id + subscription access in one DB round trip. */
-export async function getSession(): Promise<{ userId: string; access: Access } | null> {
+export async function getSession(): Promise<{ userId: string; access: Access; consent: boolean } | null> {
   const store = await cookies();
   const raw = store.get(COOKIE)?.value;
   if (!raw) return null;
@@ -62,9 +62,9 @@ export async function getSession(): Promise<{ userId: string; access: Access } |
   const b = Buffer.from(sign(`${id}.${ver}`));
   if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
   if (!/^[0-9a-f-]{36}$/.test(id)) return null;
-  const { data } = await db().from("users").select("session_version, plan, tier, access_until, renewal_requested_at, renewal_mode").eq("id", id).maybeSingle();
+  const { data } = await db().from("users").select("session_version, plan, tier, access_until, renewal_requested_at, renewal_mode, marketing_consent").eq("id", id).maybeSingle();
   if (!data || String(data.session_version) !== ver) return null;
-  return { userId: id, access: accessOf(data) };
+  return { userId: id, access: accessOf(data), consent: data.marketing_consent === true };
 }
 
 export async function getSessionUserId(): Promise<string | null> {
@@ -72,10 +72,15 @@ export async function getSessionUserId(): Promise<string | null> {
 }
 
 /** For paid features: the user id if logged in AND the subscription is active, otherwise a ready error Response. */
-export async function requireActive(): Promise<{ userId: string; access: Access } | Response> {
+export async function requireActive(): Promise<{ userId: string; access: Access; consent: boolean } | Response> {
   const s = await getSession();
   if (!s) return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
+  if (!s.consent) return consentRequired();
   if (s.access.status === "expired")
     return new Response(JSON.stringify({ error: "expired", message: "תקופת הגישה שלך הסתיימה." }), { status: 402, headers: { "Content-Type": "application/json" } });
   return s;
 }
+
+/** 403 for members who have not approved the marketing consent yet (they see the consent gate). */
+export const consentRequired = () =>
+  new Response(JSON.stringify({ error: "consent_required", message: "צריך לאשר קבלת דיוור כדי להמשיך." }), { status: 403, headers: { "Content-Type": "application/json" } });

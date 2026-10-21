@@ -15,7 +15,7 @@ export async function GET() {
   if (!admin) return json({ error: "unauthorized" }, 401);
   const supabase = db();
   const [{ data: users }, { data: convs }, { data: leads }, { data: usage }] = await Promise.all([
-    supabase.from("users").select("id, full_name, email, phone, created_at, plan, tier, billing, renewal_mode, access_until, paid_at, paid_by, renewal_requested_at, admin_note, profile").order("created_at", { ascending: false }).limit(2000),
+    supabase.from("users").select("id, full_name, email, phone, created_at, plan, tier, billing, renewal_mode, access_until, paid_at, paid_by, renewal_requested_at, admin_note, profile, marketing_consent, marketing_consent_at, marketing_consent_source, marketing_consent_text_version").order("created_at", { ascending: false }).limit(2000),
     supabase.from("conversations").select("user_id, updated_at").order("updated_at", { ascending: false }).limit(20000),
     supabase.from("leads").select("id, user_id, meeting_type, full_name, phone, email, note, created_at, status").order("created_at", { ascending: false }).limit(500),
     supabase.from("user_usage_30d").select("user_id, answers, tokens_in, tokens_out, answers_today"),
@@ -48,6 +48,10 @@ export async function GET() {
       paidBy: u.paid_by,
       renewalRequestedAt: u.renewal_requested_at,
       note: u.admin_note,
+      consent: u.marketing_consent === true,
+      consentAt: u.marketing_consent_at ?? null,
+      consentSource: u.marketing_consent_source ?? null,
+      consentVersion: u.marketing_consent_text_version ?? null,
       business: [profile.business_type, profile.business_name].filter(Boolean).join(" · ") || null,
       conversations: st?.n ?? 0,
       answers30: use.get(u.id)?.answers ?? 0,
@@ -80,7 +84,7 @@ export async function PATCH(req: Request) {
     const tier = (PLANS.some((p) => p.id === b.tier) ? b.tier : "basic") as Tier;
     const billing = (b.billing === "installments" ? "installments" : "onetime") as Billing;
     try {
-      const r = await activateSubscription({ userId, tier, billing, channel: "rep", by: admin.displayName });
+      const r = await activateSubscription({ userId, tier, billing, channel: "rep", by: admin.displayName, adminId: admin.id });
       await supabase.from("admin_audit").insert({ admin_id: admin.id, user_id: userId, action, meta: { tier, billing, ...r } });
       return json({ ok: true, ...r });
     } catch (e) {

@@ -14,7 +14,7 @@ const YEAR = 365 * 86400_000;
  * - after the year the membership continues automatically at the monthly renewal price (renewal_mode = monthly69).
  * Opens all courses (Schooler) and fires the "purchase"/"upgrade" automation.
  */
-export async function activateSubscription(opts: { userId: string; tier: Tier; billing: Billing; channel: "self" | "rep" | "admin"; by?: string; orderId?: string }) {
+export async function activateSubscription(opts: { userId: string; tier: Tier; billing: Billing; channel: "self" | "rep" | "admin"; by?: string; orderId?: string; adminId?: string }) {
   const supabase = db();
   const { data: u } = await supabase.from("users").select("id, email, full_name, phone, plan, tier, access_until").eq("id", opts.userId).single();
   if (!u) throw new Error("user not found");
@@ -46,7 +46,7 @@ export async function activateSubscription(opts: { userId: string; tier: Tier; b
     order = data;
   } else {
     const p = priceOf(opts.tier, opts.billing);
-    const { data } = await supabase.from("orders").insert({ user_id: opts.userId, tier: opts.tier, billing: opts.billing, amount_net: p.net, vat: p.vat, amount_total: p.total, status: "paid", channel: opts.channel, paid_at: new Date().toISOString() }).select("id, amount_net, amount_total").maybeSingle();
+    const { data } = await supabase.from("orders").insert({ user_id: opts.userId, tier: opts.tier, billing: opts.billing, amount_net: p.net, vat: p.vat, amount_total: p.total, status: "paid", channel: opts.channel, paid_at: new Date().toISOString(), installments: opts.billing === "installments" ? 12 : 1, customer_name: u.full_name, customer_phone: u.phone, customer_email: u.email, rep_name: opts.channel === "rep" ? opts.by ?? null : null, created_by_admin: opts.adminId ?? null, source: "admin_activate" }).select("id, amount_net, amount_total").maybeSingle();
     order = data;
   }
 

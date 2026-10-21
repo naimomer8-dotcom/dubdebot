@@ -4,7 +4,7 @@ import { emit } from "@/lib/automation";
 import { cleanName, isEmail, normalizeIsraeliPhone } from "@/lib/validation";
 import { STAGES, render, emailParts, noAstral } from "@/lib/journeys";
 import { nextWebinar, webinarLabel, webinarLinks, WEBINAR_TIME, WEBINAR_WA_GROUP } from "@/lib/webinars";
-import { MARKETING_CONSENT_TEXT } from "@/lib/legal";
+import { LEGACY_MARKETING_CONSENT_TEXT } from "@/lib/legal";
 
 export const runtime = "nodejs";
 
@@ -67,7 +67,9 @@ export async function POST(req: Request) {
       password_hash: null,
       marketing_consent: consent,
       marketing_consent_at: consent ? now : null,
-      consent_text: consent ? MARKETING_CONSENT_TEXT : null,
+      consent_text: consent ? LEGACY_MARKETING_CONSENT_TEXT : null,
+      marketing_consent_text_version: consent ? "meta-lead-form" : null,
+      marketing_consent_source: consent ? "meta_lead_form" : null,
       terms_accepted_at: now,
       privacy_version: "meta-lead-form",
       utm: { utm_source: "facebook", utm_medium: "lead_form", utm_campaign: meta.campaign, utm_adset: meta.adset, utm_ad: meta.ad },

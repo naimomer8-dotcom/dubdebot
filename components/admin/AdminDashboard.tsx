@@ -14,7 +14,9 @@ type Row = {
   business: string | null; conversations: number; lastActive: string | null;
   answers30: number; answersToday: number; cost30: number;
   money?: number | null; moneyLevel?: string | null;
+  consent?: boolean; consentAt?: string | null; consentSource?: string | null; consentVersion?: string | null;
 };
+const CONSENT_SRC: Record<string, string> = { signup: "בהרשמה", signup_claim: "בהרשמה", gate: "במסך האישור", meta_lead_form: "בטופס מטא" };
 type Lead = { id: string; user_id: string | null; meeting_type: string; full_name: string; phone: string; email: string | null; note: string | null; created_at: string; status: string };
 type Tab = "requests" | "all" | "trial" | "paid" | "expired" | "leads" | "bank";
 
@@ -28,6 +30,7 @@ export default function AdminDashboard({ adminName, preview }: { adminName: stri
   const [dl, setDl] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("requests");
   const [q, setQ] = useState("");
+  const [consentF, setConsentF] = useState<"all" | "yes" | "no">("all");
   const [loading, setLoading] = useState(!preview);
   const [busy, setBusy] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<{ row: Row; action: string } | null>(null);
@@ -67,9 +70,10 @@ export default function AdminDashboard({ adminName, preview }: { adminName: stri
     const s = q.trim().toLowerCase();
     return rows
       .filter((r) => (tab === "requests" ? !!r.renewalRequestedAt : tab === "all" || tab === "leads" ? true : r.status === tab))
+      .filter((r) => consentF === "all" || (consentF === "yes" ? r.consent === true : r.consent !== true))
       .filter((r) => !s || [r.name, r.email, r.phone, r.business ?? ""].some((x) => x.toLowerCase().includes(s)))
       .sort((a, b) => (tab === "requests" ? (b.renewalRequestedAt ?? "").localeCompare(a.renewalRequestedAt ?? "") : 0));
-  }, [rows, tab, q]);
+  }, [rows, tab, q, consentF]);
 
   async function act(row: Row, action: string, note?: string) {
     setBusy(row.id + action);
@@ -120,6 +124,10 @@ export default function AdminDashboard({ adminName, preview }: { adminName: stri
       <header className="adm-top">
         <Brand sub={false} size={30} href="/admin" />
         <span className="badge">ניהול מנויים</span>
+        <nav className="rv-nav" aria-label="ניווט בניהול">
+          <a href="/admin" className="on" aria-current="page">ניהול מנויים</a>
+          <a href="/admin/payments">דשבורד הכנסות</a>
+        </nav>
         <span style={{ flex: 1 }} />
         <span className="muted" style={{ fontSize: 14 }}>שלום, {adminName}</span>
         <button className="btn btn-ghost btn-sm" onClick={logout}><Icon name="logout" size={16} /> יציאה</button>
@@ -145,6 +153,11 @@ export default function AdminDashboard({ adminName, preview }: { adminName: stri
           ))}
         </div>
         <div className="adm-search"><Icon name="search" size={16} /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="חיפוש לפי שם, טלפון, מייל או עסק" /></div>
+        <select className="input adm-filter" value={consentF} onChange={(e) => setConsentF(e.target.value as "all" | "yes" | "no")} aria-label="סינון לפי אישור דיוור">
+          <option value="all">דיוור: כולם</option>
+          <option value="yes">אישרו דיוור ({rows.filter((r) => r.consent).length})</option>
+          <option value="no">לא אישרו ({rows.filter((r) => !r.consent).length})</option>
+        </select>
         <button className="btn btn-glass btn-sm" onClick={() => { setLoading(true); load(); }}>רענון</button>
       </div>
 
@@ -192,6 +205,9 @@ export default function AdminDashboard({ adminName, preview }: { adminName: stri
               <div className="adm-meta">
                 <span className="adm-pills">
                   <span className={`pill ${r.status}`}>{r.status === "paid" ? planById(r.tier)?.name ?? STATUS.paid : STATUS[r.status]}</span>
+                  {r.consent
+                    ? <span className="pill ok" title={[r.consentSource ? CONSENT_SRC[r.consentSource] ?? r.consentSource : "", r.consentVersion ?? ""].filter(Boolean).join(" · ")}>דיוור מאושר {d(r.consentAt ?? null)}</span>
+                    : <span className="pill cherry" title="יראה את מסך האישור בכניסה הבאה">דיוור לא אושר</span>}
                   {r.money != null && <span className="pill money" title={r.moneyLevel ?? ""}>כסף {r.money}/100{r.moneyLevel ? ` · ${r.moneyLevel}` : ""}</span>}
                 </span>
                 <span>{r.status === "expired" ? `הסתיים ${d(r.accessUntil)}` : `עד ${d(r.accessUntil)} · ${r.daysLeft} ימים`}</span>

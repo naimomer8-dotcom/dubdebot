@@ -1,4 +1,4 @@
-import { getSession } from "@/lib/session";
+import { getSession, consentRequired } from "@/lib/session";
 import { db } from "@/lib/supabase";
 import { alert } from "@/lib/alerts";
 
@@ -11,6 +11,7 @@ export const runtime = "nodejs";
 export async function POST(req: Request) {
   const s = await getSession();
   if (!s) return Response.json({ error: "unauthorized" }, { status: 401 });
+  if (!s.consent) return consentRequired();
   const { question } = (await req.json().catch(() => ({}))) as { question?: string };
   const q = String(question ?? "").trim().slice(0, 1200);
   if (q.length < 8) return Response.json({ error: "השאלה קצרה מדי" }, { status: 400 });

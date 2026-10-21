@@ -25,7 +25,7 @@ export default function AdminAuth({ mode, token = "", username = "" }: { mode: "
     }).catch(() => null);
     const j = r ? await r.json().catch(() => ({})) : { error: "אין חיבור" };
     setBusy(false);
-    if (r?.ok) return (window.location.href = "/admin");
+    if (r?.ok) return (window.location.href = new URLSearchParams(window.location.search).get("next") === "payments" ? "/admin/payments" : "/admin");
     setErr(j.errors ?? { form: j.error ?? "משהו השתבש" });
   }
 

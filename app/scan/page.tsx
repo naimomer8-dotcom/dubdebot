@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getSessionUserId } from "@/lib/session";
 import { loadShell } from "@/lib/data";
 import ExpiredScreen from "@/components/ExpiredScreen";
+import ConsentGate from "@/components/ConsentGate";
 import ScanClient from "@/components/ScanClient";
 
 export const dynamic = "force-dynamic";
@@ -13,6 +14,7 @@ export default async function ScanPage() {
   if (!userId) redirect("/login?next=scan");
   const shell = await loadShell(userId);
   if (!shell) redirect("/login?next=scan");
+  if (!shell.user.consent) return <ConsentGate firstName={shell.user.firstName} />;
   if (shell.user.access.status === "expired") return <ExpiredScreen user={shell.user} />;
   return <ScanClient />;
 }

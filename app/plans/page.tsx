@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import ConsentGate from "@/components/ConsentGate";
+import { consentPending } from "@/lib/consent";
 import { getSessionUserId } from "@/lib/session";
 import { loadShell } from "@/lib/data";
 import PlansClient from "@/components/PlansClient";
@@ -9,6 +11,7 @@ export const metadata: Metadata = { title: "מסלולים | Duvdevani Platform"
 
 export default async function PlansPage({ searchParams }: { searchParams: Promise<{ up?: string; buy?: string; billing?: string }> }) {
   const userId = await getSessionUserId();
+  if (await consentPending(userId)) return <ConsentGate />;
   const shell = userId ? await loadShell(userId) : null;
   const sp = await searchParams;
   const offers = userId ? await offersFor(userId) : {};

@@ -1,4 +1,4 @@
-import { getSession } from "@/lib/session";
+import { getSession, consentRequired } from "@/lib/session";
 import { db } from "@/lib/supabase";
 import { emit } from "@/lib/automation";
 
@@ -8,6 +8,7 @@ export const runtime = "nodejs";
 export async function POST(req: Request) {
   const s = await getSession();
   if (!s) return Response.json({ error: "unauthorized" }, { status: 401 });
+  if (!s.consent) return consentRequired();
   const b = await req.json().catch(() => ({}));
   const mode = b.action === "resume" ? "monthly69" : "cancelled";
   const { data: u } = await db().from("users").select("plan, year_ends_at, renewal_mode").eq("id", s.userId).single();

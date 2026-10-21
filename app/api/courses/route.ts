@@ -1,4 +1,4 @@
-import { getSession } from "@/lib/session";
+import { getSession, consentRequired } from "@/lib/session";
 import { db } from "@/lib/supabase";
 import { enrollAllCourses } from "@/lib/schooler";
 
@@ -14,6 +14,7 @@ const j = (b: unknown, status = 200) => new Response(JSON.stringify(b), { status
 export async function POST() {
   const s = await getSession();
   if (!s) return j({ error: "unauthorized" }, 401);
+  if (!s.consent) return consentRequired();
   if (s.access.status !== "paid") return j({ error: "not_paid" }, 402);
   const supabase = db();
   const { data: u } = await supabase.from("users").select("email, full_name, phone, course_links, courses_synced_at").eq("id", s.userId).single();

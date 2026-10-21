@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import ConsentGate from "@/components/ConsentGate";
+import { consentPending } from "@/lib/consent";
 import { notFound } from "next/navigation";
 import { getSessionUserId } from "@/lib/session";
 import { loadShell } from "@/lib/data";
@@ -34,6 +36,7 @@ export default async function PlanPage({ params, searchParams }: { params: Promi
   const p = planById(plan);
   if (!p) notFound();
   const userId = await getSessionUserId();
+  if (await consentPending(userId)) return <ConsentGate />;
   const shell = userId ? await loadShell(userId) : null;
   const offers = userId ? await offersFor(userId) : {};
   const owned = shell?.user.access.plan === "paid" ? (shell.user.access.tier as Tier | null) : null;

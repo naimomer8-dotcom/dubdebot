@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/supabase";
-import { getSessionUserId } from "@/lib/session";
+import { getSession, consentRequired } from "@/lib/session";
 import { gemini, FAST_MODEL, LITE_THINKING } from "@/lib/gemini";
 import { LEAD_SUMMARY_PROMPT } from "@/lib/persona";
 import { cleanName, isEmail, normalizeIsraeliPhone } from "@/lib/validation";
@@ -11,8 +11,10 @@ export const runtime = "nodejs";
 export const maxDuration = 30;
 
 export async function POST(req: Request) {
-  const userId = await getSessionUserId();
-  if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const sess = await getSession();
+  if (!sess) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  if (!sess.consent) return consentRequired();
+  const userId = sess.userId;
 
   if (await limited(`u:${userId}`, "lead", 6, 60 * 24)) return NextResponse.json({ error: "כבר קיבלנו ממך כמה פניות היום – נחזור אליך בהקדם." }, { status: 429 });
   void hit(`u:${userId}`, "lead").catch(() => {});

@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { getSessionUserId } from "@/lib/session";
 import { loadShell } from "@/lib/data";
 import ExpiredScreen from "@/components/ExpiredScreen";
+import ConsentGate from "@/components/ConsentGate";
 import QuizClient from "@/components/QuizClient";
 import { QUIZZES, type QuizId } from "@/lib/quizzes";
 
@@ -16,6 +17,7 @@ export default async function QuizPage({ params }: { params: Promise<{ id: strin
   if (!userId) redirect("/login");
   const shell = await loadShell(userId);
   if (!shell) redirect("/login");
+  if (!shell.user.consent) return <ConsentGate firstName={shell.user.firstName} />;
   if (shell.user.access.status === "expired") return <ExpiredScreen user={shell.user} />;
   return <QuizClient id={id as QuizId} />;
 }
