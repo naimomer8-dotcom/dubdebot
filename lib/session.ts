@@ -1,3 +1,4 @@
+import { hasCurrentConsent } from "@/lib/legal";
 import { createHmac, timingSafeEqual } from "crypto";
 import { cookies } from "next/headers";
 import { db } from "./supabase";
@@ -62,9 +63,9 @@ export async function getSession(): Promise<{ userId: string; access: Access; co
   const b = Buffer.from(sign(`${id}.${ver}`));
   if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
   if (!/^[0-9a-f-]{36}$/.test(id)) return null;
-  const { data } = await db().from("users").select("session_version, plan, tier, access_until, renewal_requested_at, renewal_mode, marketing_consent").eq("id", id).maybeSingle();
+  const { data } = await db().from("users").select("session_version, plan, tier, access_until, renewal_requested_at, renewal_mode, marketing_consent, marketing_consent_text_version").eq("id", id).maybeSingle();
   if (!data || String(data.session_version) !== ver) return null;
-  return { userId: id, access: accessOf(data), consent: data.marketing_consent === true };
+  return { userId: id, access: accessOf(data), consent: hasCurrentConsent(data) };
 }
 
 export async function getSessionUserId(): Promise<string | null> {

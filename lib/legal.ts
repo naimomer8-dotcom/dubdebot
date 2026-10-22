@@ -16,6 +16,10 @@ export const LEGACY_MARKETING_CONSENT_TEXT =
 
 export const TERMS_TEXT = "קראתי ואני מסכים/ה לתנאי השימוש ולמדיניות הפרטיות";
 
+/** Consent counts only if it was given on the current mandatory wording. */
+export const hasCurrentConsent = (u: { marketing_consent?: unknown; marketing_consent_text_version?: unknown } | null | undefined) =>
+  !!u && u.marketing_consent === true && u.marketing_consent_text_version === MARKETING_CONSENT_VERSION;
+
 export type ConsentSource = "signup" | "signup_claim" | "gate" | "meta_lead_form";
 
 /** The columns written for one consent. */
