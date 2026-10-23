@@ -4,13 +4,15 @@ import { limited } from "@/lib/ratelimit";
 import { emit } from "@/lib/automation";
 import { PLANS, priceOf, TIER_RANK, type Billing, type Tier } from "@/lib/plans";
 import { offersFor } from "@/lib/offers";
+import { cardcomReady, createPaymentPage } from "@/lib/cardcom";
+import { alert } from "@/lib/alerts";
 
 export const runtime = "nodejs";
 const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
 
 /**
  * Starts a purchase. Creates a pending order and:
- * - when a payment provider is connected (PAYMENT_PROVIDER + its keys) → returns its hosted payment URL;
+ * - when Cardcom is configured (CARDCOM_TERMINAL + CARDCOM_API_NAME) → returns its hosted payment URL;
  * - until then → opens a "purchase" lead so a rep sends a payment link within 24h.
  * Body: { tier, billing, via?: "self" | "rep" }
  */
@@ -52,10 +54,27 @@ export async function POST(req: Request) {
   await emit("checkout_started", s.userId, { order_id: order.id, tier, billing, via, upgrade_from: owned, amount_total: total, utm });
   if (Object.keys(utm).length) await supabase.from("events").insert({ user_id: s.userId, type: "checkout_utm", meta: { order_id: order.id, tier, ...utm } });
 
-  const provider = process.env.PAYMENT_PROVIDER;
-  if (provider && via === "self") {
-    // Wired when the provider is chosen: create a hosted payment page for `order.id` and return its URL.
-    return json({ status: "provider_pending", orderId: order.id, total, message: "דף התשלום יחובר בקרוב." });
+  if (cardcomReady() && via === "self") {
+    const planName = PLANS.find((p) => p.id === tier)!.name;
+    const payments = billing === "installments" ? 12 : 1;
+    try {
+      const lp = await createPaymentPage({
+        orderId: order.id,
+        amount: total,
+        payments,
+        productName: `${planName} · ${owned ? "שדרוג מנוי" : "מנוי שנתי"} · Duvdevani Platform`,
+        customer: { name: u.full_name ?? "", email: u.email ?? null, phone: u.phone ?? null },
+      });
+      if (lp.ResponseCode === 0 && lp.Url && lp.LowProfileId) {
+        await supabase.from("orders").update({ lp_id: lp.LowProfileId, provider: "cardcom" }).eq("id", order.id);
+        return json({ status: "redirect", orderId: order.id, total, url: lp.Url });
+      }
+      await supabase.from("orders").update({ provider_error: `create ${lp.ResponseCode}: ${String(lp.Description ?? "").slice(0, 200)}` }).eq("id", order.id);
+      await alert("cardcom_create", "דף התשלום של קארדקום לא נוצר", [`קוד: ${lp.ResponseCode}`, `תיאור: ${String(lp.Description ?? "").slice(0, 200)}`, "הלקוח הועבר לנציג במקום."], 30);
+    } catch (e) {
+      await alert("cardcom_create", "קארדקום לא זמין", [`שגיאה: ${(e as Error).message.slice(0, 200)}`, "הלקוח הועבר לנציג במקום."], 30);
+    }
+    // fall through: a rep closes it with a payment link
   }
 
   // no provider yet (or the user asked for a rep): a rep closes it with a payment link

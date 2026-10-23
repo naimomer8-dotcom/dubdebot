@@ -1988,3 +1988,35 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { box-shadow: 
   .rv-table-tools .adm-search { max-width: none; }
 }
 @media (prefers-reduced-motion: reduce) { .rv-hb-bar, .rv-f-track span { transition: none; } }
+
+/* ===== Payment result pages (/pay/thanks, /pay/failed) ===== */
+.pay-page { min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 40px 16px 32px; background: radial-gradient(900px 520px at 50% -10%, rgba(226,198,142,.13), transparent 70%), radial-gradient(700px 420px at 85% 110%, rgba(179,19,43,.14), transparent 70%), var(--bg); }
+.pay-card { width: min(760px, 100%); display: grid; grid-template-columns: 220px 1fr; gap: 8px 28px; padding: 32px 32px 30px; animation: fadeUp .7s var(--ease) both; }
+.pay-art { display: flex; align-items: flex-end; justify-content: center; }
+.pay-art .nir-pose { filter: drop-shadow(0 18px 40px rgba(0,0,0,.55)); }
+.pay-body { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.pay-h { font-size: clamp(44px, 7vw, 66px); text-wrap: balance; }
+.pay-lead { margin: 0; font-size: 17px; }
+.pay-receipt { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; border-radius: 16px; overflow: hidden; background: var(--hair-2); border: 1px solid var(--hair-2); }
+.pay-receipt > div { background: rgba(10,10,12,.82); padding: 14px 16px; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.pay-receipt small { color: var(--text-3); font-size: 12.5px; letter-spacing: .02em; }
+.pay-receipt b { font-size: 18px; color: var(--gold-hi); overflow-wrap: anywhere; }
+.pay-invoice { display: flex; gap: 10px; align-items: flex-start; margin: 0; color: var(--text-2); font-size: 15px; line-height: 1.55; }
+.pay-invoice .ico, .pay-invoice svg { color: var(--gold); flex-shrink: 0; margin-top: 3px; }
+.pay-steps { list-style: none; margin: 2px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.pay-steps li { display: flex; gap: 12px; align-items: center; }
+.pay-steps b { display: block; font-size: 16px; }
+.pay-steps small { display: block; color: var(--text-3); font-size: 14px; line-height: 1.45; }
+.pay-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+.pay-foot { color: var(--text-3); font-size: 13.5px; margin: 0; text-align: center; }
+.pay-pending { display: flex; gap: 14px; align-items: center; padding: 16px 18px; border-radius: 14px; background: rgba(226,198,142,.06); border: 1px solid var(--hair-2); color: var(--text-2); }
+.pay-pending p { margin: 0; line-height: 1.55; }
+.pay-spin { width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgba(226,198,142,.25); border-top-color: var(--gold); animation: paySpin .9s linear infinite; flex-shrink: 0; }
+@keyframes paySpin { to { transform: rotate(360deg); } }
+@media (max-width: 640px) {
+  .pay-card { grid-template-columns: 1fr; padding: 24px 18px 22px; }
+  .pay-art { margin-top: -6px; }
+  .pay-art .nir-pose { width: 150px; height: auto; }
+  .pay-receipt { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) { .pay-card { animation: none; } .pay-spin { animation-duration: 2.5s; } }
