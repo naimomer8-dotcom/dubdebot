@@ -45,9 +45,9 @@ export async function createPaymentPage(o: {
 }) {
   const url = appUrl();
   const pay = Math.max(1, Math.min(12, Math.round(o.payments)));
-  return post<LpCreate>("LowProfile/Create", {
+  const body = (op: string) => ({
     ...creds(),
-    Operation: "ChargeAndCreateToken", // keep a token for the monthly renewal after the year
+    Operation: op, // ChargeAndCreateToken keeps a token for the monthly renewal after the year
     ReturnValue: o.orderId,
     Amount: o.amount,
     SuccessRedirectUrl: `${url}/pay/thanks?o=${o.orderId}`,
@@ -74,6 +74,11 @@ export async function createPaymentPage(o: {
       Products: [{ Description: o.productName.slice(0, 200), Quantity: 1, UnitCost: o.amount, TotalLineCost: o.amount }],
     },
   });
+  // terminal without the LowProfile tokens module (error 651) → charge without a token
+  const wantToken = process.env.CARDCOM_TOKENS !== "0";
+  let r = await post<LpCreate>("LowProfile/Create", body(wantToken ? "ChargeAndCreateToken" : "ChargeOnly"));
+  if (wantToken && r.ResponseCode === 651) r = await post<LpCreate>("LowProfile/Create", body("ChargeOnly"));
+  return r;
 }
 
 export type LpResult = {
