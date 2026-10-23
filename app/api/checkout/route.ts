@@ -37,9 +37,16 @@ export async function POST(req: Request) {
   const offers = owned ? {} : await offersFor(s.userId);
   const target = priceOf(tier, billing, offers);
   const base = owned ? priceOf(owned, billing) : null;
-  const net = Math.round((target.net - (base?.net ?? 0)) * 100) / 100;
-  const vat = Math.round(net * 0.18 * 100) / 100;
-  const total = Math.round((net + vat) * 100) / 100;
+  let net = Math.round((target.net - (base?.net ?? 0)) * 100) / 100;
+  let vat = Math.round(net * 0.18 * 100) / 100;
+  let total = Math.round((net + vat) * 100) / 100;
+  // live payment test: only for accounts listed in CARDCOM_TEST_EMAILS (1 ₪, or 12 ₪ = 12 × 1 ₪ for installments)
+  const testers = (process.env.CARDCOM_TEST_EMAILS || "").split(",").map((x) => x.trim().toLowerCase()).filter(Boolean);
+  if (u.email && testers.includes(String(u.email).toLowerCase())) {
+    total = billing === "installments" ? 12 : 1;
+    net = Math.round((total / 1.18) * 100) / 100;
+    vat = Math.round((total - net) * 100) / 100;
+  }
 
   const { data: order, error } = await supabase
     .from("orders")
