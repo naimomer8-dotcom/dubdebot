@@ -42,6 +42,9 @@ export default function Sidebar({
   const [toast, setToast] = useState("");
   const [launcher, setLauncher] = useState(false);
   const [me, setMe] = useState(false);
+  useEffect(() => {
+    try { if (new URLSearchParams(window.location.search).get("tools") === "1") setLauncher(true); } catch {}
+  }, []);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const refresh = useCallback(async () => {
@@ -183,9 +186,6 @@ export default function Sidebar({
 
         <div className="side-actions">
           <a className="side-new" href="/chat?new=1"><Icon name="plus" size={18} /> שיחה חדשה</a>
-          {onCall && (
-            <button className="side-call" onClick={() => { onClose(); onCall(); }} aria-label="שיחה קולית עם ניר" title="שיחה קולית עם ניר"><Icon name="phone" size={18} /></button>
-          )}
         </div>
 
         <nav aria-label="עמודים">
@@ -257,6 +257,12 @@ export default function Sidebar({
         {toast && <div className="side-toast" role="status">{toast}</div>}
       </aside>
       <ToolsLauncher open={launcher} onClose={() => setLauncher(false)} onTool={tool} />
+      <nav className="tabbar" aria-label="ניווט מהיר">
+        <Link className="tab" href="/chat" aria-current={active === "chat" && !launcher ? "page" : undefined}><Icon name="home" size={22} /><span>בית</span></Link>
+        <button className="tab" onClick={() => setLauncher(true)} aria-current={launcher ? "page" : undefined} aria-haspopup="dialog"><Icon name="spark" size={22} /><span>כלים</span></button>
+        <Link className="tab" href="/vault" aria-current={active === "vault" ? "page" : undefined}><Icon name="vault" size={22} /><span>התיק שלי</span></Link>
+        <Link className="tab" href="/plans" aria-current={active === "plans" ? "page" : undefined}><Icon name="gem" size={22} /><span>מנוי</span></Link>
+      </nav>
     </>
   );
 }

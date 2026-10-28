@@ -11,7 +11,6 @@ import WebinarBar from "./WebinarBar";
 import WelcomePaid from "./WelcomePaid";
 import Sidebar from "./Sidebar";
 import NirPhoto from "./NirPhoto";
-import NirPose from "./NirPose";
 import PlanCube from "./PlanCube";
 import UpsellInline from "./UpsellInline";
 import Icon from "./Icon";
@@ -20,7 +19,6 @@ import ForecastStudio from "./ForecastStudio";
 import VoiceCall from "./VoiceCall";
 import Confetti from "./Confetti";
 import AiCore, { type CoreState } from "./AiCore";
-import { MONEY_STARTERS } from "@/lib/money";
 import { TOOLS, ToolMode } from "@/lib/persona";
 import { ForecastInput, toPrompt } from "@/lib/forecast";
 import { toPrompt as xrayPrompt } from "@/lib/xray";
@@ -447,18 +445,13 @@ export default function ChatClient({
               </div>
             </div>
             <div className="topbar-actions">
-              <button className="icon-btn" onClick={() => setStudio(true)} aria-label="סטודיו תחזית" title="סטודיו תחזית"><Icon name="chart" size={20} /></button>
-              <button className="call-btn" onClick={() => setCall(true)} title="שיחה קולית (Ctrl+J)">
-                <Icon name="phone" size={17} /> <span>שיחה קולית</span>
-              </button>
               {!leadSent && (
-                <button className="btn btn-primary btn-sm" onClick={() => openLead("advisor", "header")}>
+                <button className="btn btn-glass btn-sm desk-only" onClick={() => openLead("advisor", "header")}>
                   <Icon name="calendar" size={16} /> <span>פגישה</span>
                 </button>
               )}
             </div>
           </header>
-          <WebinarBar />
 
           <div
             className="thread"
@@ -470,34 +463,25 @@ export default function ChatClient({
           >
             <div className="thread-col">
               {messages.length === 0 && (
-                <div className="welcome">
-                  <div className="welcome-hero"><span className="welcome-core"><AiCore size={120} state="idle" /></span><NirPose pose="welcome" width={230} eager /></div>
-                  <h2 className="h-display">
-                    {user.firstName}, <span className="gold">מה בונים היום?</span>
-                  </h2>
-                  <p>22 שנה אני רואה עסקים נתקעים באותם מקומות. ספר לי מה קורה אצלך, שלח לי דוח או צילום, או תתחיל מאחד מאלה.</p>
-                  <div className="welcome-label">שאלות שבעלי עסקים שואלים אותי</div>
-                  <div className="starter-grid">
+                <div className="welcome home">
+                  <div className="home-hero">
+                    <span className="home-ring"><NirPhoto size={112} /></span>
+                    <h2 className="h-display">{user.firstName}, <span className="gold">מה בונים היום?</span></h2>
+                    <p>ספר לי מה קורה בעסק, שלח דוח או צילום, או תבחר מאיפה להתחיל.</p>
+                  </div>
+                  <div className="home-tiles" role="group" aria-label="מאיפה להתחיל">
+                    <button className="home-tile" onClick={() => setStudio(true)}><span className="ht-ico"><Icon name="chart" size={26} /></span><b>תחזית ל-12 חודש</b><small>הכנסות, הוצאות ורווח</small></button>
+                    <button className="home-tile" onClick={() => startTool("workplan")}><span className="ht-ico"><Icon name="map" size={26} /></span><b>תוכנית עבודה</b><small>מה עושים, מתי ואיך</small></button>
+                    <button className="home-tile" onClick={() => startTool("sales_script")}><span className="ht-ico"><Icon name="target" size={26} /></span><b>תסריט מכירה</b><small>שיחה שסוגרת עסקה</small></button>
+                    <a className="home-tile" href="/money"><span className="ht-ico"><Icon name="coin" size={26} /></span><b>בדיקת הכסף בעסק</b><small>2 דקות, תמונה ברורה</small></a>
+                  </div>
+                  <div className="welcome-label">או שאלה שבעלי עסקים שואלים אותי</div>
+                  <div className="home-chips">
                     {QUICK_STARTS.map((q) => (
-                      <button key={q.b} className="starter" onClick={() => send(q.t)}>
-                        <b>{q.b}</b>
-                        <span>{q.s}</span>
-                        <Icon name="arrow" size={18} />
-                      </button>
+                      <button key={q.b} className="next-chip" onClick={() => send(q.t)}>{q.b}</button>
                     ))}
                   </div>
-                  <div className="welcome-label welcome-label-row"><span>כסף בעסק</span><a href="/money">בדיקת כסף ב-2 דקות <Icon name="arrowLeft" size={14} /></a></div>
-                  <div className="money-chips">
-                    {MONEY_STARTERS.map((q) => (
-                      <button key={q.b} className="next-chip money-chip" onClick={() => send(q.t)}><Icon name="coin" size={15} /> {q.b}</button>
-                    ))}
-                  </div>
-                  <div className="welcome-label">או כלי מהיר</div>
-                  <div className="power-row">
-                    <a className="power" href="/xray"><Icon name="scan" size={22} /><span>רנטגן עסקי<small>3 דקות · ציון ופרופיל</small></span></a>
-                    <a className="power" href="/scan"><Icon name="radar" size={22} /><span>סריקת רשתות<small>איפה אתה נכשל שיווקית</small></span></a>
-                    <button className="power" onClick={() => setCall(true)}><Icon name="phone" size={22} /><span>שיחה קולית עם ניר<small>מדברים, כמו בטלפון</small></span></button>
-                  </div>
+                  <WebinarBar compact />
                 </div>
               )}
 
