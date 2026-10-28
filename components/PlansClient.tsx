@@ -7,6 +7,7 @@ import { carried, ctaHref } from "@/lib/planPages";
 import Spotlight from "./Spotlight";
 import Sidebar from "./Sidebar";
 import Icon from "./Icon";
+import { pixelTrack } from "./MetaPixel";
 import ReferralCard from "./ReferralCard";
 import { Brand } from "./BrandBar";
 import { WORKSHOP } from "@/lib/money";
@@ -96,6 +97,7 @@ export default function PlansClient({ user, conversations, focus, offers = {}, a
     if (!agree) { setErr("צריך לאשר את תנאי השימוש ותנאי החידוש."); return; }
     setBusy(via);
     setErr("");
+    pixelTrack("InitiateCheckout", { content_name: pick.id, content_category: billing, currency: "ILS" });
     const r = await fetch("/api/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tier: pick.id, billing, via, utm: carried(new URLSearchParams(window.location.search)) }) }).catch(() => null);
     const j = r ? await r.json().catch(() => ({})) : {};
     setBusy(null);

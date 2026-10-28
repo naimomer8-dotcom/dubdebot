@@ -9,6 +9,7 @@ import Confetti from "@/components/Confetti";
 import NirPose from "@/components/NirPose";
 import Icon from "@/components/Icon";
 import PayPending from "@/components/PayPending";
+import { PixelEvent } from "@/components/MetaPixel";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "תודה! | Duvdevani Platform", robots: { index: false }, referrer: "no-referrer" };
@@ -42,6 +43,7 @@ export default async function Thanks({ searchParams }: { searchParams: Promise<{
   return (
     <main className="pay-page" dir="rtl">
       {paid && <Confetti />}
+      {paid && <PixelEvent event="Purchase" eventId={`pur_${orderId}`} params={{ value: Number(order.amount_total), currency: "ILS", content_name: order.tier, content_type: "product" }} />}
       <section className="pay-card glass edge">
         <div className="pay-art"><NirPose pose={paid ? "celebrate" : "hourglass"} width={210} eager /></div>
         <div className="pay-body">

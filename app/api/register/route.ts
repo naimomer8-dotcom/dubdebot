@@ -7,6 +7,7 @@ import { cleanName, isEmail, normalizeIsraeliPhone } from "@/lib/validation";
 import { sendToMake } from "@/lib/make";
 import { emit } from "@/lib/automation";
 import { PRIVACY_VERSION, MARKETING_CONSENT_VERSION, consentFields, clientIp } from "@/lib/legal";
+import { capi, capiCtx } from "@/lib/metaCapi";
 
 export const runtime = "nodejs";
 
@@ -68,7 +69,9 @@ export async function POST(req: Request) {
     await supabase.from("events").insert({ user_id: existing.id, type: "marketing_consent", meta: { source: "signup_claim", version: MARKETING_CONSENT_VERSION } });
     await emit("signup", existing.id, { marketing_consent: marketingConsent, utm, claimed: true });
     await setSession(existing.id);
-    return NextResponse.json({ ok: true, claimed: true });
+    const eventId = `reg_${existing.id}`;
+    await capi("CompleteRegistration", eventId, { email, phone, userId: existing.id, ...capiCtx(req) }, { content_name: "30 יום במתנה", status: "claimed" });
+    return NextResponse.json({ ok: true, claimed: true, eventId });
   }
   if (existing) {
     // never log someone into an existing account from the signup form
@@ -115,5 +118,7 @@ export async function POST(req: Request) {
   await supabase.from("events").insert({ user_id: userId, type: "marketing_consent", meta: { source: "signup", version: MARKETING_CONSENT_VERSION } });
   await emit("signup", userId, { marketing_consent: marketingConsent, utm });
   await setSession(userId);
-  return NextResponse.json({ ok: true });
+  const eventId = `reg_${userId}`;
+  await capi("CompleteRegistration", eventId, { email, phone, userId, ...capiCtx(req) }, { content_name: "30 יום במתנה", status: "new" });
+  return NextResponse.json({ ok: true, eventId });
 }

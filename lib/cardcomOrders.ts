@@ -3,6 +3,7 @@ import { getPaymentResult } from "./cardcom";
 import { activateSubscription } from "./subscription";
 import { notifyPayment } from "./paymentAlerts";
 import { alert } from "./alerts";
+import { capi } from "./metaCapi";
 import { planById, type Billing, type Tier } from "./plans";
 
 export type SettleResult = { status: "paid" | "pending" | "failed" | "not_found"; orderId?: string; tier?: string; docUrl?: string | null; message?: string };
@@ -66,6 +67,9 @@ export async function settleCardcomOrder(orderId: string): Promise<SettleResult>
   } catch (e) {
     await alert(`cardcom_activate:${order.id}`, "תשלום עבר אבל פתיחת המנוי נכשלה", [`הזמנה ${order.id}`, `שגיאה: ${(e as Error).message}`, "לפתוח ידנית מדשבורד התשלומים."], 1);
   }
+
+  // Meta server copy of the purchase (same event_id as the thank-you page pixel)
+  await capi("Purchase", `pur_${order.id}`, { email: order.customer_email, phone: order.customer_phone, userId: order.user_id }, { value: Number(order.amount_total), currency: "ILS", content_name: order.tier, content_type: "product" });
 
   await notifyPayment({
     orderId: order.id,

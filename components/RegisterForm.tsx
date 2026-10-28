@@ -1,6 +1,7 @@
 "use client";
 
 import { PLANS, type Tier } from "@/lib/plans";
+import { pixelTrack } from "@/components/MetaPixel";
 import { MARKETING_CONSENT_TEXT } from "@/lib/legal";
 import { carried, checkoutPath } from "@/lib/planPages";
 import { useEffect, useRef, useState } from "react";
@@ -101,6 +102,7 @@ export default function RegisterForm() {
         setLoading(false);
         return;
       }
+      pixelTrack("CompleteRegistration", { content_name: "30 יום במתנה" }, data.eventId);
       // came from a plan page: go straight back to that plan's checkout, with the campaign params
       router.push(planReturn() ?? "/chat");
     } catch {
