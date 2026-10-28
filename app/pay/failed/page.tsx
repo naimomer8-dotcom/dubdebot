@@ -6,6 +6,7 @@ import { planById } from "@/lib/plans";
 import NirPose from "@/components/NirPose";
 import Icon from "@/components/Icon";
 import PayRepButton from "@/components/PayRepButton";
+import { REP_NAME, repWhatsApp } from "@/lib/platform";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "התשלום לא הושלם | Duvdevani Platform", robots: { index: false }, referrer: "no-referrer" };
@@ -40,6 +41,7 @@ export default async function Failed({ searchParams }: { searchParams: Promise<{
           <div className="pay-actions">
             <Link className="btn btn-primary" href={retry}>לנסות שוב <Icon name="arrowLeft" size={18} className="ico-move" /></Link>
             {tier && <PayRepButton tier={tier} billing={billing === "installments" ? "installments" : "onetime"} />}
+            <a className="btn btn-ghost" href={repWhatsApp(plan?.name)} target="_blank" rel="noreferrer">וואטסאפ ל{REP_NAME}</a>
           </div>
         </div>
       </section>

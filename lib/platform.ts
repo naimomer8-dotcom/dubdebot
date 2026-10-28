@@ -52,3 +52,11 @@ export const PERSONAS: Record<string, string> = {
 };
 
 export const SHABBAT_NOTE = "24/6: בשבת אנחנו נחים ומתמקדים במשפחה.";
+
+/** Sales rep for a quick call (WhatsApp click-to-chat), shown wherever a purchase can go through a rep. */
+export const REP_NAME = "נדב";
+export const REP_WA_PHONE = "972544639887";
+export function repWhatsApp(plan?: string): string {
+  const msg = `היי ${REP_NAME}, הגעתי מהפלטפורמה של ניר דובדבני ואשמח לתאם שיחה קצרה${plan ? ` על ${plan}` : ""}.`;
+  return `https://wa.me/${REP_WA_PHONE}?text=${encodeURIComponent(msg)}`;
+}

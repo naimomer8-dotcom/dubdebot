@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { PERSONAS } from "@/lib/platform";
+import { PERSONAS, REP_NAME, repWhatsApp } from "@/lib/platform";
 import { useEffect, useState } from "react";
 import { carried, ctaHref } from "@/lib/planPages";
 import Spotlight from "./Spotlight";
@@ -240,7 +240,7 @@ export default function PlansClient({ user, conversations, focus, offers = {}, a
             {faq === i && <p>{f.a}</p>}
           </div>
         ))}
-        <p className="plans-rep">מעדיף לדבר עם בן אדם? <button className="link-btn" onClick={() => { setPick(PLANS[0]); setAgree(true); }}>נציג יחזור אליך</button> ויעזור לבחור.</p>
+        <p className="plans-rep">מעדיף לדבר עם בן אדם? <a className="link-btn" href={repWhatsApp()} target="_blank" rel="noreferrer">וואטסאפ ל{REP_NAME} לתיאום שיחה מהירה</a>, או <button className="link-btn" onClick={() => { setPick(PLANS[0]); setAgree(true); }}>שנציג יחזור אליך</button>.</p>
       </section>
     </div>
   );
@@ -255,7 +255,10 @@ export default function PlansClient({ user, conversations, focus, offers = {}, a
             <h3>ההזמנה של {done.plan} נקלטה</h3>
             <p>{done.via === "rep" ? "נציג יחזור אליך תוך 24 שעות כדי להשלים את הרכישה." : "נציג ישלח לך תוך 24 שעות קישור תשלום מאובטח בוואטסאפ, וברגע שהתשלום עובר הכל נפתח לך אוטומטית."}</p>
             <p className="muted num">סכום: {ils(done.total, 2)} כולל מע״מ</p>
-            <button className="btn btn-primary" onClick={() => { setPick(null); setDone(null); }}>מעולה</button>
+            <div className="buy-actions">
+              <a className="btn btn-glass" href={repWhatsApp(done.plan)} target="_blank" rel="noreferrer">לא רוצה לחכות? וואטסאפ ל{REP_NAME}</a>
+              <button className="btn btn-primary" onClick={() => { setPick(null); setDone(null); }}>מעולה</button>
+            </div>
           </div>
         ) : (
           <>
@@ -287,6 +290,7 @@ export default function PlansClient({ user, conversations, focus, offers = {}, a
               <button className="btn btn-primary" disabled={!!busy} onClick={() => buy("self")}>{!user ? "להרשמה ורכישה" : busy === "self" ? "רגע…" : "להמשך רכישה"}</button>
               {user && <button className="btn btn-glass" disabled={!!busy} onClick={() => buy("rep")}>{busy === "rep" ? "רגע…" : "שנציג יחזור אליי"}</button>}
             </div>
+            <p className="buy-renew" style={{ textAlign: "center" }}><a className="link-btn" href={repWhatsApp(pick.name)} target="_blank" rel="noreferrer">או וואטסאפ ישיר ל{REP_NAME} לתיאום שיחה מהירה</a></p>
           </>
         )}
       </div>
