@@ -81,6 +81,7 @@ export default function Landing() {
               <span className="line"><span>הפלטפורמה</span></span>
               <span className="line"><span className="gold">להצלחה בעסקים.</span></span>
             </h1>
+            <p className="hero-slogan">בואו לפגוש את הפוטנציאל הפיננסי האמיתי שלכם !!!</p>
             <p className="lead">פלטפורמה היברידית ואקטיבית על בסיס שיטת האלפא של ניר דובדבני. דובדבוט זמין לך 24/6 ובונה איתך תחזית, תוכנית ותסריט מכירה, ומסביבו קורסים דיגיטליים, הסדנה "להעיר את הכסף שבך" פעם ברבעון ופגישה אסטרטגית חודשית בזום עם ניר.</p>
             <div className="hero-mcta">
               <button className="btn btn-primary btn-lg" onClick={() => goSignup()}>להתחיל 30 יום במתנה <Icon name="arrow" size={18} className="ico-move" /></button>

@@ -2060,3 +2060,6 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { box-shadow: 
 .ps-table th { text-align: start; color: var(--text-3); font-weight: 600; padding: 6px 8px; border-bottom: 1px solid var(--hair); }
 .ps-table td { padding: 8px; border-bottom: 1px solid var(--hair); }
 @media (max-width: 900px) { .ps-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } .ps-form { grid-template-columns: 1fr 1fr; } .ps-note { grid-column: 1 / -1; } }
+
+/* hero slogan */
+.hero-slogan { margin: 14px 0 6px; font-family: var(--display); font-size: clamp(30px, 4.2vw, 46px); line-height: 1.1; background: var(--grad-text); -webkit-background-clip: text; background-clip: text; color: transparent; text-wrap: balance; }
