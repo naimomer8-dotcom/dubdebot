@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Brand } from "../BrandBar";
 import Icon from "../Icon";
 import AnswerBank from "./AnswerBank";
+import LiveCounter from "./LiveCounter";
+import PromoSpend from "./PromoSpend";
 import Spotlight from "../Spotlight";
 import { PLANS, planById, priceOf, ils } from "@/lib/plans";
 
@@ -132,6 +134,9 @@ export default function AdminDashboard({ adminName, preview }: { adminName: stri
         <span className="muted" style={{ fontSize: 14 }}>שלום, {adminName}</span>
         <button className="btn btn-ghost btn-sm" onClick={logout}><Icon name="logout" size={16} /> יציאה</button>
       </header>
+
+      {!preview && <LiveCounter />}
+      {!preview && <PromoSpend />}
 
       <section className="adm-stats">
         {([["requests", "ממתינים לנציג", "cherry"], ["trial", "במנוי מתנה", ""], ["paid", "מנוי שנתי", "gold"], ["expired", "חסומים", ""], ["all", "סה״כ משתמשים", ""]] as [Tab, string, string][]).map(([k, label, tone]) => (

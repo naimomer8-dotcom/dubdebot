@@ -2020,3 +2020,43 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { box-shadow: 
   .pay-receipt { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) { .pay-card { animation: none; } .pay-spin { animation-duration: 2.5s; } }
+
+/* ===== Live user counter (admin) ===== */
+.lc { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr); gap: 22px; padding: 22px 26px; margin-bottom: 18px; border-radius: var(--r-lg); align-items: center; transition: box-shadow .6s var(--ease); }
+.lc-pulse { box-shadow: 0 0 0 1px var(--gold-2), 0 0 60px rgba(226, 198, 142, 0.35); }
+.lc-head { display: flex; align-items: center; gap: 8px; color: var(--text-2); font-size: 14px; }
+.lc-upd { margin-inline-start: auto; font-size: 12px; }
+.lc-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--cherry-hi); box-shadow: 0 0 0 0 rgba(255, 90, 110, .6); animation: lcDot 1.6s infinite; }
+@keyframes lcDot { 0% { box-shadow: 0 0 0 0 rgba(255, 90, 110, .6); } 70% { box-shadow: 0 0 0 10px rgba(255, 90, 110, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 90, 110, 0); } }
+.lc-num { font-family: var(--display); font-size: 96px; line-height: 1; margin: 6px 0 10px; background: var(--grad-text); -webkit-background-clip: text; background-clip: text; color: transparent; font-variant-numeric: tabular-nums; }
+.lc-goal { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--text-2); }
+.lc-goal b { color: var(--gold); }
+.lc-bar { height: 8px; border-radius: 8px; background: var(--surface-3); overflow: hidden; }
+.lc-bar i { display: block; height: 100%; background: var(--grad-gold); border-radius: 8px; transition: width 1.2s var(--ease); }
+.lc-side { display: grid; gap: 10px; }
+.lc-kpi { display: flex; align-items: baseline; gap: 10px; color: var(--text-2); font-size: 14px; }
+.lc-kpi b { font-family: var(--display); font-size: 38px; color: var(--text); min-width: 64px; font-variant-numeric: tabular-nums; }
+.lc-feed { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 14px; max-height: 190px; overflow: hidden; }
+.lc-feed li { display: flex; justify-content: space-between; gap: 10px; padding: 6px 10px; border-radius: var(--r-sm); background: var(--surface); }
+.lc-feed li:first-child { background: var(--surface-3); color: var(--text); }
+@media (max-width: 900px) { .lc { grid-template-columns: 1fr; } .lc-num { font-size: 72px; } }
+
+/* ===== Organic promo spend (admin) ===== */
+.ps { padding: 22px 26px; margin-bottom: 18px; border-radius: var(--r-lg); display: grid; gap: 16px; }
+.ps-h h2 { margin: 0; font-size: 20px; }
+.ps-h p { margin: 4px 0 0; font-size: 14px; }
+.ps-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.ps-kpis > div { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: var(--r); background: var(--surface); color: var(--text-2); font-size: 13px; }
+.ps-kpis b { font-family: var(--display); font-size: 36px; line-height: 1; color: var(--text); font-variant-numeric: tabular-nums; }
+.ps-kpis .gold b { color: var(--gold); }
+.ps-form { display: grid; grid-template-columns: 120px 160px 140px minmax(0, 1fr) auto; gap: 10px; align-items: end; }
+.ps-form label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--text-2); min-width: 0; }
+.ps-err { color: var(--bad); margin: 0; font-size: 14px; }
+.ps-nets { display: flex; flex-wrap: wrap; gap: 8px; font-size: 13px; color: var(--text-2); }
+.ps-nets span { padding: 4px 12px; border-radius: 20px; border: 1px solid var(--hair-2); }
+.ps-nets b { color: var(--gold); }
+.ps-table { overflow-x: auto; }
+.ps-table table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.ps-table th { text-align: start; color: var(--text-3); font-weight: 600; padding: 6px 8px; border-bottom: 1px solid var(--hair); }
+.ps-table td { padding: 8px; border-bottom: 1px solid var(--hair); }
+@media (max-width: 900px) { .ps-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } .ps-form { grid-template-columns: 1fr 1fr; } .ps-note { grid-column: 1 / -1; } }
