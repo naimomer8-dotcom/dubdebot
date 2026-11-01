@@ -277,7 +277,7 @@ export default function PlatformPage({ signedIn }: { signedIn: boolean }) {
         <div className="wrap">
           <footer className="footer">
             <div className="footer-brand"><GroupLogo /><span>© {new Date().getFullYear()} קבוצת דובדבני (RND)</span></div>
-            <nav><Link href="/">דף הבית</Link><a href="/terms">תנאי שימוש</a><a href="/privacy">מדיניות פרטיות</a></nav>
+            <nav><Link href="/">דף הבית</Link><a href="/terms">תנאי שימוש</a><a href="/privacy">מדיניות פרטיות</a><a href="/accessibility">הצהרת נגישות</a></nav>
             <small style={{ width: "100%", fontSize: 12.5, lineHeight: 1.6 }}>{DISCLAIMER_LONG}</small>
           </footer>
         </div>

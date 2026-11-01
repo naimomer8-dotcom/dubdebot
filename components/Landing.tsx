@@ -231,6 +231,7 @@ export default function Landing() {
               <a href="/login">כניסה</a>
               <a href="/terms">תנאי שימוש</a>
               <a href="/privacy">מדיניות פרטיות</a>
+              <a href="/accessibility">הצהרת נגישות</a>
               <a href="/privacy#unsubscribe">הסרה מדיוור</a>
             </nav>
             <small style={{ width: "100%", fontSize: 12.5, lineHeight: 1.6 }}>{DISCLAIMER_LONG}</small>
