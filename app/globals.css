@@ -2063,3 +2063,19 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { box-shadow: 
 
 /* hero slogan */
 .hero-slogan { margin: 14px 0 6px; font-family: var(--display); font-size: clamp(30px, 4.2vw, 46px); line-height: 1.1; background: var(--grad-text); -webkit-background-clip: text; background-clip: text; color: transparent; text-wrap: balance; }
+
+/* signup thank-you + workshop gift */
+.ty .ty-gift { margin-top: 18px; display: grid; gap: 10px; padding: 20px; border: 1px solid var(--hair-3); border-radius: var(--r-lg); background: linear-gradient(160deg, rgba(226,198,142,.10), rgba(226,198,142,.02)); }
+.ty-tag { justify-self: start; font-size: 14px; color: var(--gold-hi); background: rgba(226,198,142,.08); border: 1px solid var(--hair-2); border-radius: 999px; padding: 5px 12px; }
+.ty-title { margin: 4px 0 0; font-family: var(--display); font-weight: 700; font-size: 40px; line-height: .95; background: var(--grad-text); -webkit-background-clip: text; background-clip: text; color: transparent; text-wrap: balance; }
+.ty-sub { margin: 0; font-weight: 700; color: var(--text); }
+.ty-quote { margin: 4px 0; color: var(--text-2); border-inline-start: 3px solid var(--gold-2); padding-inline-start: 12px; line-height: 1.5; }
+.ty-lead { margin: 4px 0 0; font-weight: 700; color: var(--gold); }
+.ty-star { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.ty-star li { display: flex; gap: 10px; align-items: center; }
+.ty-star b { flex: none; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; background: var(--grad-gold); color: #1a1408; font-size: 14px; }
+.ty-meta { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 4px; color: var(--text); }
+.ty-note { margin: 4px 0 0; color: var(--text-2); font-size: 15px; }
+.ty-cta { justify-self: stretch; text-align: center; }
+.ty-enter { margin-top: 14px; width: 100%; justify-content: center; }
+@media (max-width: 560px) { .ty .ty-gift { padding: 16px; } .ty-title { font-size: 34px; } }

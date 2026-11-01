@@ -24,6 +24,7 @@ export default function RegisterForm() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [carried, setCarried] = useState(false);
+  const [done, setDone] = useState(false);
   const firstRef = useRef<HTMLInputElement>(null);
 
   // friend-brings-friend: remember ?ref= even if they browse around before signing up
@@ -104,7 +105,13 @@ export default function RegisterForm() {
       }
       pixelTrack("CompleteRegistration", { content_name: "30 יום במתנה" }, data.eventId);
       // came from a plan page: go straight back to that plan's checkout, with the campaign params
-      router.push(planReturn() ?? "/chat");
+      const back = planReturn();
+      if (back) return router.push(back);
+      // otherwise: thank-you screen with the workshop gift, then into the platform
+      router.prefetch("/chat");
+      setLoading(false);
+      setDone(true);
+      window.scrollTo({ top: (document.querySelector(".stepper") as HTMLElement | null)?.offsetTop ?? 0, behavior: "smooth" });
     } catch {
       setErrors({ form: "אין חיבור כרגע. בדוק את האינטרנט ונסה שוב." });
       setLoading(false);
@@ -116,6 +123,8 @@ export default function RegisterForm() {
     { t: `נעים מאוד, ${first || "חבר"}.`, s: "הפרטים להתחברות. עם המייל והסיסמה האלה נכנסים מכל מכשיר." },
     { t: "עוד שנייה ואתה בפנים", s: "שני אישורים קצרים, והפלטפורמה נפתחת." },
   ];
+
+  if (done) return <ThankYou first={first} onEnter={() => router.push("/chat")} />;
 
   return (
     <div className="stepper glass edge">
@@ -202,6 +211,42 @@ export default function RegisterForm() {
         )}
       </form>
       <p className="auth-alt" style={{ marginTop: 18 }}>כבר רשום? <a href={`/login${loginNext().replace(/^&/, "?")}`}>התחברות</a></p>
+    </div>
+  );
+}
+
+const WORKSHOP_URL = "https://script.google.com/macros/s/AKfycbzxfY5HKv0uZMoiDcXRrXcm3S6k6gOsEuRlxd-2rZWk0BZmRX7RqnS-027e5hCPSHx-/exec?utm_source=whatsapp";
+const STAR = ["להתחבר", "להוביל", "להציג פתרון", "לענות להתנגדויות (\"יקר לי\", \"אני אחשוב על זה\")", "לסגור"];
+
+/** Shown right after a successful signup: welcome + the sales workshop gift. */
+function ThankYou({ first, onEnter }: { first: string; onEnter: () => void }) {
+  return (
+    <div className="stepper glass edge ty">
+      <div className="step-head">
+        <Mascot size={64} mood="wink" />
+        <div>
+          <h3 className="step-title">{first ? `${first}, אתה בפנים` : "אתה בפנים"}</h3>
+          <p className="step-sub">החשבון נפתח. 30 יום במתנה מתחילים עכשיו.</p>
+        </div>
+      </div>
+
+      <div className="ty-gift">
+        <span className="ty-tag">🎁 חלק קטן מעוד הרבה הפתעות גדולות שתקבלו</span>
+        <h4 className="ty-title">סדנת מכירות: פשוט למכור יותר</h4>
+        <p className="ty-sub">4 שעות פרונטליות, במתנה</p>
+        <p className="ty-quote">22 שנה אני רואה עסקים מצוינים שמפסידים עסקאות. לא בגלל המוצר. בגלל השיחה.</p>
+        <p className="ty-lead">מודל הכוכב, 5 שלבים:</p>
+        <ol className="ty-star">{STAR.map((t, i) => <li key={i}><b className="num">{i + 1}</b><span>{t}</span></li>)}</ol>
+        <ul className="ty-meta">
+          <li>🗓️ יום ראשון 15.11</li>
+          <li>⏰ התכנסות 9:00 | 10:00–14:00</li>
+          <li>📍 מרכז ניר דובדבני, הנגב 2, איירפורט סיטי</li>
+        </ul>
+        <p className="ty-note">המקומות מוגבלים, ההרשמה מראש בלבד:</p>
+        <a className="btn btn-primary ty-cta" href={WORKSHOP_URL} target="_blank" rel="noopener">שריינו לי מקום בסדנה</a>
+      </div>
+
+      <button type="button" className="btn btn-ghost ty-enter" onClick={onEnter}>כניסה לפלטפורמה <Icon name="arrow" size={18} className="ico-move" /></button>
     </div>
   );
 }
