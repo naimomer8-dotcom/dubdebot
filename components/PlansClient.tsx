@@ -283,7 +283,7 @@ export default function PlansClient({ user, conversations, focus, offers = {}, a
             })()}
             <p className="buy-renew"><Icon name="clock" size={14} /> {trial ? "השנה מתחילה בסוף חודש המתנה. " : ""}אחרי השנה: {ils(RENEWAL_MONTHLY)} + מע״מ לחודש אוטומטית, ביטול בכל רגע.</p>
             {user ? (
-              <label className="buy-agree"><input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} /> קראתי ואני מסכים ל<Link href="/terms" target="_blank">תנאי השימוש</Link>, כולל החידוש החודשי אחרי השנה. ידוע לי שהתכנים נפתחים מיד ולכן <b>אין ביטולים</b> אחרי הסליקה.</label>
+              <label className="buy-agree"><input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} /> קראתי ואני מסכים ל<Link href="/terms" target="_blank">תנאי השימוש</Link>, כולל החידוש החודשי אחרי השנה. ידוע לי ש<b>אפשר לבטל בתוך 14 יום</b>, בכפוף למדיניות הביטול שבתנאים.</label>
             ) : (
               <p className="buy-renew">כדי לרכוש צריך חשבון. ההרשמה לוקחת 20 שניות ונותנת 30 יום במתנה.</p>
             )}

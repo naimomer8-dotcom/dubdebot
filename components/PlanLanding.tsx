@@ -168,7 +168,7 @@ export default function PlanLanding({ tier, signedIn, firstName, owned, offers, 
               <ul className="pl-terms">
                 <li><Icon name="check" size={15} /> הכל נפתח מיד עם הסליקה</li>
                 <li><Icon name="check" size={15} /> מהשנה השנייה: {ils(RENEWAL_MONTHLY)} + מע״מ לחודש, אפשר לבטל את החידוש בכל רגע</li>
-                <li><Icon name="alert" size={15} /> אין ביטולים והחזרים אחרי הסליקה, כי התכנים נפתחים מיד</li>
+                <li><Icon name="alert" size={15} /> אפשר לבטל בתוך 14 יום לפי חוק הגנת הצרכן, בכפוף לתנאי השימוש</li>
                 {owned && !included && <li><Icon name="gem" size={15} /> כבר במנוי? בשדרוג משלמים רק את ההפרש</li>}
               </ul>
               <Cta block />
