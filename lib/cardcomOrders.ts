@@ -31,6 +31,9 @@ export async function settleCardcomOrder(orderId: string): Promise<SettleResult>
     const stillOpen = [5117, 5118, 5119].includes(Number(r.ResponseCode));
     if (!stillOpen && r.ResponseCode !== 0) {
       await supabase.from("orders").update({ provider_error: `${r.ResponseCode}: ${String(r.Description ?? "").slice(0, 200)}` }).eq("id", order.id);
+      // the charge was declined: tell the team right away so a rep closes it (once per order)
+      const { data: o } = await supabase.from("orders").select("customer_name, customer_phone, customer_email, tier, amount_total").eq("id", order.id).maybeSingle();
+      await alert(`cardcom_failed:${order.id}`, "תשלום נכשל באשראי, לסגור דרך נציג", [`${o?.customer_name ?? ""} · ${o?.customer_phone ?? ""} · ${o?.customer_email ?? ""}`, `מסלול: ${planById(o?.tier ?? null)?.name ?? o?.tier ?? ""} · ₪${o?.amount_total ?? ""}`, `קארדקום: ${r.ResponseCode} ${String(r.Description ?? "").slice(0, 160)}`, "הלקוח רצה לקנות. לחזור אליו היום עם קישור תשלום."], 60 * 24 * 30).catch(() => {});
     }
     return { status: stillOpen || r.ResponseCode === 0 ? "pending" : "failed", orderId, message: r.Description };
   }
