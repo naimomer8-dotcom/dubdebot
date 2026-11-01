@@ -7,7 +7,7 @@ export default function Privacy() {
     <main className="legal">
       <BrandBar />
       <h1>מדיניות פרטיות – Duvdevani Platform</h1>
-      <p><i>טיוטה לבדיקת עו״ד · גרסה v1 · אוקטובר 2026</i></p>
+      <p><i>עודכן: נובמבר 2026</i></p>
 
       <h2>מי אנחנו</h2>
       <p>Duvdevani Platform (הפלטפורמה להצלחה בעסקים) מופעלת על ידי קבוצת דובדבני – RND (ח.פ. 514686534), רחוב נגב 2, איירפורט סיטי (״אנחנו״). יצירת קשר בנושאי פרטיות: <a href="mailto:info@rnd.org.il">info@rnd.org.il</a>.</p>
