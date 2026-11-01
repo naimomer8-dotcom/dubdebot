@@ -239,7 +239,7 @@ function ThankYou({ first, onEnter }: { first: string; onEnter: () => void }) {
         <ol className="ty-star">{STAR.map((t, i) => <li key={i}><b className="num">{i + 1}</b><span>{t}</span></li>)}</ol>
         <ul className="ty-meta">
           <li>🗓️ יום ראשון 15.11</li>
-          <li>⏰ התכנסות 9:00 | 10:00–14:00</li>
+          <li>⏰ התכנסות 9:00 | <bdi dir="ltr">10:00–14:00</bdi></li>
           <li>📍 מרכז ניר דובדבני, הנגב 2, איירפורט סיטי</li>
         </ul>
         <p className="ty-note">המקומות מוגבלים, ההרשמה מראש בלבד:</p>
