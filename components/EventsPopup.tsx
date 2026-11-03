@@ -48,6 +48,20 @@ export default function EventsPopup() {
     return () => { alive = false; };
   }, []);
 
+  // the home screen's "סדנה" step / webinar tile reopen the seat picker on demand
+  useEffect(() => {
+    const open = () => {
+      fetch("/api/registrations", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).then((s: State | null) => {
+        if (!s) return;
+        setSt(s);
+        setPick({ workshop: s.workshopOpen && !s.workshop, webinar: !s.webinar });
+        setStep(s.webinar && (s.workshop || !s.workshopOpen) ? "done" : "events");
+      }).catch(() => {});
+    };
+    window.addEventListener("dd:open-events", open);
+    return () => window.removeEventListener("dd:open-events", open);
+  }, []);
+
   useEffect(() => {
     if (!step) return;
     const key = (e: KeyboardEvent) => e.key === "Escape" && close();

@@ -6,6 +6,6 @@ export const dynamic = "force-dynamic";
 
 export default async function Home() {
   // members go straight to the app – the landing page is only the gate
-  if (await getSessionUserId()) redirect("/chat");
+  if (await getSessionUserId()) redirect("/home");
   return <Landing />;
 }

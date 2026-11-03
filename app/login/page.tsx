@@ -9,7 +9,7 @@ export const metadata: Metadata = { title: "כניסה | הפלטפורמה לה
 
 export default async function Login({ searchParams }: { searchParams: Promise<{ email?: string; forgot?: string; next?: string }> }) {
   const sp = await searchParams;
-  const next = sp.next === "xray" ? "/xray" : sp.next === "vault" ? "/vault" : sp.next === "scan" ? "/scan" : safeNext(sp.next) ?? "/chat";
+  const next = sp.next === "xray" ? "/xray" : sp.next === "vault" ? "/vault" : sp.next === "scan" ? "/scan" : safeNext(sp.next) ?? "/home";
   if (await getSessionUserId()) redirect(next);
   return <AuthClient initialMode={sp.forgot ? "forgot" : "login"} email={(sp.email ?? "").slice(0, 200)} next={next} />;
 }

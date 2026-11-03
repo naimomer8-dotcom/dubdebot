@@ -24,7 +24,7 @@ export default function Sidebar({
   open,
   onClose,
 }: {
-  active: "chat" | "vault" | "plans" | "courses" | "money";
+  active: "home" | "chat" | "vault" | "plans" | "courses" | "money";
   mode?: ToolMode;
   onTool?: (id: ToolMode) => void;
   conversations: ConvItem[];
@@ -179,7 +179,7 @@ export default function Sidebar({
       {open && <div className="backdrop mobile-backdrop" onClick={onClose} style={{ zIndex: 64 }} />}
       <aside className={`side ${open ? "open" : ""}`} aria-label="ניווט ראשי">
         <div className="side-head">
-          <Brand size={34} href="/chat" />
+          <Brand size={34} href="/home" />
           <button className="icon-btn mobile-only" onClick={onClose} aria-label="סגירת תפריט"><Icon name="close" size={18} /></button>
         </div>
 
@@ -191,6 +191,7 @@ export default function Sidebar({
         </div>
 
         <nav aria-label="עמודים">
+          <Link className="side-link" href="/home" aria-current={active === "home" ? "true" : undefined}><Icon name="home" size={18} /> הבוקר שלך</Link>
           <Link className="side-link" href="/chat" aria-current={active === "chat" && (!mode || mode === "chat") ? "true" : undefined}><Icon name="chat" size={18} /> שיחה עם ניר</Link>
           <Link className="side-link" href="/xray"><Icon name="scan" size={18} /> רנטגן לעסק</Link>
           <Link className="side-link" href="/vault" aria-current={active === "vault" ? "true" : undefined}><Icon name="vault" size={18} /> התיק העסקי שלי</Link>
@@ -260,7 +261,7 @@ export default function Sidebar({
         {toast && <div className="side-toast" role="status">{toast}</div>}
       </aside>
       <ToolsLauncher open={launcher} onClose={() => setLauncher(false)} onTool={tool} />
-      <BottomNav active={active === "chat" && mode && mode !== "chat" ? undefined : active} onTools={() => setLauncher(true)} onCall={onCall} />
+      <BottomNav active={active === "chat" && mode && mode !== "chat" ? undefined : active} />
       <EventsPopup />
     </>
   );

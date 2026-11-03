@@ -126,7 +126,7 @@ export default function RegisterForm() {
     { t: "עוד שנייה ואתה בפנים", s: "שני אישורים קצרים, והפלטפורמה נפתחת." },
   ];
 
-  if (done) return <ThankYou first={first} onEnter={() => router.push("/chat")} />;
+  if (done) return <ThankYou first={first} onEnter={() => router.push("/home")} />;
 
   return (
     <div className="stepper glass edge">

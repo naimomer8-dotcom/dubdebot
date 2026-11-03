@@ -48,7 +48,7 @@ export default function AuthClient({ initialMode, email: initialEmail = "", toke
     const { ok, j } = await post("/api/auth/reset", { token, password });
     if (ok) {
       setMode("done");
-      setTimeout(() => router.push("/chat"), 1400);
+      setTimeout(() => router.push("/home"), 1400);
       return;
     }
     setErrors(j.errors ?? { form: j.error ?? "משהו השתבש" });
