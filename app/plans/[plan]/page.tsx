@@ -4,7 +4,7 @@ import { consentPending } from "@/lib/consent";
 import { notFound } from "next/navigation";
 import { getSessionUserId } from "@/lib/session";
 import { loadShell } from "@/lib/data";
-import { offersFor } from "@/lib/offers";
+import { offersFor, webinarGiftFor } from "@/lib/offers";
 import { planById, priceOf, ils, type Tier } from "@/lib/plans";
 import { PLAN_PAGES, carried } from "@/lib/planPages";
 import PlanLanding from "@/components/PlanLanding";
@@ -38,7 +38,9 @@ export default async function PlanPage({ params, searchParams }: { params: Promi
   const userId = await getSessionUserId();
   if (await consentPending(userId)) return <ConsentGate />;
   const shell = userId ? await loadShell(userId) : null;
-  const offers = userId ? await offersFor(userId) : {};
+  const gift = userId ? null : await webinarGiftFor(null);
+  const offers = userId ? await offersFor(userId) : gift ? { webinarHalf: gift } : {};
+  const sp = await searchParams;
   const owned = shell?.user.access.plan === "paid" ? (shell.user.access.tier as Tier | null) : null;
-  return <PlanLanding tier={p.id} signedIn={!!shell} firstName={shell?.user.firstName ?? null} owned={owned} offers={offers} passParams={carried(await searchParams)} />;
+  return <PlanLanding tier={p.id} signedIn={!!shell} firstName={shell?.user.firstName ?? null} owned={owned} offers={offers} passParams={carried(sp)} giftClosed={sp.gift === "closed"} />;
 }

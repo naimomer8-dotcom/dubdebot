@@ -22,7 +22,7 @@ const BASE_ITEMS: { icon: IconName; t: string; d: string }[] = [
   { icon: "vault", t: "התיק העסקי שלך", d: "כל התוצרים, המשימות והמספרים נשמרים במקום אחד, ודובדבוט זוכר את העסק." },
 ];
 
-export default function PlanLanding({ tier, signedIn, firstName, owned, offers, passParams }: { tier: Tier; signedIn: boolean; firstName: string | null; owned: Tier | null; offers: Offers; passParams: Record<string, string> }) {
+export default function PlanLanding({ tier, signedIn, firstName, owned, offers, passParams, giftClosed = false }: { tier: Tier; signedIn: boolean; firstName: string | null; owned: Tier | null; offers: Offers; passParams: Record<string, string>; giftClosed?: boolean }) {
   const plan = planById(tier)!;
   const page = PLAN_PAGES[tier];
   const [billing, setBilling] = useState<Billing>("onetime");
@@ -77,6 +77,10 @@ export default function PlanLanding({ tier, signedIn, firstName, owned, offers, 
             <span className="badge"><Icon name="gem" size={14} /> {page.eyebrow} · {PERSONAS[tier]}</span>
             <h1 className="h-display">{page.title} <span className="gold">{page.gold}</span></h1>
             <p className="lead">{page.promise}</p>
+            {tier === "private" && offers.webinarHalf && !owned && (
+              <p className="pl-gift"><Icon name="gem" size={15} /> <span><b>המתנה מהוובינר:</b> 50% הנחה על השנה הראשונה, המחיר כאן כבר אחרי ההנחה. בתוקף עד {new Date(offers.webinarHalf).toLocaleString("he-IL", { timeZone: "Asia/Jerusalem", weekday: "long", day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" })}.</span></p>
+            )}
+            {giftClosed && !offers.webinarHalf && <p className="pl-gift off"><Icon name="clock" size={15} /> <span>המתנה מהוובינר כבר לא בתוקף. היא נפתחת שוב בוובינר הבא.</span></p>}
             <div className="pl-price-chip">
               {regularMonthly && <s className="num">{ils(regularMonthly)}</s>}
               <b className="num">{ils(priceOf(tier, "onetime", offers).perMonthNet)}</b>

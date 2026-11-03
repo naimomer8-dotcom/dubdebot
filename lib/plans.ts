@@ -86,7 +86,8 @@ export const TIER_RANK: Record<Tier, number> = { basic: 1, private: 2, upgrade: 
 
 /** Time-limited offers a person currently holds (see lib/offers.ts). Values are ISO expiry times. */
 /** friendHalf: joined through a member's link → 50% off the first annual subscription (any tier, best price wins over the other offers). */
-export type Offers = { privateHalf?: string; installmentsAtOnetime?: string; friendHalf?: string };
+/** webinarHalf: the live-webinar gift → Platform Private at 50% off the first year. */
+export type Offers = { privateHalf?: string; installmentsAtOnetime?: string; friendHalf?: string; webinarHalf?: string };
 export const FRIEND_DISCOUNT = 0.5;
 export const PRIVATE_HALF_EXTRA = 295;
 
@@ -101,6 +102,7 @@ export function priceOf(tier: Tier, billing: Billing, offers?: Offers | null) {
     const full = p.flat ? p.flat[billing] : BASIC[billing] + p.extra;
     net = Math.min(net, Math.round(full * (1 - FRIEND_DISCOUNT)));
   }
+  if (tier === "private" && offers?.webinarHalf) net = Math.min(net, Math.round((BASIC[billing] + p.extra) * (1 - FRIEND_DISCOUNT)));
   const vat = Math.round(net * VAT * 100) / 100;
   const total = Math.round((net + vat) * 100) / 100;
   return { net, vat, total, perMonth: Math.round((total / 12) * 100) / 100, perMonthNet: Math.round((net / 12) * 100) / 100 };

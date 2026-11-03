@@ -125,12 +125,13 @@ export default function PlansClient({ user, conversations, focus, offers = {}, a
             <button className="link-btn" style={{ marginInlineStart: "auto" }} onClick={toggleRenewal}>{renewal === "cancelled" ? "החזרת החידוש החודשי" : "ביטול החידוש אחרי השנה"}</button>
           </p>
         )}
-        {(offers.privateHalf || offers.installmentsAtOnetime || offers.friendHalf) && (
+        {(offers.privateHalf || offers.installmentsAtOnetime || offers.friendHalf || offers.webinarHalf) && (
           <div className="plans-offer">
             <Icon name="gem" size={16} />
             <div>
               {offers.friendHalf && <p><b>חבר הביא אותך:</b> 50% הנחה על השנה הראשונה בכל מסלול. המחירים כאן כבר אחרי ההנחה.</p>}
               {offers.privateHalf && !offers.friendHalf && <p><b>בונוס מצטרפים בחודש המתנה:</b> Platform Private בחצי מחיר, ₪295 + מע״מ במקום ₪590. בתוקף עד {fmt(offers.privateHalf)}.</p>}
+              {offers.webinarHalf && <p><b>המתנה מהוובינר:</b> Platform Private ב-50% הנחה על השנה הראשונה. בתוקף עד {fmt(offers.webinarHalf)}.</p>}
               {offers.installmentsAtOnetime && <p><b>הצעת 72 שעות:</b> 12 תשלומים במחיר של תשלום אחד, ₪229 לחודש + מע״מ במקום ₪299. בתוקף עד {fmt(offers.installmentsAtOnetime)}.</p>}
             </div>
           </div>
