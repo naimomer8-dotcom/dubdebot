@@ -6,6 +6,8 @@ import Icon from "./Icon";
 import { Brand, GroupLogo } from "./BrandBar";
 import { ToolMode } from "@/lib/persona";
 import ToolsLauncher, { TOOL_COUNT } from "./ToolsLauncher";
+import BottomNav from "./BottomNav";
+import EventsPopup from "./EventsPopup";
 import { nextTier, planById } from "@/lib/plans";
 import type { ConvItem, ShellUser } from "@/lib/data";
 
@@ -190,6 +192,7 @@ export default function Sidebar({
 
         <nav aria-label="עמודים">
           <Link className="side-link" href="/chat" aria-current={active === "chat" && (!mode || mode === "chat") ? "true" : undefined}><Icon name="chat" size={18} /> שיחה עם ניר</Link>
+          <Link className="side-link" href="/xray"><Icon name="scan" size={18} /> רנטגן לעסק</Link>
           <Link className="side-link" href="/vault" aria-current={active === "vault" ? "true" : undefined}><Icon name="vault" size={18} /> התיק העסקי שלי</Link>
           <Link className="side-link" href="/money" aria-current={active === "money" ? "true" : undefined}><Icon name="coin" size={18} /> כסף <span className="new-tag">חדש</span></Link>
           <Link className="side-link" href="/courses" aria-current={active === "courses" ? "true" : undefined}><Icon name="layers" size={18} /> הקורסים שלי</Link>
@@ -257,6 +260,8 @@ export default function Sidebar({
         {toast && <div className="side-toast" role="status">{toast}</div>}
       </aside>
       <ToolsLauncher open={launcher} onClose={() => setLauncher(false)} onTool={tool} />
+      <BottomNav active={active === "chat" && mode && mode !== "chat" ? undefined : active} onTools={() => setLauncher(true)} onCall={onCall} />
+      <EventsPopup />
     </>
   );
 }
