@@ -2262,3 +2262,17 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { box-shadow: 
 .pl-gift{display:flex;gap:10px;align-items:flex-start;margin:4px 0 14px;padding:12px 14px;border-radius:14px;background:rgba(217,184,119,.1);border:1px solid rgba(217,184,119,.35);color:var(--fg,#f5efe4);font-size:15px;line-height:1.5;max-width:560px}
 .pl-gift svg{flex:none;margin-top:3px;color:var(--gold,#e2c68e)}
 .pl-gift.off{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.1);opacity:.85}
+
+/* public "5-minute call" page from the webinar */
+.cb-page{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:32px 16px;background:radial-gradient(700px 500px at 50% 0%,rgba(217,184,119,.10),transparent 70%),#0A0A0B}
+.cb-card{width:100%;max-width:460px;display:flex;flex-direction:column;gap:16px;background:#131315;border:1px solid rgba(255,255,255,.07);border-radius:24px;padding:32px 26px}
+.cb-ava{width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid var(--gold,#e2c68e)}
+.cb-card h1{margin:0;font-family:var(--display);font-size:64px;line-height:.9;font-weight:700}
+.cb-eyebrow{margin:0;color:var(--gold,#e2c68e);font-weight:600}
+.cb-lead{margin:0;color:#cfc7b8;font-size:17px;line-height:1.55}
+.cb-form{display:flex;flex-direction:column;gap:14px;margin-top:6px}
+.cb-chips{display:flex;flex-wrap:wrap;gap:8px}
+.cb-chips button{padding:9px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:transparent;color:inherit;font:inherit;font-size:15px;cursor:pointer}
+.cb-chips button.on{background:rgba(217,184,119,.14);border-color:var(--gold,#e2c68e);color:var(--gold,#e2c68e)}
+.cb-fine{margin:0;font-size:13px;color:#8c8579;text-align:center}
+.cb-fine a{color:inherit}
