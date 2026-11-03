@@ -2,13 +2,11 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import Mascot from "./Mascot";
 import { Brand, GroupLogo } from "./BrandBar";
 import Spotlight from "./Spotlight";
 import Radar from "./Radar";
 import { QUESTIONS } from "@/lib/xray";
 import RegisterForm from "./RegisterForm";
-import NirPose from "./NirPose";
 import Icon, { IconName } from "./Icon";
 import { useReveal } from "./useReveal";
 import { DISCLAIMER_LONG } from "@/lib/disclaimer";
@@ -99,8 +97,12 @@ export default function Landing() {
             </div>
           </div>
           <div className="hero-form" id="signup">
-            <div className="hero-form-mascot"><Mascot size={96} /></div>
-            <NirPose pose="point-down" width={250} className="hero-nir" eager />
+            <div className="hero-photo">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/nir/home-suit.webp" alt="ניר דובדבני" />
+              <span aria-hidden="true" />
+              <em><b>ניר דובדבני</b> 22 שנה של ליווי עסקים · מייסד קבוצת דובדבני</em>
+            </div>
             <RegisterForm />
           </div>
         </header>
@@ -197,7 +199,7 @@ export default function Landing() {
               {[
                 ["נרשמים בחצי דקה", "שם, נייד, מייל וסיסמה. מעכשיו נכנסים מכל מכשיר."],
                 ["מספרים על העסק", "בכתב, בקול, או שולחים דוח. הפלטפורמה לומדת את העסק וזוכרת אותו."],
-                ["מקבלים תוצר, ומתקדמים", "תחזית, תוכנית ותסריט – נשמרים בתיק העסקי עם משימות לביצוע. 30 הימים הראשונים עלינו."],
+                ["מקבלים תוצר, ומתקדמים", "תחזית, תוכנית ותסריט. הכל נשמר בתיק העסקי עם משימות לביצוע. 30 הימים הראשונים עלינו."],
               ].map(([t, d], i) => (
                 <div className="step3 reveal" key={t} style={{ transitionDelay: `${i * 80}ms` }}>
                   <span className="step3-n">0{i + 1}</span>
@@ -213,7 +215,10 @@ export default function Landing() {
         <section className="section vision-sec">
           <div className="wrap">
             <div className="vision reveal">
-              <div className="vision-photo"><NirPose pose="welcome" width={340} /><Mascot size={72} mood="wink" track={false} /></div>
+              <div className="vision-photo vision-real">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/nir/home-yes.webp" alt="ניר דובדבני" />
+              </div>
               <blockquote className="h-display">״החזון שלי: שלא יהיה עסק בישראל <span className="gold">בלי Duvdevani Platform.</span>״</blockquote>
               <cite>ניר דובדבני · מייסד קבוצת דובדבני</cite>
               <button className="btn btn-primary btn-lg" onClick={() => goSignup()}>להתחיל 30 יום במתנה <Icon name="arrow" size={18} className="ico-move" /></button>

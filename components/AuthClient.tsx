@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Spotlight from "./Spotlight";
-import Mascot, { Mood } from "./Mascot";
 import Icon from "./Icon";
 import PasswordField from "./PasswordField";
 import { Brand, GroupLogo } from "./BrandBar";
@@ -54,7 +53,6 @@ export default function AuthClient({ initialMode, email: initialEmail = "", toke
     setErrors(j.errors ?? { form: j.error ?? "משהו השתבש" });
   }
 
-  const mood: Mood = loading ? "thinking" : mode === "done" ? "celebrate" : mode === "sent" ? "wink" : errors.form ? "curious" : "idle";
 
   return (
     <>
@@ -65,8 +63,18 @@ export default function AuthClient({ initialMode, email: initialEmail = "", toke
           <GroupLogo />
         </header>
         <main className="auth-stage">
+          <div className="auth-photo" aria-hidden="true">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/nir/home-suit.webp" alt="" />
+            <span />
+            <em>״אסטרטגיה מנצחת טקטיקה.״<b>ניר דובדבני</b></em>
+          </div>
           <div className="auth-card glass edge" key={mode}>
-            <Mascot size={70} mood={mood} />
+            <span className="nir-ava auth-ava">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/nir/talk-face.jpg" alt="ניר דובדבני" />
+              <i aria-hidden="true" />
+            </span>
             {mode === "login" && (
               <>
                 <span className="eyebrow" style={{ marginTop: 18 }}>כניסה</span>
