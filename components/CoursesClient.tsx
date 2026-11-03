@@ -98,7 +98,10 @@ export default function CoursesClient({ user, conversations, leadSent, links: in
 
           <div className="vault">
             <div className="vault-in">
-              <div className="crs-head">
+              <div className="crs-head crs-hero">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/nir/home-book.webp" alt="ניר דובדבני עם הספר שלו" />
+                <span className="crs-hero-scrim" aria-hidden="true" />
                 <span className="eyebrow">{user.firstName} · הספרייה של הפלטפורמה</span>
                 <h1 className="h-display">כל מה שניר לימד, <span className="gold">בלחיצה אחת.</span></h1>
                 <p className="lead" style={{ margin: 0 }}>

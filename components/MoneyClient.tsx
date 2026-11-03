@@ -93,7 +93,10 @@ export default function MoneyClient({ user, conversations, leadSent, initial }: 
 
           <div className="vault">
             <div className="vault-in money">
-              <div className="crs-head">
+              <div className="crs-head crs-hero">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/nir/home-suit.webp" alt="ניר דובדבני" />
+                <span className="crs-hero-scrim" aria-hidden="true" />
                 <span className="eyebrow">{user.firstName} · כסף</span>
                 <h1 className="h-display">הכסף שלך. <span className="gold">ער או ישן?</span></h1>
                 <p className="lead" style={{ margin: 0 }}>עסק יכול להכניס הרבה ולהשאיר מעט. פה בודקים מה נשאר אצלך באמת, ומה עושים עם זה.</p>

@@ -2206,3 +2206,26 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { box-shadow: 
 .chat-hero em { position: absolute; inset-inline: 0; bottom: 0; padding: 16px 20px; font-style: normal; font-weight: 700; font-size: 18px; }
 .welcome h2 { font-size: clamp(40px, 6vw, 72px); }
 .starter { background: #131315; border-color: rgba(255,255,255,.07); border-radius: 20px; }
+
+/* ── X-ray result (direction A) ── */
+.xr-result .xr-score, .xr-result .xr-radar, .xr-result .xr-insight { background: #131315; border: 1px solid rgba(255,255,255,.07); border-radius: 26px; box-shadow: none; }
+.xr-result .xr-insight { border-color: rgba(224,70,92,.38); padding: 0; overflow: hidden; grid-template-columns: 200px minmax(0, 1fr) auto; }
+.xr-result .xr-insight > div { padding: 24px 0; }
+.xr-result .xr-insight > .btn { margin-inline-end: 24px; }
+.xr-nir-photo { width: 200px; height: 100%; min-height: 200px; object-fit: cover; object-position: center 20%; display: block; }
+.xr-leak { color: #e0465c; }
+@media (max-width: 900px) {
+  .xr-result .xr-insight { grid-template-columns: 1fr; }
+  .xr-nir-photo { width: 100%; height: 190px; min-height: 0; }
+  .xr-result .xr-insight > div { padding: 18px 20px 0; }
+  .xr-result .xr-insight > .btn { margin: 0 20px 20px; }
+}
+
+/* ── Courses (direction A): photo hero, calmer cards ── */
+.crs-hero { position: relative; min-height: 300px; border-radius: 26px; overflow: hidden; background: #1a1916; padding: 24px; justify-content: flex-end; }
+.crs-hero > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 30%; }
+.crs-hero-scrim { position: absolute; inset: 0; background: linear-gradient(to top, rgba(10,10,11,.97) 0%, rgba(10,10,11,.6) 50%, rgba(10,10,11,.1) 85%); }
+.crs-hero > :not(img):not(.crs-hero-scrim) { position: relative; }
+.crs-hero h1 { font-size: clamp(40px, 6vw, 72px); }
+.crs-grid .crs { background: #131315; border-color: rgba(255,255,255,.07); border-radius: 22px; }
+@media (max-width: 640px) { .crs-hero { min-height: 360px; padding: 18px; } }

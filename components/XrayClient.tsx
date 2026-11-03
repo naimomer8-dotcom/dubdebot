@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Mascot, { Mood } from "./Mascot";
 import Icon from "./Icon";
-import NirPose from "./NirPose";
 import Radar from "./Radar";
 import Spotlight from "./Spotlight";
 import Confetti from "./Confetti";
@@ -208,9 +207,10 @@ export default function XrayClient({ loggedIn }: { loggedIn: boolean }) {
               </section>
 
               <section className="xr-insight glass edge">
-                <NirPose pose={result.total >= 60 ? "celebrate" : "alarm"} width={170} className="xr-nir" />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img className="xr-nir-photo" src={result.total >= 60 ? "/nir/home-yes.webp" : "/nir/home-suit.webp"} alt="ניר דובדבני" />
                 <div>
-                  <span className="eyebrow">צוואר הבקבוק: {ins.weakest.label}</span>
+                  <span className="eyebrow xr-leak">איפה הכסף בורח: {ins.weakest.label}</span>
                   <h4 style={{ marginTop: 10 }}>{ins.weakLine}</h4>
                   <p>הצד החזק שלך: {ins.strongLine}. עכשיו בוא נתקן את מה שמאט אותך.</p>
                 </div>
