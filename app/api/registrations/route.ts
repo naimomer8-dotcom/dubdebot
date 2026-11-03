@@ -3,6 +3,7 @@ import { db } from "@/lib/supabase";
 import { getSessionUserId } from "@/lib/session";
 import { LIVE_EVENT_TYPE, workshopOpen, type LiveEventKey } from "@/lib/liveEvents";
 import { nextWebinar } from "@/lib/webinarDates";
+import { contactOf } from "@/lib/automation";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -41,6 +42,26 @@ export async function POST(req: Request) {
   if (rows.length) {
     const { error } = await db().from("events").insert(rows);
     if (error) return NextResponse.json({ error: "לא הצלחנו לשמור. נסה שוב." }, { status: 500 });
+    await forward(userId, rows.some((r) => r.type === LIVE_EVENT_TYPE.workshop), rows.some((r) => r.type === LIVE_EVENT_TYPE.webinar) ? now.webinarDate : "");
   }
   return NextResponse.json(await state(userId));
+}
+
+/** New seats go to Make (REGISTRATIONS_WEBHOOK_URL): a row in the leads sheet tab "הרשמות סדנה ווובינר" + a Fireberry note. Never blocks the member. */
+async function forward(userId: string, workshop: boolean, webinarDate: string) {
+  const url = process.env.REGISTRATIONS_WEBHOOK_URL;
+  if (!url) return;
+  try {
+    const c = await contactOf(userId);
+    if (!c) return;
+    const [y, m, d] = webinarDate ? webinarDate.split("-") : [];
+    await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ contact: { full_name: c.full_name, phone: c.phone, email: c.email, plan: c.plan }, workshop, webinar_date: webinarDate ? `${Number(d)}.${Number(m)}.${y}` : "", source: "app_popup" }),
+      signal: AbortSignal.timeout(6000),
+    });
+  } catch (e) {
+    console.error("registrations forward", (e as Error).message);
+  }
 }
