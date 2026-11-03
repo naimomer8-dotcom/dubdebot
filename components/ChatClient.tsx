@@ -11,7 +11,6 @@ import WebinarBar from "./WebinarBar";
 import WelcomePaid from "./WelcomePaid";
 import Sidebar from "./Sidebar";
 import NirPhoto from "./NirPhoto";
-import NirPose from "./NirPose";
 import PlanCube from "./PlanCube";
 import UpsellInline from "./UpsellInline";
 import Icon from "./Icon";
@@ -19,7 +18,7 @@ import LeadModal, { MeetingType } from "./LeadModal";
 import ForecastStudio from "./ForecastStudio";
 import VoiceCall from "./VoiceCall";
 import Confetti from "./Confetti";
-import AiCore, { type CoreState } from "./AiCore";
+import { type CoreState } from "./AiCore";
 import { MONEY_STARTERS } from "@/lib/money";
 import { TOOLS, ToolMode } from "@/lib/persona";
 import { ForecastInput, toPrompt } from "@/lib/forecast";
@@ -411,6 +410,7 @@ export default function ChatClient({
   }, []);
 
   const coreState: CoreState = streaming ? "answering" : busy ? "thinking" : "idle";
+  void coreState;
   const activeTool = TOOLS.find((t) => t.id === mode);
   const lastIdx = messages.length - 1;
   const canSend = !busy && !fileBusy && (!!input.trim() || files.length > 0);
@@ -440,19 +440,23 @@ export default function ChatClient({
           <header className="topbar">
             <div className="who">
               <button className="icon-btn mobile-only" onClick={() => setSide(true)} aria-label="תפריט"><Icon name="menu" size={20} /></button>
-              <AiCore size={44} state={coreState} label={busy ? (streaming ? "ניר עונה" : "ניר חושב") : "דובדבוט זמין"} />
-              <div style={{ minWidth: 0 }}>
-                <b>{busy ? (streaming ? "ניר כותב…" : "חושב…") : activeTool && activeTool.id !== "chat" ? activeTool.title : "דובדבוט"}</b>
-                <small><span className="dot-live" /> ניר דובדבני · תתייעץ איתי 24/6</small>
+              <span className={`nir-ava ${busy ? "busy" : ""}`}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/nir/talk-face.jpg" alt="ניר דובדבני" />
+                <i aria-hidden="true" />
+              </span>
+              <div style={{ minWidth: 0 }} className="who-txt">
+                <b>{activeTool && activeTool.id !== "chat" ? activeTool.title : "ניר דובדבני"}</b>
+                <small>{busy ? (streaming ? "כותב לך עכשיו…" : "חושב…") : "היועץ העסקי שלך · זמין 24/6"}</small>
               </div>
             </div>
             <div className="topbar-actions">
-              <button className="icon-btn" onClick={() => setStudio(true)} aria-label="סטודיו תחזית" title="סטודיו תחזית"><Icon name="chart" size={20} /></button>
+              <button className="icon-btn desk-only" onClick={() => setStudio(true)} aria-label="סטודיו תחזית" title="סטודיו תחזית"><Icon name="chart" size={20} /></button>
               <button className="call-btn" onClick={() => setCall(true)} title="שיחה קולית (Ctrl+J)">
                 <Icon name="phone" size={17} /> <span>שיחה קולית</span>
               </button>
               {!leadSent && (
-                <button className="btn btn-primary btn-sm" onClick={() => openLead("advisor", "header")}>
+                <button className="btn btn-primary btn-sm desk-only" onClick={() => openLead("advisor", "header")}>
                   <Icon name="calendar" size={16} /> <span>פגישה</span>
                 </button>
               )}
@@ -471,7 +475,12 @@ export default function ChatClient({
             <div className="thread-col">
               {messages.length === 0 && (
                 <div className="welcome">
-                  <div className="welcome-hero"><span className="welcome-core"><AiCore size={120} state="idle" /></span><NirPose pose="welcome" width={230} eager /></div>
+                  <div className="chat-hero">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/nir/home-yes.webp" alt="ניר דובדבני" />
+                    <span aria-hidden="true" />
+                    <em>22 שנה של ליווי עסקים. עכשיו איתך, 24/6.</em>
+                  </div>
                   <h2 className="h-display">
                     {user.firstName}, <span className="gold">מה בונים היום?</span>
                   </h2>
@@ -520,8 +529,9 @@ export default function ChatClient({
                     </div>
                   ) : (
                     <div className="msg bot">
-                      <span className="avatar-bot">
-                        <AiCore size={30} state={i === lastIdx ? coreState : "idle"} />
+                      <span className={`avatar-bot nir-ava sm ${i === lastIdx && busy ? "busy" : ""}`}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src="/nir/talk-face.jpg" alt="" />
                       </span>
                       <div className="body">
                         <div className="name"><b>ניר</b></div>

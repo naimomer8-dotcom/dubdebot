@@ -2179,3 +2179,30 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { box-shadow: 
   .home-hero { height: 380px; }
   .home-quote { font-size: 28px; }
 }
+
+/* ── Chat (direction A): Nir's face, gold user bubbles, calmer chrome ── */
+@media (max-width: 1080px) { .desk-only { display: none !important; } }
+.nir-ava { position: relative; width: 44px; height: 44px; flex-shrink: 0; }
+.nir-ava img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; }
+.nir-ava i { position: absolute; bottom: 1px; left: 1px; width: 11px; height: 11px; border-radius: 50%; background: #5bd69a; border: 2px solid var(--bg); }
+.nir-ava.busy::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; border: 2px solid var(--gold); opacity: .7; animation: ring 1.6s var(--ease) infinite; }
+.msg.bot .avatar-bot.nir-ava { width: 34px; height: 34px; border-radius: 50%; background: none; border: 0; padding: 0; overflow: visible; }
+.topbar .who .who-txt b { font-family: inherit; font-size: 17px; font-weight: 800; line-height: 1.2; }
+.topbar .who .who-txt small { font-size: 13px; color: var(--text-2); }
+.topbar .call-btn { background: var(--gold); color: #17130b; border: 0; font-weight: 700; }
+.topbar .call-btn .ico { color: #17130b; }
+@media (max-width: 1080px) {
+  .topbar .call-btn { width: 44px; height: 44px; padding: 0; justify-content: center; border-radius: 50%; }
+  .topbar .call-btn span { display: none; }
+  .main .webinar-bar { display: none; }
+}
+.msg.user .bubble { background: var(--gold); border: 0; color: #17130b; font-weight: 600; border-radius: 20px 20px 6px 20px; }
+.msg.bot .md { background: #131315; border: 1px solid rgba(255,255,255,.07); border-radius: 20px 20px 20px 6px; padding: 14px 18px; }
+.msg.bot .name { display: none; }
+.composer-box { border-radius: 20px; border-color: rgba(226,198,142,.28); background: #18181b; }
+.chat-hero { position: relative; height: 230px; border-radius: 26px; overflow: hidden; background: #1a1916; max-width: 560px; }
+.chat-hero img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 18%; }
+.chat-hero span { position: absolute; inset: 0; background: linear-gradient(to top, rgba(10,10,11,.92), rgba(10,10,11,0) 60%); }
+.chat-hero em { position: absolute; inset-inline: 0; bottom: 0; padding: 16px 20px; font-style: normal; font-weight: 700; font-size: 18px; }
+.welcome h2 { font-size: clamp(40px, 6vw, 72px); }
+.starter { background: #131315; border-color: rgba(255,255,255,.07); border-radius: 20px; }
