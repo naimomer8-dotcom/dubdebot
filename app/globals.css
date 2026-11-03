@@ -2123,3 +2123,8 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { box-shadow: 
 .evp-ok + .evp-title { text-align: center; }
 .evp-line { font-size: 16px; line-height: 1.5; color: var(--text-2); }
 .evp-line b { color: var(--text); }
+.evp-wa-box { display: flex; flex-direction: column; gap: 4px; padding: 14px; border-radius: 16px; background: rgba(37, 211, 102, .08); border: 1px solid rgba(37, 211, 102, .35); }
+.evp-wa-box b { font-size: 17px; }
+.evp-wa-box small { font-size: 14px; color: var(--text-2); }
+.evp-ok-wa { background: #25d366; color: #06130b; }
+.btn.evp-wa { background: #25d366; color: #06130b; box-shadow: 0 18px 40px -18px rgba(37, 211, 102, .7); }

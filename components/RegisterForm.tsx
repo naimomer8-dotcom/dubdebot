@@ -8,6 +8,8 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Mascot, { Mood } from "./Mascot";
 import Icon from "./Icon";
+import { trackWaJoin } from "./EventsPopup";
+import { WEBINAR_WA_GROUP } from "@/lib/webinarDates";
 import PasswordField from "./PasswordField";
 
 
@@ -220,8 +222,21 @@ const STAR = ["להתחבר", "להוביל", "להציג פתרון", "לענו
 
 /** Shown right after a successful signup: welcome + the sales workshop gift. */
 function ThankYou({ first, onEnter }: { first: string; onEnter: () => void }) {
+  const [wa, setWa] = useState(true);
   return (
     <div className="stepper glass edge ty">
+      {wa && (
+        <div className="evp-wrap" onClick={(e) => e.target === e.currentTarget && setWa(false)}>
+          <div className="evp" role="dialog" aria-modal="true" aria-labelledby="ty-wa-h">
+            <button type="button" className="icon-btn evp-x" onClick={() => setWa(false)} aria-label="סגירה"><Icon name="close" size={18} /></button>
+            <span className="evp-ok evp-ok-wa"><Icon name="chat" size={28} /></span>
+            <h2 id="ty-wa-h" className="evp-title" style={{ textAlign: "center" }}>{first ? `${first}, ` : ""}עוד צעד אחד</h2>
+            <p className="evp-sub" style={{ textAlign: "center" }}>הצטרפו לקבוצת העדכונים בוואטסאפ: קישורים לזום, תזכורות לוובינר ולסדנה, וחומרים מניר. קבוצה שקטה, רק עדכונים.</p>
+            <a className="btn btn-primary evp-cta evp-wa" href={WEBINAR_WA_GROUP} target="_blank" rel="noopener noreferrer" onClick={() => { trackWaJoin(); setWa(false); }}><Icon name="chat" size={18} /> להצטרפות לקבוצה בוואטסאפ</a>
+            <button type="button" className="link-btn evp-later" onClick={() => setWa(false)}>לא עכשיו</button>
+          </div>
+        </div>
+      )}
       <div className="step-head">
         <Mascot size={64} mood="wink" />
         <div>

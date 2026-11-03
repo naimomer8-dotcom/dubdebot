@@ -11,11 +11,12 @@ export const dynamic = "force-dynamic";
 /** Which live events this member already holds a seat for (workshop gift, next webinar). */
 async function state(userId: string) {
   const webinar = nextWebinar();
-  const { data } = await db().from("events").select("type, meta").eq("user_id", userId).in("type", Object.values(LIVE_EVENT_TYPE));
+  const { data } = await db().from("events").select("type, meta").eq("user_id", userId).in("type", [...Object.values(LIVE_EVENT_TYPE), "wa_group_clicked"]);
   const rows = data ?? [];
   return {
     workshop: rows.some((r) => r.type === LIVE_EVENT_TYPE.workshop),
     webinar: rows.some((r) => r.type === LIVE_EVENT_TYPE.webinar && (r.meta as { date?: string } | null)?.date === webinar),
+    waJoined: rows.some((r) => r.type === "wa_group_clicked"),
     workshopOpen: workshopOpen(),
     webinarDate: webinar,
   };
