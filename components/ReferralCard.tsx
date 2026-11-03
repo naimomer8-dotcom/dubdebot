@@ -19,8 +19,8 @@ export default function ReferralCard({ userId, firstName }: { userId: string; fi
     <section className="ref-card glass edge" aria-label="חבר מביא חבר">
       <div className="ref-copy">
         <span className="deal-tag">חבר מביא חבר</span>
-        <h3>{firstName}, תביא חבר. תקבל מקום בסדנה עם ניר.</h3>
-        <p>על כל חבר שנרשם דרך הקישור שלך ומצטרף למסלול, אתה מקבל מקום בסדנה "להעיר את הכסף שבך" עם ניר דובדבני. בלי הגבלה על מספר החברים.</p>
+        <h3>{firstName}, תביא חבר. הוא נכנס ב-50% הנחה.</h3>
+        <p>מי שנרשם דרך הקישור שלך מקבל 50% הנחה על השנה הראשונה. ועל כל חבר שמצטרף למסלול, אתה מקבל מקום בסדנה "להעיר את הכסף שבך" עם ניר דובדבני. בלי הגבלה על מספר החברים.</p>
       </div>
       <div className="ref-actions">
         <code className="ref-link" dir="ltr">{link.replace(/^https?:\/\//, "")}</code>

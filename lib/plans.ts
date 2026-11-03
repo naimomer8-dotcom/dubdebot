@@ -85,7 +85,9 @@ export const planById = (id: string | null | undefined) => PLANS.find((p) => p.i
 export const TIER_RANK: Record<Tier, number> = { basic: 1, private: 2, upgrade: 3, pro: 4 };
 
 /** Time-limited offers a person currently holds (see lib/offers.ts). Values are ISO expiry times. */
-export type Offers = { privateHalf?: string; installmentsAtOnetime?: string };
+/** friendHalf: joined through a member's link → 50% off the first annual subscription (any tier, best price wins over the other offers). */
+export type Offers = { privateHalf?: string; installmentsAtOnetime?: string; friendHalf?: string };
+export const FRIEND_DISCOUNT = 0.5;
 export const PRIVATE_HALF_EXTRA = 295;
 
 export function priceOf(tier: Tier, billing: Billing, offers?: Offers | null) {
@@ -94,7 +96,11 @@ export function priceOf(tier: Tier, billing: Billing, offers?: Offers | null) {
   const base = billing === "installments" && offers?.installmentsAtOnetime ? BASIC.onetime : BASIC[billing];
   // trial bonus: Alpha Private add-on at half price
   const extra = tier === "private" && offers?.privateHalf ? PRIVATE_HALF_EXTRA : p.extra;
-  const net = p.flat ? p.flat[billing] : base + extra;
+  let net = p.flat ? p.flat[billing] : base + extra;
+  if (offers?.friendHalf) {
+    const full = p.flat ? p.flat[billing] : BASIC[billing] + p.extra;
+    net = Math.min(net, Math.round(full * (1 - FRIEND_DISCOUNT)));
+  }
   const vat = Math.round(net * VAT * 100) / 100;
   const total = Math.round((net + vat) * 100) / 100;
   return { net, vat, total, perMonth: Math.round((total / 12) * 100) / 100, perMonthNet: Math.round((net / 12) * 100) / 100 };

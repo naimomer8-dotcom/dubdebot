@@ -9,6 +9,16 @@ export const refLink = (userId: string, app = process.env.PUBLIC_APP_URL || "htt
  * Called when someone pays for the first time. If they signed up through a friend's link,
  * the friend earns a seat at Nir's quarterly workshop "להעיר את הכסף שבך" (recorded + pushed to Make → WhatsApp/Fireberry).
  */
+/** The member whose link this user signed up through (utm.ref), if any. */
+export async function referrerOf(userId: string): Promise<string | null> {
+  const supabase = db();
+  const { data: u } = await supabase.from("users").select("id, utm").eq("id", userId).maybeSingle();
+  const code = String((u?.utm as Record<string, unknown> | null)?.ref ?? "").toLowerCase().replace(/[^0-9a-f]/g, "").slice(0, 8);
+  if (!u || code.length !== 8) return null;
+  const { data: cands } = await supabase.from("users").select("id").gte("id", `${code}-0000-0000-0000-000000000000`).lte("id", `${code}-ffff-ffff-ffff-ffffffffffff`).limit(5);
+  return (cands ?? []).find((c) => refCode(c.id) === code && c.id !== userId)?.id ?? null;
+}
+
 export async function rewardReferrer(buyerId: string) {
   const supabase = db();
   const { data: buyer } = await supabase.from("users").select("id, full_name, utm").eq("id", buyerId).maybeSingle();
