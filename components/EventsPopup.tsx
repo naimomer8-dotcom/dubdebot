@@ -59,6 +59,8 @@ export default function EventsPopup() {
       }).catch(() => {});
     };
     window.addEventListener("dd:open-events", open);
+    // a link from an email or message (?events=1) opens the seat picker right away
+    try { if (new URLSearchParams(window.location.search).get("events") === "1") setTimeout(open, 600); } catch {}
     return () => window.removeEventListener("dd:open-events", open);
   }, []);
 
