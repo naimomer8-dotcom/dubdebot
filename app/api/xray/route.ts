@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/supabase";
-import { getSessionUserId } from "@/lib/session";
+import { getSession, consentRequired, requireMember } from "@/lib/session";
 import { QUESTIONS, archetype, score } from "@/lib/xray";
 import { clientIp, hit, limited } from "@/lib/ratelimit";
 
@@ -17,7 +17,9 @@ export async function POST(req: Request) {
   }
   if (Object.keys(answers).length < QUESTIONS.length) return NextResponse.json({ error: "incomplete" }, { status: 400 });
 
-  const userId = await getSessionUserId();
+  const sess = await getSession();
+  if (sess && !sess.consent) return consentRequired();
+  const userId = sess?.userId ?? null;
   const ipKey = `ip:${clientIp(req)}`;
   if (!userId && (await limited(ipKey, "xray", 30, 60))) return NextResponse.json({ error: "too many" }, { status: 429 });
   if (!userId) void hit(ipKey, "xray").catch(() => {});
@@ -38,8 +40,9 @@ export async function POST(req: Request) {
 
 /** Attach an anonymous result to the user right after signup. */
 export async function PATCH(req: Request) {
-  const userId = await getSessionUserId();
-  if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const m = await requireMember();
+  if (m instanceof Response) return m;
+  const userId = m;
   const { id } = await req.json().catch(() => ({}));
   if (typeof id !== "string") return NextResponse.json({ error: "bad id" }, { status: 400 });
   await db().from("xray_results").update({ user_id: userId }).eq("id", id).is("user_id", null);

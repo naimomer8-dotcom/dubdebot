@@ -82,6 +82,14 @@ export async function requireActive(): Promise<{ userId: string; access: Access;
   return s;
 }
 
+/** Any member feature: the user id if logged in AND marketing consent is approved, otherwise a ready 401/403 Response. */
+export async function requireMember(): Promise<string | Response> {
+  const s = await getSession();
+  if (!s) return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
+  if (!s.consent) return consentRequired();
+  return s.userId;
+}
+
 /** 403 for members who have not approved the marketing consent yet (they see the consent gate). */
 export const consentRequired = () =>
   new Response(JSON.stringify({ error: "consent_required", message: "צריך לאשר קבלת דיוור כדי להמשיך." }), { status: 403, headers: { "Content-Type": "application/json" } });

@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/supabase";
-import { getSessionUserId } from "@/lib/session";
+import { requireMember } from "@/lib/session";
 
 export const runtime = "nodejs";
 const ALLOWED = new Set(["cta_clicked", "cta_dismissed", "tool_opened", "file_attached", "xray_shared", "call_started", "wa_group_clicked"]);
 
 export async function POST(req: Request) {
-  const userId = await getSessionUserId();
-  if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const m = await requireMember();
+  if (m instanceof Response) return m;
+  const userId = m;
   const body = await req.json().catch(() => ({}));
   const type = String(body.type ?? "");
   if (!ALLOWED.has(type)) return NextResponse.json({ error: "bad type" }, { status: 400 });

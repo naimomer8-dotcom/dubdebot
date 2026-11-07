@@ -1,4 +1,4 @@
-import { getSession } from "@/lib/session";
+import { getSession, consentRequired } from "@/lib/session";
 import { db } from "@/lib/supabase";
 
 export const runtime = "nodejs";
@@ -8,6 +8,7 @@ const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: 
 export async function GET() {
   const s = await getSession();
   if (!s) return json({ error: "unauthorized" }, 401);
+  if (!s.consent) return consentRequired();
   const { data } = await db()
     .from("conversations")
     .select("id, title, mode, updated_at, pinned, folder")
@@ -23,6 +24,7 @@ export async function GET() {
 export async function PATCH(req: Request) {
   const s = await getSession();
   if (!s) return json({ error: "unauthorized" }, 401);
+  if (!s.consent) return consentRequired();
   const b = await req.json().catch(() => ({}));
   const id = String(b.id ?? "");
   if (!/^[0-9a-f-]{36}$/.test(id)) return json({ error: "bad id" }, 400);
@@ -48,6 +50,7 @@ export async function PATCH(req: Request) {
 export async function DELETE(req: Request) {
   const s = await getSession();
   if (!s) return json({ error: "unauthorized" }, 401);
+  if (!s.consent) return consentRequired();
   const id = new URL(req.url).searchParams.get("id") ?? "";
   if (!/^[0-9a-f-]{36}$/.test(id)) return json({ error: "bad id" }, 400);
   const { error, count } = await db().from("conversations").delete({ count: "exact" }).eq("id", id).eq("user_id", s.userId);

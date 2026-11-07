@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/supabase";
-import { getSessionUserId } from "@/lib/session";
+import { requireMember } from "@/lib/session";
 import { LIVE_EVENT_TYPE, workshopOpen, type LiveEventKey } from "@/lib/liveEvents";
 import { nextWebinar } from "@/lib/webinarDates";
 import { contactOf } from "@/lib/automation";
@@ -23,15 +23,17 @@ async function state(userId: string) {
 }
 
 export async function GET() {
-  const userId = await getSessionUserId();
-  if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const m = await requireMember();
+  if (m instanceof Response) return m;
+  const userId = m;
   return NextResponse.json(await state(userId));
 }
 
 /** One-click registration with the member's existing details. Body: { items: ["workshop","webinar"] } */
 export async function POST(req: Request) {
-  const userId = await getSessionUserId();
-  if (!userId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const m = await requireMember();
+  if (m instanceof Response) return m;
+  const userId = m;
   const body = await req.json().catch(() => ({}));
   const raw: unknown[] = Array.isArray(body.items) ? body.items : [];
   const items = raw.filter((x): x is LiveEventKey => x === "workshop" || x === "webinar");
