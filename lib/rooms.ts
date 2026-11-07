@@ -44,8 +44,8 @@ export const ROOMS: Room[] = [
     tagline: "תסריט שיחה ותשובות להתנגדויות",
     intro: "כאן סוגרים יותר: תסריט לשיחת מכירה ותרגול של מה עונים ללקוח שמתלבט.",
     items: [
-      { key: "script", icon: "list", title: "תסריט לשיחת מכירה", desc: "מהפתיחה ועד הסגירה, מותאם לעסק שלך", action: { kind: "tool", tool: "sales_script" } },
-      { key: "objections", icon: "shield", title: "מה עונים ל\"יקר לי\"", desc: "מתרגלים עם ניר את ההתנגדויות הכי נפוצות", action: { kind: "tool", tool: "objections" } },
+      { key: "script", icon: "list", title: "תסריט לשיחת מכירה", desc: "פתיחה, שאלות, סגירה ו-5 תשובות להתנגדויות", action: { kind: "href", href: "/rooms/sales/script" } },
+      { key: "objections", icon: "mic", title: "לתרגל שיחה עם ניר", desc: "ניר משחק לקוח שמתלבט, אתם עונים ומקבלים משוב", action: { kind: "tool", tool: "objections" } },
       { key: "tests", icon: "target", title: "מבחן מכירות", desc: "איפה אתה חזק בשיחה ואיפה כדאי לשפר", action: { kind: "href", href: "/tests" } },
     ],
     courses: [50, 1366],
@@ -57,9 +57,9 @@ export const ROOMS: Room[] = [
     tagline: "תזרים, מחירים ודוחות",
     intro: "כאן מסדרים את הכסף: כמה נשאר לך באמת, איך לתמחר ומה הדוחות אומרים.",
     items: [
+      { key: "target", icon: "target", title: "כמה צריך למכור?", desc: "כמה מכירות ופניות צריך בחודש כדי להגיע ליעד", action: { kind: "href", href: "/rooms/money/target" } },
       { key: "money", icon: "coin", title: "מצב הכסף שלי", desc: "שאלון קצר ותמונה ברורה של הכסף בעסק", action: { kind: "href", href: "/money" } },
       { key: "reports", icon: "file", title: "לבדוק דוח או תלוש", desc: "מעלים קובץ, ניר מסביר מה רואים בו", action: { kind: "tool", tool: "financials" } },
-      { key: "calc", icon: "chart", title: "מחשבונים", desc: "נקודת איזון, תמחור ומע״מ", action: { kind: "href", href: "/calc" } },
     ],
     courses: [110990, 116394],
   },
@@ -70,7 +70,7 @@ export const ROOMS: Room[] = [
     tagline: "לבדוק עסקה ולתכנן השקעה",
     intro: "כאן בודקים נדל״ן כמו משקיע: כמה זה מכניס, כמה זה עולה ומה הסיכון.",
     items: [
-      { key: "deal", icon: "scan", title: "לבדוק עסקה", desc: "נותנים מחיר, שכירות והון עצמי, ומקבלים תשואה ותזרים", action: { kind: "ask", text: "ניר, אני רוצה לבדוק עסקת נדל״ן. תשאל אותי שאלה אחת בכל פעם: מחיר, שכירות צפויה, הון עצמי ומשכנתא, ואז תחשב לי תשואה, תזרים חודשי ומה הסיכון." } },
+      { key: "deal", icon: "scan", title: "לבדוק עסקה", desc: "מחיר, שכירות והון עצמי, ורואים מיד החזר, תזרים ותשואה", action: { kind: "href", href: "/rooms/realestate/deal" } },
       { key: "plan", icon: "map", title: "מאיפה מתחילים להשקיע", desc: "כמה הון צריך ומה הצעד הראשון שלך", action: { kind: "ask", text: "ניר, אני רוצה להתחיל להשקיע בנדל״ן. תשאל אותי כמה הון יש לי, מה ההכנסה החודשית ומה המטרה, ותבנה לי צעד ראשון ברור." } },
     ],
     courses: [111779, 116394],
@@ -83,7 +83,7 @@ export const ROOMS: Room[] = [
     intro: "כאן נשארים בראש של הלקוחות: סטורי אחד ביום, בלי לחשוב מה להעלות.",
     items: [
       { key: "story", icon: "image", title: "הסטורי של היום", desc: "רעיון אחד, 3 פריימים, מה לצלם ומה לכתוב", action: { kind: "href", href: "/rooms/social#story" } },
-      { key: "week", icon: "calendar", title: "פוסטים לכל השבוע", desc: "5 רעיונות לתוכן, עם פתיח לכל אחד", action: { kind: "ask", text: "ניר, תבנה לי לוח תוכן לשבוע הקרוב לרשתות: 5 פוסטים או ריילס לעסק שלי, לכל אחד נושא, פתיח של שורה וקריאה לפעולה. תשאל אותי קודם מה העסק אם אתה לא יודע." } },
+      { key: "week", icon: "calendar", title: "לוח תוכן לשבוע", desc: "7 ימים, מה מעלים כל יום, עם פתיח וקריאה לפעולה", action: { kind: "href", href: "/rooms/social/week" } },
       { key: "scan", icon: "radar", title: "איך אני נראה ברשתות", desc: "סריקה של העמוד שלך מבחוץ", action: { kind: "href", href: "/scan" } },
     ],
     courses: [110992],

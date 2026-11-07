@@ -15,7 +15,7 @@ const STEPS: { n: Step; label: string }[] = [
   { n: 4, label: "המודעה" },
 ];
 
-function CopyBtn({ text }: { text: string }) {
+export function CopyBtn({ text }: { text: string }) {
   const [ok, setOk] = useState(false);
   return (
     <button className="btn btn-ghost btn-sm" onClick={() => navigator.clipboard.writeText(text).then(() => { setOk(true); setTimeout(() => setOk(false), 1600); }).catch(() => {})}>

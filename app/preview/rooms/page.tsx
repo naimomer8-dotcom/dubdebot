@@ -2,12 +2,15 @@ import { notFound } from "next/navigation";
 import { RoomClient } from "@/components/Rooms";
 import CampaignBuilder from "@/components/CampaignBuilder";
 import { roomById } from "@/lib/rooms";
+import RoomToolPage from "@/components/RoomTools";
+import { ROOM_TOOLS, type ToolId } from "@/lib/roomTools";
 
 // Design preview with sample data. Disabled in production.
-export default async function PreviewRooms({ searchParams }: { searchParams: Promise<{ r?: string; step?: string; empty?: string }> }) {
+export default async function PreviewRooms({ searchParams }: { searchParams: Promise<{ r?: string; t?: string; step?: string; empty?: string }> }) {
   if (process.env.NODE_ENV === "production") notFound();
   const sp = await searchParams;
   const user = { id: "preview", firstName: "מיכל", fullName: "מיכל כהן", phone: "0501234567", email: "michal@example.com", access: { status: "trial" as const, plan: "trial" as const, accessUntil: new Date(Date.now() + 20 * 864e5).toISOString(), daysLeft: 20, renewalRequestedAt: null, tier: null, renewalMode: "none" } };
+  if (sp.t && ROOM_TOOLS[sp.t]) return <RoomToolPage tool={sp.t as ToolId} user={user} conversations={[]} />;
   if (sp.r === "campaign") {
     const c = {
       audience: { who: "אמהות בנות 28 עד 40 אחרי לידה שרוצות לחזור לכושר בלי לעזוב את הבית לשעות.", pains: ["אין לי זמן לעצמי", "הבגדים כבר לא עולים", "ניסיתי חדר כושר ונשברתי אחרי שבועיים"], desires: ["להרגיש שוב חזקה", "אימון קצר שמתאים לתינוק", "מישהי שתחזיק אותי במסגרת"], objections: ["אין לי כסף לזה עכשיו", "אני לא אתמיד", "אני לא בכושר בשביל אימון"], targeting: ["אמהות לתינוקות", "כושר נשים", "פילאטיס", "הורות", "תל אביב והסביבה"], angle: "30 דקות ביום שמחזירות לך את עצמך, עם התינוק לידך." },

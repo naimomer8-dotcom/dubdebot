@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Sidebar from "./Sidebar";
 import Icon from "./Icon";
 import { LIBRARY } from "@/lib/courses";
@@ -49,6 +49,28 @@ function AskBox({ room }: { room: Room }) {
   );
 }
 
+/** "I posted today" counter, kept on this device: days in a row with a story. */
+function StoryStreak() {
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jerusalem" });
+  const [st, setSt] = useState<{ last: string; n: number }>({ last: "", n: 0 });
+  useEffect(() => { try { const v = JSON.parse(localStorage.getItem("dd_story") || "null"); if (v?.last) setSt(v); } catch {} }, []);
+  const yesterday = new Date(Date.now() - 864e5).toLocaleDateString("en-CA", { timeZone: "Asia/Jerusalem" });
+  const alive = st.last === today || st.last === yesterday ? st.n : 0;
+  const done = st.last === today;
+  function mark() {
+    if (done) return;
+    const next = { last: today, n: alive + 1 };
+    setSt(next);
+    try { localStorage.setItem("dd_story", JSON.stringify(next)); } catch {}
+  }
+  return (
+    <div className="story-streak">
+      <b>{alive > 0 ? `🔥 ${alive} ${alive === 1 ? "יום" : "ימים"} ברצף` : "עוד לא העליתם היום"}</b>
+      <button className="btn btn-glass btn-sm" aria-pressed={done} onClick={mark}>{done ? "✓ העליתי היום" : "העליתי סטורי היום"}</button>
+    </div>
+  );
+}
+
 function StoryCard() {
   const s = storyOfDay();
   return (
@@ -63,6 +85,7 @@ function StoryCard() {
           <Icon name="edit" size={18} /> ניר, תכתוב לי את הטקסטים
         </button>
       </div>
+      <StoryStreak />
       <p className="room-hint">מעלים כל יום. סטורי אחד ביום עושה יותר מפוסט מושלם פעם בחודש.</p>
     </section>
   );
