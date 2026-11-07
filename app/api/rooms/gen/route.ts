@@ -22,7 +22,7 @@ const TOOLS = {
     kind: "sales_script",
     schema: obj({ opening: str, discovery: strs, pitch: str, close: str, objections: { type: Type.ARRAY, items: obj({ q: str, a: str }) }, tip: str }),
     prompt: (f: Record<string, string>, biz: string) => `${VOICE}
-בנה תסריט לשיחת מכירה בטלפון לבעל עסק קטן.
+בנה תסריט לשיחת מכירה בטלפון לבעל עסק קטן. את השיחה מנהל בעל העסק בעצמו, לא ניר: בפתיחה כתוב "[השם שלך]" ו"[שם העסק]" במקום שמות.
 העסק: ${biz || "לא נאמר"}
 מה מוכרים: ${f.product}
 מי הלקוח שמתקשרים אליו: ${f.customer || "לא נאמר, תניח ליד שהשאיר פרטים"}
