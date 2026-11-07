@@ -129,6 +129,7 @@ export default function AdminDashboard({ adminName, preview }: { adminName: stri
         <nav className="rv-nav" aria-label="ניווט בניהול">
           <a href="/admin" className="on" aria-current="page">ניהול מנויים</a>
           <a href="/admin/payments">דשבורד הכנסות</a>
+            <a href="/admin/library">ספריית וידאו</a>
         </nav>
         <span style={{ flex: 1 }} />
         <span className="muted" style={{ fontSize: 14 }}>שלום, {adminName}</span>

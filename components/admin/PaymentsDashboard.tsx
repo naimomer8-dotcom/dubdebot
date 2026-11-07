@@ -335,6 +335,7 @@ export default function PaymentsDashboard({ adminName, preview }: { adminName: s
           <nav className="rv-nav" aria-label="ניווט בניהול">
             <a href="/admin">ניהול מנויים</a>
             <a href="/admin/payments" className="on" aria-current="page">הכנסות</a>
+            <a href="/admin/library">ספריית וידאו</a>
           </nav>
           <span style={{ flex: 1 }} />
           <span className="muted rv-hello">שלום, {adminName}</span>

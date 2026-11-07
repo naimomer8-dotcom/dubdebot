@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "ניהול | Duvdevani Platform", robots: { index: false, follow: false } };
 
 export default async function AdminLogin({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
-  if (await getAdmin()) redirect((await searchParams).next === "payments" ? "/admin/payments" : "/admin");
+  const next = (await searchParams).next;
+  if (await getAdmin()) redirect(next === "payments" ? "/admin/payments" : next === "library" ? "/admin/library" : "/admin");
   return <AdminAuth mode="login" />;
 }
