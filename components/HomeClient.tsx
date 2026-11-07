@@ -5,6 +5,9 @@ import { useState } from "react";
 import Sidebar from "./Sidebar";
 import Icon from "./Icon";
 import { MoreSheet } from "./BottomNav";
+import { RoomsGrid } from "./Rooms";
+import TextSize from "./TextSize";
+import { storyOfDay } from "@/lib/rooms";
 import { trackWaJoin } from "./EventsPopup";
 import type { ConvItem, ShellUser } from "@/lib/data";
 import type { Step } from "@/lib/home";
@@ -32,6 +35,7 @@ export default function HomeClient({ user, conversations, steps, xrayScore, quot
   const now = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Jerusalem" }));
   const doneCount = steps.filter((s) => s.done).length;
   const next = steps.find((s) => !s.done);
+  const story = storyOfDay();
 
   const runStep = (s: Step) => {
     if (s.key === "events") return window.dispatchEvent(new Event("dd:open-events"));
@@ -47,6 +51,7 @@ export default function HomeClient({ user, conversations, steps, xrayScore, quot
           <header className="home-top">
             <button className="icon-btn mobile-only home-ibtn" onClick={() => setSide(true)} aria-label="תפריט"><Icon name="menu" size={19} /></button>
             <img className="home-logo" src="/logo-duvdevani-white.png" alt="קבוצת דובדבני" />
+            <TextSize />
             <button className="home-avatar" onClick={() => setMore(true)} aria-label="החשבון והכלים">{user.firstName.slice(0, 1)}</button>
           </header>
 
@@ -55,23 +60,21 @@ export default function HomeClient({ user, conversations, steps, xrayScore, quot
             <h1>{greeting(now.getHours())}, {user.firstName}</h1>
           </div>
 
-          <section className="home-hero" aria-label="המשפט של ניר להיום">
-            <img src="/nir/home-suit.webp" alt="ניר דובדבני" />
-            <div className="home-hero-scrim" aria-hidden="true" />
-            <div className="home-hero-txt">
-              <span className="home-pill">המשפט של ניר להיום</span>
-              <p className="home-quote">{quote}</p>
-              <button className="home-hero-btn" onClick={() => ask(`ניר, המשפט שלך להיום: "${quote}". איך אני מיישם את זה השבוע בעסק שלי?`)}>
-                <Icon name="chat" size={15} /> איך מיישמים את זה אצלי?
-              </button>
-            </div>
-          </section>
+
+          <Link className="home-ask home-ask-top" href="/chat?new=1">
+            <img src="/nir/talk-face.jpg" alt="" />
+            <span>שאלו את ניר כל דבר על העסק…</span>
+            <i><Icon name="mic" size={17} /></i>
+          </Link>
+
+          <h2 className="home-q">לאיזה חדר נכנסים היום?</h2>
+          <RoomsGrid />
 
           {next && (
             <section className="home-card home-next" aria-label="הצעד הבא שלך">
               <span className="home-next-ico"><Icon name={next.key === "xray" ? "scan" : next.key === "money" ? "coin" : next.key === "events" ? "calendar" : next.key === "vault" ? "vault" : "chat"} size={22} /></span>
               <div className="home-next-txt">
-                <small>הצעד הבא שלך</small>
+                <small>הצעד הבא שלך · {doneCount} מתוך {steps.length}</small>
                 <b>{next.title}</b>
                 <span>{next.sub}</span>
               </div>
@@ -79,22 +82,15 @@ export default function HomeClient({ user, conversations, steps, xrayScore, quot
             </section>
           )}
 
-          <section className="home-card home-steps" aria-label="ההתקדמות שלך">
-            <div className="home-steps-head">
-              <b>הצעדים הראשונים שלך</b>
-              <span className="num">{doneCount} מתוך {steps.length}</span>
+          <Link className="home-card home-story" href="/rooms/social#story">
+            <span className="home-next-ico"><Icon name="image" size={22} /></span>
+            <div className="home-next-txt">
+              <small>הסטורי של היום</small>
+              <b>{story.title}</b>
+              <span>3 פריימים, 2 דקות. ניר כותב לך את הטקסט.</span>
             </div>
-            <div className="home-bar" aria-hidden="true">
-              {steps.map((s) => <i key={s.key} className={s.done ? "on" : s === next ? "now" : ""} />)}
-            </div>
-            <div className="home-steps-labels">
-              {steps.map((s) => (
-                <button key={s.key} className={s.done ? "done" : s === next ? "now" : ""} onClick={() => runStep(s)}>
-                  {s.short}{s.done ? " ✓" : ""}
-                </button>
-              ))}
-            </div>
-          </section>
+            <Icon name="arrow" size={20} />
+          </Link>
 
           <div className="home-row">
             <Link className="home-card home-mini" href="/xray">
@@ -107,11 +103,17 @@ export default function HomeClient({ user, conversations, steps, xrayScore, quot
             </button>
           </div>
 
-          <Link className="home-ask" href="/chat?new=1">
-            <img src="/nir/talk-face.jpg" alt="" />
-            <span>שאלו את ניר כל דבר על העסק…</span>
-            <i><Icon name="mic" size={17} /></i>
-          </Link>
+          <section className="home-hero home-hero-sm" aria-label="המשפט של ניר להיום">
+            <img src="/nir/home-suit.webp" alt="ניר דובדבני" />
+            <div className="home-hero-scrim" aria-hidden="true" />
+            <div className="home-hero-txt">
+              <span className="home-pill">המשפט של ניר להיום</span>
+              <p className="home-quote">{quote}</p>
+              <button className="home-hero-btn" onClick={() => ask(`ניר, המשפט שלך להיום: "${quote}". איך אני מיישם את זה השבוע בעסק שלי?`)}>
+                <Icon name="chat" size={15} /> איך מיישמים את זה אצלי?
+              </button>
+            </div>
+          </section>
         </div>
       </main>
       <MoreSheet open={more} onClose={() => setMore(false)} />

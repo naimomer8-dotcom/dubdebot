@@ -54,7 +54,7 @@ export default function CoursesClient({ user, conversations, leadSent, links: in
     const open = paid && !!href;
     const ping = () => { try { navigator.sendBeacon("/api/courses/open", new Blob([JSON.stringify({ id: c.id })], { type: "application/json" })); } catch {} };
     return (
-      <div className={`crs crs-${c.kind} ${c.bonus ? "crs-bonus" : ""} ${open ? "" : paid ? "is-pending" : "is-locked"}`}>
+      <div id={`c-${c.id}`} className={`crs crs-${c.kind} ${c.bonus ? "crs-bonus" : ""} ${open ? "" : paid ? "is-pending" : "is-locked"}`}>
         <div className="crs-top">
           <span className="crs-num num">{String(i + 1).padStart(2, "0")}</span>
           <span className="crs-tag">{c.tag}</span>
