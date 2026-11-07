@@ -2276,3 +2276,10 @@ input:focus-visible, textarea:focus-visible, select:focus-visible { box-shadow: 
 .cb-chips button.on{background:rgba(217,184,119,.14);border-color:var(--gold,#e2c68e);color:var(--gold,#e2c68e)}
 .cb-fine{margin:0;font-size:13px;color:#8c8579;text-align:center}
 .cb-fine a{color:inherit}
+
+/* course video reference under a bot answer */
+.video-ref { margin-top: 10px; }
+.video-ref-btn { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; border: 1px solid rgba(212,175,106,.45); background: rgba(212,175,106,.08); color: inherit; font: inherit; font-size: .9rem; cursor: pointer; text-align: start; }
+.video-ref-btn:hover { background: rgba(212,175,106,.16); }
+.video-ref-frame { margin-top: 10px; position: relative; width: 100%; max-width: 560px; aspect-ratio: 16 / 9; border-radius: 14px; overflow: hidden; background: #000; }
+.video-ref-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }

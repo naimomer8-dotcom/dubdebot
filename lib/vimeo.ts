@@ -62,3 +62,49 @@ export async function whoAmI(): Promise<string> {
   const me = await get("/me?fields=name");
   return String(me.name ?? "");
 }
+
+export type Cue = { start: number; end: number; text: string };
+
+const toSec = (t: string) => {
+  const p = t.trim().split(":").map(Number);
+  return p.length === 3 ? p[0] * 3600 + p[1] * 60 + p[2] : p[0] * 60 + p[1];
+};
+
+/** Parse a WebVTT file into cues (seconds). */
+export function parseVtt(vtt: string): Cue[] {
+  const cues: Cue[] = [];
+  for (const block of vtt.replace(/\r/g, "").split(/\n\n+/)) {
+    const lines = block.split("\n");
+    const i = lines.findIndex((l) => l.includes("-->"));
+    if (i < 0) continue;
+    const [a, b] = lines[i].split("-->");
+    const text = lines.slice(i + 1).join(" ").replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+    if (text) cues.push({ start: toSec(a), end: toSec(b.split(" ").filter(Boolean)[0]), text });
+  }
+  return cues;
+}
+
+/** The captions of one video (prefers the active Hebrew track), or [] when it has none. */
+export async function getCaptionCues(id: string): Promise<Cue[]> {
+  const r: { data?: { link?: string; language?: string; active?: boolean }[] } = await get(`/videos/${id}/texttracks?fields=link,language,active`);
+  const tracks = (r.data ?? []).filter((t) => t.link);
+  if (!tracks.length) return [];
+  const t = tracks.find((x) => x.active && x.language?.startsWith("he")) ?? tracks.find((x) => x.language?.startsWith("he")) ?? tracks.find((x) => x.active) ?? tracks[0];
+  const res = await fetch(String(t.link), { cache: "no-store" });
+  if (!res.ok) throw new Error(`captions ${res.status}`);
+  return parseVtt(await res.text());
+}
+
+/** Group cues into ~60-second windows of readable text. */
+export function windows(cues: Cue[], seconds = 60, maxChars = 1400): { start: number; text: string }[] {
+  const out: { start: number; text: string }[] = [];
+  let cur: { start: number; text: string } | null = null;
+  for (const c of cues) {
+    if (!cur || c.start - cur.start >= seconds || cur.text.length > maxChars) {
+      if (cur) out.push(cur);
+      cur = { start: Math.floor(c.start), text: c.text };
+    } else cur.text += " " + c.text;
+  }
+  if (cur) out.push(cur);
+  return out.filter((w) => w.text.length > 60);
+}

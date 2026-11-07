@@ -8,6 +8,7 @@ import Spotlight from "../Spotlight";
 type Video = {
   id: string; name: string; duration: number | null; link: string | null; thumb: string | null; texttracks: number;
   vimeo_created_at: string | null; course_id: number | null; lesson: number | null; hidden: boolean;
+  indexed_chunks: number; indexed_at: string | null; index_error: string | null;
 };
 type Course = { id: number; title: string };
 type Filter = "all" | "unmapped" | "mapped" | "hidden";
@@ -36,6 +37,20 @@ export default function LibraryDashboard({ adminName }: { adminName: string }) {
     setBusy(false);
     setNote(r?.ok ? `סונכרנו ${r.synced} סרטונים מהחשבון "${r.account}". ל-${r.withCaptions} מהם יש כתוביות ב-Vimeo.` : `הסנכרון נכשל: ${r?.error ?? "שגיאה"}`);
     if (r?.ok) load();
+  }
+
+  async function indexAll() {
+    setBusy(true);
+    let total = 0;
+    for (let round = 0; round < 200; round++) {
+      const r = await fetch("/api/backoffice/vimeo", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "index" }) }).then((x) => x.json()).catch(() => null);
+      if (!r?.ok) { setNote(`האינדוקס נעצר: ${r?.error ?? "שגיאה"}`); break; }
+      total += (r.done ?? []).length;
+      setNote(`מאנדקס תמלולים… ${total} סרטונים, נשארו ${r.left}`);
+      if (!r.left || !(r.done ?? []).length) { setNote(`אינדוקס הסתיים: ${total} סרטונים נכנסו לידע של הבוט.`); break; }
+    }
+    setBusy(false);
+    load();
   }
 
   async function save(v: Video, patch: Partial<Video>) {
@@ -88,7 +103,8 @@ export default function LibraryDashboard({ adminName }: { adminName: string }) {
             ))}
           </div>
           <input className="input adm-filter" placeholder="חיפוש לפי שם סרטון" value={q} onChange={(e) => setQ(e.target.value)} />
-          <button className="btn btn-primary btn-sm" onClick={sync} disabled={busy}><Icon name="download" size={16} /> {busy ? "מסנכרן…" : "סנכרון מ-Vimeo"}</button>
+          <button className="btn btn-primary btn-sm" onClick={sync} disabled={busy}><Icon name="download" size={16} /> {busy ? "עובד…" : "סנכרון מ-Vimeo"}</button>
+          <button className="btn btn-glass btn-sm" onClick={indexAll} disabled={busy}><Icon name="spark" size={16} /> אינדוקס לבוט</button>
         </div>
         {note && <p className="adm-note">{note}</p>}
 
@@ -99,7 +115,7 @@ export default function LibraryDashboard({ adminName }: { adminName: string }) {
         ) : (
           <div className="adm-table glass edge">
             <table>
-              <thead><tr><th>סרטון</th><th>אורך</th><th>הועלה</th><th>כתוביות</th><th>קורס</th><th>שיעור</th><th>לא קורס</th></tr></thead>
+              <thead><tr><th>סרטון</th><th>אורך</th><th>הועלה</th><th>כתוביות</th><th>בבוט</th><th>קורס</th><th>שיעור</th><th>לא קורס</th></tr></thead>
               <tbody>
                 {shown.map((v) => (
                   <tr key={v.id}>
@@ -107,6 +123,7 @@ export default function LibraryDashboard({ adminName }: { adminName: string }) {
                     <td className="num">{mmss(v.duration)}</td>
                     <td className="num">{dshort(v.vimeo_created_at)}</td>
                     <td>{v.texttracks > 0 ? <span className="pill ok">יש</span> : <span className="muted">אין</span>}</td>
+                    <td>{v.indexed_chunks > 0 ? <span className="pill ok">{v.indexed_chunks} קטעים</span> : v.index_error ? <span className="muted" title={v.index_error}>שגיאה</span> : <span className="muted">-</span>}</td>
                     <td>
                       <select className="input" value={v.course_id ?? ""} onChange={(e) => save(v, { course_id: e.target.value ? Number(e.target.value) : null, hidden: false })}>
                         <option value="">בחרו קורס</option>

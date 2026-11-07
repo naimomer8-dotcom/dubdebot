@@ -91,7 +91,7 @@ export async function POST(req: Request) {
   const supabase = db();
 
   // ---- retrieval helpers (declared early so voice can start embedding right away) ----
-  let knowledge: { source: string; content: string; id: number; similarity: number }[] = [];
+  let knowledge: { source: string; content: string; id: number; similarity: number; title?: string | null; url?: string | null }[] = [];
   let golden: { question: string; answer: string }[] = [];
   let topSimilarity: number | null = null;
   let preEmb: { text: string; emb: number[] } | null = null;
@@ -227,7 +227,7 @@ export async function POST(req: Request) {
     // a bare greeting gets no stored profile, so the bot doesn't jump to old assumptions
     profile: text.replace(/[^\p{L}]/gu, "").length < 8 ? null : ((user.profile as Record<string, unknown>) ?? null),
     // cost saver: only the most relevant ~700 characters of each passage go to the model
-    knowledge: knowledge.map((k) => ({ source: k.source, content: k.content.length > 700 ? k.content.slice(0, 700) + "…" : k.content })),
+    knowledge: knowledge.map((k) => ({ source: k.source.startsWith("vimeo:") ? `וידאו של ניר: ${k.title ?? ""}` : k.source, content: k.content.length > 700 ? k.content.slice(0, 700) + "…" : k.content })),
     goldenAnswers: golden,
     financials: trivial ? "" : toPrompt(((finRows ?? []) as FinRow[]).slice().reverse()),
     moneyProfile: (user.profile as Record<string, unknown>) ?? null,
@@ -397,7 +397,10 @@ export async function POST(req: Request) {
         .single();
       if (saveErr) console.error("assistant save failed", saveErr.message);
 
-      send(META_SEP + JSON.stringify({ conversationId, messageId: saved?.id ?? null, cta: trigger, next }));
+      // a course video where Nir talks about this exact thing, opened at the right minute
+      const vk = knowledge.find((k) => k.source.startsWith("vimeo:") && k.similarity >= 0.66);
+      const video = vk ? { id: vk.source.slice(6), start: Number(/#t=(\d+)s/.exec(vk.url ?? "")?.[1] ?? 0), title: vk.title ?? "" } : null;
+      send(META_SEP + JSON.stringify({ conversationId, messageId: saved?.id ?? null, cta: trigger, next, video }));
       if (!closed) {
         try {
           controller.close();

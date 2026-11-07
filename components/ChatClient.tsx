@@ -37,7 +37,27 @@ export type ChatMessage = {
   saved?: boolean;
   attachments?: ChatAttachment[];
   next?: string[];
+  video?: { id: string; start: number; title: string } | null;
 };
+
+const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+
+/** "Nir talks about this in lesson X, from minute m:ss" – opens the course video right at that point. */
+function VideoRef({ v }: { v: NonNullable<ChatMessage["video"]> }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="video-ref">
+      <button className="video-ref-btn" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
+        <Icon name="eye" size={15} /> ניר מדבר על זה ב{v.title}, מדקה <bdi>{mmss(v.start)}</bdi>
+      </button>
+      {open && (
+        <div className="video-ref-frame">
+          <iframe src={`https://player.vimeo.com/video/${encodeURIComponent(v.id)}?autoplay=1#t=${Math.floor(v.start)}s`} allow="autoplay; fullscreen; picture-in-picture" allowFullScreen title={v.title} />
+        </div>
+      )}
+    </div>
+  );
+}
 
 const THINKING = ["עובר על החומרים של ניר…", "בודק את המספרים…", "מחפש את נקודת המינוף…", "מנסח לך תשובה…"];
 /** Rotating "thinking" line so the wait feels alive. */
@@ -230,13 +250,13 @@ export default function ChatClient({
       }
       if (frame) cancelAnimationFrame(frame);
       const [visible, metaRaw] = raw.split(META_SEP);
-      let meta: { conversationId?: string; messageId?: string; cta?: string | null; next?: string[] } = {};
+      let meta: { conversationId?: string; messageId?: string; cta?: string | null; next?: string[]; video?: ChatMessage["video"] } = {};
       try {
         meta = metaRaw ? JSON.parse(metaRaw) : {};
       } catch {}
       setMessages((m) => {
         const c = [...m];
-        c[c.length - 1] = { id: meta.messageId ?? null, role: "assistant", content: visible.trim(), cta: meta.cta ?? null, next: Array.isArray(meta.next) ? meta.next.slice(0, 3) : [] };
+        c[c.length - 1] = { id: meta.messageId ?? null, role: "assistant", content: visible.trim(), cta: meta.cta ?? null, next: Array.isArray(meta.next) ? meta.next.slice(0, 3) : [], video: meta.video ?? null };
         return c;
       });
       if (meta.conversationId) { setConversationId(meta.conversationId); window.dispatchEvent(new Event("conv:changed")); }
@@ -558,6 +578,7 @@ export default function ChatClient({
                             <button className={`act ${m.rating === -1 ? "on" : ""}`} onClick={() => rate(i, -1)} aria-label="תשובה לא טובה"><Icon name="thumbDown" size={15} /></button>
                           </div>
                         )}
+                        {m.video && <VideoRef v={m.video} />}
                         {i === lastIdx && !busy && !!m.next?.length && (
                           <div className="next-replies" role="group" aria-label="תשובות מהירות">
                             {m.next.map((q) => (
