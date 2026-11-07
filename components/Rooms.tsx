@@ -131,7 +131,7 @@ export function RoomClient({ room, user, conversations }: { room: Room; user: Sh
               <p className="room-hint">שואלים את ניר בצ׳אט, והוא אומר באיזה שיעור ובאיזו דקה הוא מדבר על זה.</p>
               <div className="room-course-list">
                 {courses.map((c) => (
-                  <Link key={c.id} href={`/courses#c-${c.id}`} className="room-course">
+                  <Link key={c.id} href={`/courses/${c.id}`} className="room-course">
                     <Icon name="layers" size={20} />
                     <span><b>{c.title}</b><small>{c.blurb}</small></span>
                   </Link>

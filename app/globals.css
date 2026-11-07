@@ -2420,3 +2420,27 @@ html[data-fs="lg"] body { zoom: 1.15; }
 .story-streak b { font-size: 16px; }
 .story-streak .btn[aria-pressed="true"] { background: rgba(143,217,180,.2); color: var(--ok); border-color: transparent; }
 .rt-results dd { text-align: right; }
+
+/* ── In-app course player ── */
+.home.cp { max-width: 920px; }
+.cp-head h1 { margin: 0; font-size: 28px; font-weight: 800; line-height: 1.2; }
+.cp-prog { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+.cp-bar { flex: 1; height: 8px; border-radius: 99px; background: rgba(255,255,255,.08); overflow: hidden; }
+.cp-bar i { display: block; height: 100%; background: var(--gold); border-radius: 99px; }
+.cp-prog small { color: var(--text-2); font-size: 14px; white-space: nowrap; }
+.cp-now { display: flex; flex-direction: column; gap: 10px; }
+.cp-frame { position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 18px; overflow: hidden; background: #000; border: 1px solid var(--hair); }
+.cp-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.cp-kicker { color: var(--gold); }
+.cp-now h2 { margin: 0; font-size: 21px; font-weight: 800; line-height: 1.35; }
+.cp-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+.cp-btns .btn { flex: 1; justify-content: center; min-width: 160px; }
+.cp-ask { align-self: flex-start; }
+.cp-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.cp-list button { width: 100%; display: flex; align-items: center; gap: 12px; min-height: 58px; padding: 10px 14px; border-radius: 14px; border: 1px solid var(--hair); background: var(--surface); color: var(--text); text-align: start; font: 500 15.5px var(--sans); cursor: pointer; }
+.cp-list button.on { border-color: var(--gold); background: rgba(226,198,142,.08); }
+.cp-n { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,.07); font-size: 13px; font-weight: 800; flex-shrink: 0; }
+.cp-n.ok { background: rgba(143,217,180,.22); color: var(--ok); }
+.cp-lt { flex: 1; min-width: 0; line-height: 1.4; }
+.cp-list small { color: var(--text-3); font-size: 13px; flex-shrink: 0; }
+.crs-ctas { display: flex; flex-direction: column; gap: 6px; } .crs-cta-2 { font-size: 13.5px; color: var(--text-2); text-align: center; text-decoration: underline; text-underline-offset: 3px; }

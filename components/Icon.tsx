@@ -3,7 +3,7 @@ export type IconName =
   | "chart" | "map" | "target" | "flask" | "shield" | "spark" | "scan" | "vault" | "phone" | "mic" | "clip"
   | "send" | "plus" | "close" | "copy" | "check" | "thumbUp" | "thumbDown" | "download" | "bookmark" | "arrow"
   | "arrowLeft" | "chat" | "user" | "calendar" | "share" | "image" | "file" | "menu" | "stop" | "wave" | "crown"
-  | "bolt" | "layers" | "clock" | "lock" | "trash" | "sound" | "mute" | "home" | "list" | "eye" | "logout" | "mail" | "radar" | "link" | "alert" | "pin" | "folder" | "edit" | "more" | "search" | "chevron" | "gem" | "coin";
+  | "bolt" | "layers" | "clock" | "lock" | "trash" | "sound" | "mute" | "home" | "list" | "eye" | "logout" | "mail" | "radar" | "link" | "alert" | "pin" | "folder" | "edit" | "more" | "search" | "chevron" | "gem" | "coin" | "play";
 
 const P: Record<IconName, React.ReactNode> = {
   pin: <><path d="M9 4h6l-1 5 3 3v2H7v-2l3-3-1-5Z" /><path d="M12 14v6" /></>,
@@ -34,6 +34,7 @@ const P: Record<IconName, React.ReactNode> = {
   thumbDown: <><path d="M7 13V4H4v9h3ZM7 13l4 7a2 2 0 0 0 2-2v-4h5.5a2 2 0 0 0 2-2.3l-1.2-6A2 2 0 0 0 17.3 4H7" /></>,
   download: <><path d="M12 4v11M7 10l5 5 5-5M5 20h14" /></>,
   bookmark: <><path d="M6 3h12v18l-6-4-6 4V3Z" /></>,
+  play: <><path d="M8 5.5v13l10.5-6.5L8 5.5z" /></>,
   arrow: <><path d="M19 12H5M11 6l-6 6 6 6" /></>,
   arrowLeft: <><path d="M5 12h14M13 6l6 6-6 6" /></>,
   chat: <><path d="M20 12a8 8 0 0 1-11.6 7.1L4 20l1-4.2A8 8 0 1 1 20 12Z" /></>,

@@ -51,7 +51,7 @@ export default function CoursesClient({ user, conversations, leadSent, links: in
 
   const Card = ({ c, i }: { c: Course; i: number }) => {
     const href = links[String(c.id)];
-    const open = paid && !!href;
+    const open = paid && (!!href || c.kind === "course");
     const ping = () => { try { navigator.sendBeacon("/api/courses/open", new Blob([JSON.stringify({ id: c.id })], { type: "application/json" })); } catch {} };
     return (
       <div id={`c-${c.id}`} className={`crs crs-${c.kind} ${c.bonus ? "crs-bonus" : ""} ${open ? "" : paid ? "is-pending" : "is-locked"}`}>
@@ -70,7 +70,14 @@ export default function CoursesClient({ user, conversations, leadSent, links: in
           </details>
         )}
         {open ? (
-          <a className="crs-cta" href={href} target="_blank" rel="noopener noreferrer" onClick={ping}>{c.kind === "book" ? "לקריאה" : "כניסה לקורס"} <Icon name="arrowLeft" size={16} className="ico-move" /></a>
+          c.kind === "book" ? (
+            <a className="crs-cta" href={href} target="_blank" rel="noopener noreferrer" onClick={ping}>לקריאה <Icon name="arrowLeft" size={16} className="ico-move" /></a>
+          ) : (
+            <div className="crs-ctas">
+              <Link className="crs-cta" href={`/courses/${c.id}`} onClick={ping}><Icon name="play" size={16} /> לצפייה בשיעורים</Link>
+              <a className="crs-cta-2" href={href} target="_blank" rel="noopener noreferrer">חומרים נלווים וקבצים</a>
+            </div>
+          )
         ) : (
           <span className="crs-cta" aria-disabled="true">{paid ? <><Icon name="clock" size={15} /> נפתח עבורך…</> : <><Icon name="lock" size={15} /> נפתח במנוי הפלטפורמה</>}</span>
         )}
