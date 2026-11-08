@@ -53,6 +53,15 @@ export default function LibraryDashboard({ adminName }: { adminName: string }) {
     load();
   }
 
+  async function allowDomain() {
+    setBusy(true); setNote("פותח את הסרטונים לניגון באפליקציה…");
+    const r = await fetch("/api/backoffice/vimeo", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "allow_domain" }) }).then((x) => x.json()).catch(() => null);
+    setBusy(false);
+    if (!r?.ok) return setNote(`נכשל: ${r?.error ?? "שגיאה"}`);
+    const scope = r.sample?.some((f: { status?: number }) => f.status === 403 || f.status === 401);
+    setNote(r.failed === 0 ? `כל ${r.allowed} הסרטונים פתוחים לניגון ב-${r.domain}.` : scope ? `לטוקן של Vimeo אין הרשאת Edit. צריך טוקן חדש עם Public, Private, Edit ו-Video Files. (${r.allowed} הצליחו, ${r.failed} נכשלו)` : `${r.allowed} הצליחו, ${r.failed} נכשלו (${r.sample?.[0]?.error ?? ""})`);
+  }
+
   async function save(v: Video, patch: Partial<Video>) {
     const next = { ...v, ...patch };
     setVideos((all) => (all ?? []).map((x) => (x.id === v.id ? next : x)));
@@ -105,6 +114,7 @@ export default function LibraryDashboard({ adminName }: { adminName: string }) {
           <input className="input adm-filter" placeholder="חיפוש לפי שם סרטון" value={q} onChange={(e) => setQ(e.target.value)} />
           <button className="btn btn-primary btn-sm" onClick={sync} disabled={busy}><Icon name="download" size={16} /> {busy ? "עובד…" : "סנכרון מ-Vimeo"}</button>
           <button className="btn btn-glass btn-sm" onClick={indexAll} disabled={busy}><Icon name="spark" size={16} /> אינדוקס לבוט</button>
+          <button className="btn btn-glass btn-sm" onClick={allowDomain} disabled={busy}><Icon name="play" size={16} /> פתיחה לניגון באפליקציה</button>
         </div>
         {note && <p className="adm-note">{note}</p>}
 

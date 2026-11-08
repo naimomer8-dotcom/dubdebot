@@ -1,5 +1,5 @@
 /**
- * Read-only Vimeo client (VIMEO_ACCESS_TOKEN: scopes public, private, video_files).
+ * Vimeo client (VIMEO_ACCESS_TOKEN: scopes public, private, video_files; "edit" is needed only for allowEmbedDomain).
  * The token never leaves the server.
  */
 const API = "https://api.vimeo.com";
@@ -107,4 +107,14 @@ export function windows(cues: Cue[], seconds = 60, maxChars = 1400): { start: nu
   }
   if (cur) out.push(cur);
   return out.filter((w) => w.text.length > 60);
+}
+
+/** Lets a video be embedded on our app domain (videos set to "embed only on specific domains"). Needs the token's "edit" scope. */
+export async function allowEmbedDomain(id: string, domain: string) {
+  const res = await fetch(`${API}/videos/${encodeURIComponent(id)}/privacy/domains/${encodeURIComponent(domain)}`, {
+    method: "PUT",
+    headers: { Authorization: `bearer ${token()}`, Accept: "application/vnd.vimeo.*+json;version=3.4" },
+  });
+  if (res.ok || res.status === 204) return { ok: true as const };
+  return { ok: false as const, status: res.status, error: (await res.text()).slice(0, 160) };
 }

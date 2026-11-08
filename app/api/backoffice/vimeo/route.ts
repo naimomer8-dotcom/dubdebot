@@ -1,6 +1,6 @@
 import { getAdmin, json } from "@/lib/adminAuth";
 import { db } from "@/lib/supabase";
-import { listAllVideos, whoAmI } from "@/lib/vimeo";
+import { listAllVideos, whoAmI, allowEmbedDomain } from "@/lib/vimeo";
 import { LIBRARY } from "@/lib/courses";
 import { indexVideo } from "@/lib/videoIndex";
 
@@ -73,6 +73,20 @@ export async function POST(req: Request) {
     const { count } = await supabase.from("vimeo_videos").select("id", { count: "exact", head: true })
       .not("course_id", "is", null).eq("hidden", false).gt("texttracks", 0).is("indexed_at", null);
     return json({ ok: true, done, left: count ?? 0 });
+  }
+
+  if (body?.action === "allow_domain") {
+    // every course video gets our app domain on its embed allow-list, so lessons play inside the app
+    const domain = new URL(process.env.PUBLIC_APP_URL || "https://dubdebot.vercel.app").host;
+    const { data: vids } = await supabase.from("vimeo_videos").select("id").not("course_id", "is", null).eq("hidden", false).limit(1000);
+    const ids = (vids ?? []).map((v) => String(v.id));
+    let ok = 0; const fails: { id: string; status?: number; error?: string }[] = [];
+    for (let i = 0; i < ids.length; i += 8) {
+      const res = await Promise.all(ids.slice(i, i + 8).map((id) => allowEmbedDomain(id, domain).then((r) => ({ id, ...r }))));
+      for (const r of res) r.ok ? ok++ : fails.push({ id: r.id, status: r.status, error: r.error });
+      if (fails.length && fails.every((f) => f.status === 403 || f.status === 401) && ok === 0 && i >= 8) break; // token without "edit" scope
+    }
+    return json({ ok: true, domain, total: ids.length, allowed: ok, failed: fails.length, sample: fails.slice(0, 3) });
   }
 
   return json({ error: "unknown action" }, 400);
