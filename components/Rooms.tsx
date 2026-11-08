@@ -112,6 +112,18 @@ export function RoomClient({ room, user, conversations }: { room: Room; user: Sh
             </div>
           </div>
 
+          {room.chips && (
+            <section className="room-chips" aria-labelledby="chips-h">
+              <h2 id="chips-h" className="room-sub">מה הכי בוער לך עכשיו?</h2>
+              <p className="room-hint">לוחצים על מה שמתאים, וניר עונה ונותן צעד ראשון.</p>
+              <div className="room-chip-row">
+                {room.chips.map((ch) => (
+                  <button key={ch} className="room-chip" onClick={() => askNir(`${room.title}: ${ch}. תשאל אותי 2 שאלות קצרות כדי להבין את המצב, ואז תן לי צעד ראשון ברור שאני עושה השבוע.`)}>{ch}</button>
+                ))}
+              </div>
+            </section>
+          )}
+
           {room.id === "social" && <StoryCard />}
 
           <section aria-label={`מה עושים בחדר ה${room.title}`} className="room-actions">

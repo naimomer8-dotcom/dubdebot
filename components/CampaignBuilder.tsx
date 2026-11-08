@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import Sidebar from "./Sidebar";
 import Icon from "./Icon";
+import GraphicStudio from "./GraphicStudio";
 import type { ConvItem, ShellUser } from "@/lib/data";
 import type { Campaign } from "@/app/api/rooms/campaign/route";
 
@@ -21,158 +22,6 @@ export function CopyBtn({ text }: { text: string }) {
     <button className="btn btn-ghost btn-sm" onClick={() => navigator.clipboard.writeText(text).then(() => { setOk(true); setTimeout(() => setOk(false), 1600); }).catch(() => {})}>
       <Icon name={ok ? "check" : "copy"} size={15} /> {ok ? "הועתק" : "העתקה"}
     </button>
-  );
-}
-
-/* ── Creative: drawn in the browser on a canvas, no image API ── */
-type Look = "bold" | "clean" | "photo";
-const LOOKS: { id: Look; label: string }[] = [
-  { id: "bold", label: "כהה ובולט" },
-  { id: "clean", label: "בהיר ונקי" },
-  { id: "photo", label: "עם תמונה שלכם" },
-];
-
-function wrap(ctx: CanvasRenderingContext2D, text: string, max: number) {
-  const words = text.split(/\s+/).filter(Boolean);
-  const lines: string[] = [];
-  let line = "";
-  for (const w of words) {
-    const t = line ? `${line} ${w}` : w;
-    if (ctx.measureText(t).width > max && line) { lines.push(line); line = w; } else line = t;
-  }
-  if (line) lines.push(line);
-  return lines;
-}
-
-function draw(cv: HTMLCanvasElement, o: { look: Look; headline: string; sub: string; cta: string; brand: string; color: string; photo: HTMLImageElement | null }) {
-  const W = 1080, H = 1350;
-  cv.width = W; cv.height = H;
-  const ctx = cv.getContext("2d")!;
-  ctx.direction = "rtl";
-  ctx.textAlign = "right";
-  const dark = o.look !== "clean";
-  if (o.look === "photo" && o.photo) {
-    const s = Math.max(W / o.photo.width, H / o.photo.height);
-    const w = o.photo.width * s, h = o.photo.height * s;
-    ctx.drawImage(o.photo, (W - w) / 2, (H - h) / 2, w, h);
-    const g = ctx.createLinearGradient(0, H, 0, H * 0.25);
-    g.addColorStop(0, "rgba(8,8,10,.96)"); g.addColorStop(0.55, "rgba(8,8,10,.7)"); g.addColorStop(1, "rgba(8,8,10,0)");
-    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-  } else {
-    ctx.fillStyle = dark ? "#0b0b0d" : "#f6f1e7";
-    ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = o.color;
-    ctx.globalAlpha = dark ? 0.16 : 0.12;
-    ctx.beginPath(); ctx.arc(W * 0.18, H * 0.2, 420, 0, Math.PI * 2); ctx.fill();
-    ctx.globalAlpha = 1;
-    ctx.fillRect(W - 90, 120, 12, 150);
-  }
-  const fg = dark ? "#f6f1e7" : "#141210";
-  const pad = 90, maxW = W - pad * 2;
-  // headline: largest size that fits in 4 lines
-  let size = 128, lines: string[] = [];
-  for (; size >= 64; size -= 6) {
-    ctx.font = `800 ${size}px Assistant, sans-serif`;
-    lines = wrap(ctx, o.headline, maxW);
-    if (lines.length <= 4) break;
-  }
-  const lh = size * 1.08;
-  const subSize = 46;
-  const blockH = lines.length * lh + 30 + subSize * 1.3 * 2 + 160;
-  let y = o.look === "photo" ? H - blockH - 60 : H * 0.36;
-  ctx.fillStyle = fg;
-  ctx.font = `800 ${size}px Assistant, sans-serif`;
-  for (const l of lines) { y += lh; ctx.fillText(l, W - pad, y); }
-  y += 30;
-  ctx.font = `500 ${subSize}px Assistant, sans-serif`;
-  ctx.fillStyle = dark ? "rgba(246,241,231,.82)" : "rgba(20,18,16,.75)";
-  for (const l of wrap(ctx, o.sub, maxW).slice(0, 2)) { y += subSize * 1.3; ctx.fillText(l, W - pad, y); }
-  // CTA pill
-  y += 70;
-  ctx.font = `800 44px Assistant, sans-serif`;
-  const cw = Math.min(maxW, ctx.measureText(o.cta).width + 100);
-  ctx.fillStyle = o.color;
-  const x = W - pad - cw, r = 46;
-  ctx.beginPath(); ctx.roundRect(x, y, cw, 92, r); ctx.fill();
-  ctx.fillStyle = "#141210";
-  ctx.textAlign = "center";
-  ctx.fillText(o.cta, x + cw / 2, y + 61);
-  // brand line
-  ctx.textAlign = "right";
-  ctx.font = `700 36px Assistant, sans-serif`;
-  ctx.fillStyle = dark ? "rgba(246,241,231,.7)" : "rgba(20,18,16,.6)";
-  if (o.brand) ctx.fillText(o.brand, W - pad, 90);
-}
-
-function Creative({ c }: { c: Campaign }) {
-  const ref = useRef<HTMLCanvasElement>(null);
-  const [ad, setAd] = useState(0);
-  const [look, setLook] = useState<Look>("bold");
-  const [brand, setBrand] = useState("");
-  const [color, setColor] = useState("#e2c68e");
-  const [headline, setHeadline] = useState(c.ads[0]?.headline ?? "");
-  const [sub, setSub] = useState(c.ads[0]?.sub ?? "");
-  const [cta, setCta] = useState("לפרטים ←");
-  const [photo, setPhoto] = useState<HTMLImageElement | null>(null);
-
-  useEffect(() => { setHeadline(c.ads[ad]?.headline ?? ""); setSub(c.ads[ad]?.sub ?? ""); }, [ad, c]);
-  useEffect(() => {
-    let off = false;
-    document.fonts.load("800 80px Assistant").catch(() => {}).finally(() => {
-      if (!off && ref.current) draw(ref.current, { look: look === "photo" && !photo ? "bold" : look, headline, sub, cta, brand, color, photo });
-    });
-    return () => { off = true; };
-  }, [look, headline, sub, cta, brand, color, photo]);
-
-  function onFile(f: File | undefined) {
-    if (!f) return;
-    const img = new Image();
-    img.onload = () => { setPhoto(img); setLook("photo"); };
-    img.src = URL.createObjectURL(f);
-  }
-  function download() {
-    ref.current?.toBlob((b) => {
-      if (!b) return;
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(b);
-      a.download = "מודעה.png";
-      a.click();
-    }, "image/png");
-  }
-
-  return (
-    <div className="cmp-creative">
-      <div className="cmp-canvas-wrap"><canvas ref={ref} className="cmp-canvas" aria-label="תצוגה מקדימה של המודעה" /></div>
-      <div className="cmp-controls">
-        <fieldset className="cmp-choice">
-          <legend>איזו מודעה?</legend>
-          {c.ads.map((a, i) => (
-            <button key={i} type="button" aria-pressed={ad === i} onClick={() => setAd(i)}>{a.name}</button>
-          ))}
-        </fieldset>
-        <fieldset className="cmp-choice">
-          <legend>איזה סגנון?</legend>
-          {LOOKS.map((l) => (
-            <button key={l.id} type="button" aria-pressed={look === l.id} onClick={() => setLook(l.id)}>{l.label}</button>
-          ))}
-        </fieldset>
-        {look === "photo" && (
-          <label className="cmp-file">
-            <Icon name="image" size={18} /> {photo ? "להחליף תמונה" : "להעלות תמונה (שלכם או של המוצר)"}
-            <input type="file" accept="image/*" onChange={(e) => onFile(e.target.files?.[0])} />
-          </label>
-        )}
-        <label className="cmp-field">כותרת<input className="input" value={headline} onChange={(e) => setHeadline(e.target.value)} /></label>
-        <label className="cmp-field">שורת משנה<input className="input" value={sub} onChange={(e) => setSub(e.target.value)} /></label>
-        <div className="cmp-two">
-          <label className="cmp-field">כפתור<input className="input" value={cta} onChange={(e) => setCta(e.target.value)} /></label>
-          <label className="cmp-field">צבע<input type="color" className="cmp-color" value={color} onChange={(e) => setColor(e.target.value)} /></label>
-        </div>
-        <label className="cmp-field">שם העסק (למעלה)<input className="input" value={brand} onChange={(e) => setBrand(e.target.value)} placeholder="לא חובה" /></label>
-        <button className="btn btn-primary btn-lg btn-block" onClick={download}><Icon name="download" size={18} /> הורדת המודעה</button>
-        <p className="room-hint">גודל 1080 על 1350, מתאים לפיד של פייסבוק ואינסטגרם.</p>
-      </div>
-    </div>
   );
 }
 
@@ -280,7 +129,7 @@ export default function CampaignBuilder({ user, conversations, initial = null, i
               {step === 4 && (
                 <section className="cmp-card" aria-labelledby="cb4">
                   <h2 id="cb4">המודעה הגרפית</h2>
-                  <Creative c={c} />
+                  <GraphicStudio initial={{ headline: c.ads[0]?.headline, sub: c.ads[0]?.sub, cta: "לפרטים ←" }} ads={c.ads.map((a) => ({ name: a.name, content: { headline: a.headline, sub: a.sub } }))} />
                 </section>
               )}
 

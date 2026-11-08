@@ -19,6 +19,14 @@ function creds() {
   return { TerminalNumber: terminal, ApiName: apiName };
 }
 
+/** Monthly renewals can run on a separate tokens / standing-order terminal (e.g. 200314). Falls back to the main terminal. */
+function tokenCreds() {
+  const t = Number(process.env.CARDCOM_TOKEN_TERMINAL);
+  const name = process.env.CARDCOM_TOKEN_API_NAME || process.env.CARDCOM_API_NAME;
+  if (!t || !name) return creds();
+  return { TerminalNumber: t, ApiName: name };
+}
+
 async function post<T>(path: string, body: Record<string, unknown>): Promise<T> {
   const r = await fetch(`${BASE}/${path}`, {
     method: "POST",
@@ -102,7 +110,7 @@ export type TranResult = { ResponseCode: number; Description?: string; Tranzacti
 /** Charges a stored token (used for the monthly renewal). ExternalUniqTranId prevents a double charge. */
 export function chargeToken(o: { token: string; expMMYY: string; amount: number; uniqueId: string; productName: string; customer: { name: string; email: string | null; phone: string | null } }) {
   return post<TranResult>("Transactions/Transaction", {
-    ...creds(),
+    ...tokenCreds(),
     Amount: o.amount,
     Token: o.token,
     CardExpirationMMYY: o.expMMYY,

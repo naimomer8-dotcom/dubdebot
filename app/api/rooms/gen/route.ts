@@ -45,6 +45,20 @@ const TOOLS = {
     md: (r: SocialWeek) => [`## לוח תוכן לשבוע`, ...r.days.map((d) => `**${d.day} · ${d.format}:** ${d.topic}\n> ${d.hook}\n👉 ${d.cta}`), `טיפ: ${r.tip}`].join("\n\n"),
     ok: (r: SocialWeek) => r?.days?.length > 0,
   },
+  graphic: {
+    kind: "graphic",
+    schema: obj({ headline: str, sub: str, cta: str, big: str, lines: strs }),
+    prompt: (f: Record<string, string>, biz: string) => `${VOICE}
+כתוב טקסט קצר לגרפיקה לרשתות (פוסט או סטורי) לבעל עסק קטן.
+העסק: ${biz || "לא נאמר"}
+על מה הגרפיקה: ${f.topic}
+הסגנון שנבחר: ${f.style || "כללי"}
+תחזיר: headline (עד 7 מילים, חזק וברור), sub (שורת משנה עד 10 מילים), cta (קריאה לפעולה עד 4 מילים), big (מספר, מחיר או תאריך קצר אם רלוונטי, אחרת ריק), lines (3 שורות קצרות של עד 7 מילים: טיפים או נקודות; לסגנון לפני/אחרי: שורה 1 המצב לפני, שורה 2 המצב אחרי).`,
+    title: (f: Record<string, string>) => `טקסט לגרפיקה: ${f.topic.slice(0, 40)}`,
+    md: (r: { headline: string; sub: string; cta: string; lines: string[] }) => [`**${r.headline}**`, r.sub, ...r.lines.map((l) => `- ${l}`), `👉 ${r.cta}`].join("\n\n"),
+    ok: (r: { headline?: string }) => !!r?.headline,
+    save: false,
+  },
 } as const;
 
 const clean = (v: unknown, max: number) => String(v ?? "").replace(/[–—]/g, ",").trim().slice(0, max);
@@ -58,8 +72,8 @@ export async function POST(req: Request) {
   if (!tool) return NextResponse.json({ error: "כלי לא מוכר" }, { status: 400 });
   const f: Record<string, string> = {};
   for (const [k, v] of Object.entries((body.fields ?? {}) as Record<string, unknown>)) f[k] = clean(v, 500);
-  const main = body.tool === "sales_script" ? f.product : f.business;
-  if (body.tool === "sales_script" && (!main || main.length < 3)) return NextResponse.json({ error: "כתבו בכמה מילים מה אתם מוכרים." }, { status: 400 });
+  const main = body.tool === "sales_script" ? f.product : body.tool === "graphic" ? f.topic : f.business;
+  if (!main || main.length < 3) return NextResponse.json({ error: "כתבו בכמה מילים על מה מדובר." }, { status: 400 });
 
   const supabase = db();
   const { data: u } = await supabase.from("users").select("profile").eq("id", gate).maybeSingle();
@@ -80,6 +94,6 @@ export async function POST(req: Request) {
     console.error("room gen failed", body.tool, (e as Error).message);
     return NextResponse.json({ error: "לא הצלחנו לבנות את זה. נסו שוב." }, { status: 502 });
   }
-  await supabase.from("deliverables").insert({ user_id: gate, kind: tool.kind, title: tool.title(f), content: (tool.md as (x: unknown) => string)(r) });
+  if (!("save" in tool && tool.save === false)) await supabase.from("deliverables").insert({ user_id: gate, kind: tool.kind, title: tool.title(f), content: (tool.md as (x: unknown) => string)(r) });
   return NextResponse.json({ ok: true, result: r });
 }

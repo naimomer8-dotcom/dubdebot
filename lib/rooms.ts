@@ -21,6 +21,8 @@ export type Room = {
   items: RoomItem[];
   /** Course ids from lib/courses LIBRARY with lessons on this subject. */
   courses: number[];
+  /** "What's burning?" one-tap problems; each sends a ready question to Nir. */
+  chips?: string[];
 };
 
 export const ROOMS: Room[] = [
@@ -33,9 +35,10 @@ export const ROOMS: Room[] = [
     items: [
       { key: "campaign", icon: "bolt", title: "בונים קמפיין מאפס", desc: "4 שלבים: קהל, קופי, תסריט צילום ומודעה מוכנה להורדה", action: { kind: "href", href: "/rooms/marketing/campaign" } },
       { key: "ad", icon: "edit", title: "לכתוב מודעה או פוסט", desc: "ניר שואל 2 שאלות וכותב לך טקסט שמוכר", action: { kind: "ask", text: "ניר, תכתוב לי מודעה לפייסבוק ואינסטגרם לעסק שלי. תשאל אותי קודם מה אני מוכר ולמי, ואז תן לי 3 גרסאות עם פתיח חזק וקריאה לפעולה." } },
-      { key: "ideas", icon: "spark", title: "רעיונות לקמפיין", desc: "כיוונים, מסרים והצעות שאפשר להעלות השבוע", action: { kind: "tool", tool: "campaign" } },
+      { key: "studio", icon: "image", title: "סטודיו גרפיקה", desc: "8 סגנונות לפוסט, סטורי או מודעה, מוכן להורדה", action: { kind: "href", href: "/studio" } },
     ],
     courses: [110992, 10426],
+    chips: ["אין לי מספיק פניות", "הקמפיין שלי יקר מדי", "לא יודע מה לכתוב במודעה", "אני לא יודע מי הקהל שלי"],
   },
   {
     id: "sales",
@@ -49,6 +52,7 @@ export const ROOMS: Room[] = [
       { key: "tests", icon: "target", title: "מבחן מכירות", desc: "איפה אתה חזק בשיחה ואיפה כדאי לשפר", action: { kind: "href", href: "/tests" } },
     ],
     courses: [50, 1366],
+    chips: ["לקוחות אומרים שיקר להם", "מתלבטים ולא חוזרים אליי", "לא נעים לי לבקש כסף", "אני לא יודע לסגור בשיחה"],
   },
   {
     id: "money",
@@ -62,6 +66,7 @@ export const ROOMS: Room[] = [
       { key: "reports", icon: "file", title: "לבדוק דוח או תלוש", desc: "מעלים קובץ, ניר מסביר מה רואים בו", action: { kind: "tool", tool: "financials" } },
     ],
     courses: [110990, 116394],
+    chips: ["לא נשאר לי כסף בסוף החודש", "אני לא יודע אם אני מרוויח", "אני לא בטוח שהמחיר שלי נכון", "יש לי חובות ואני לא יודע מאיפה להתחיל"],
   },
   {
     id: "realestate",
@@ -74,6 +79,7 @@ export const ROOMS: Room[] = [
       { key: "plan", icon: "map", title: "מאיפה מתחילים להשקיע", desc: "כמה הון צריך ומה הצעד הראשון שלך", action: { kind: "ask", text: "ניר, אני רוצה להתחיל להשקיע בנדל״ן. תשאל אותי כמה הון יש לי, מה ההכנסה החודשית ומה המטרה, ותבנה לי צעד ראשון ברור." } },
     ],
     courses: [111779, 116394],
+    chips: ["כמה הון עצמי אני צריך?", "לקנות דירה או להשקיע בעסק?", "דירה בארץ או בחו״ל?", "איך בודקים שהשכירות ריאלית?"],
   },
   {
     id: "social",
@@ -84,9 +90,10 @@ export const ROOMS: Room[] = [
     items: [
       { key: "story", icon: "image", title: "הסטורי של היום", desc: "רעיון אחד, 3 פריימים, מה לצלם ומה לכתוב", action: { kind: "href", href: "/rooms/social#story" } },
       { key: "week", icon: "calendar", title: "לוח תוכן לשבוע", desc: "7 ימים, מה מעלים כל יום, עם פתיח וקריאה לפעולה", action: { kind: "href", href: "/rooms/social/week" } },
-      { key: "scan", icon: "radar", title: "איך אני נראה ברשתות", desc: "סריקה של העמוד שלך מבחוץ", action: { kind: "href", href: "/scan" } },
+      { key: "studio", icon: "edit", title: "לעצב פוסט או סטורי", desc: "סטודיו גרפיקה עם 8 סגנונות, מוכן להורדה", action: { kind: "href", href: "/studio" } },
     ],
     courses: [110992],
+    chips: ["אין לי זמן להעלות תוכן", "מתבייש לצלם את עצמי", "יש צפיות אבל אין פניות", "לא יודע מה להעלות"],
   },
   {
     id: "courses",

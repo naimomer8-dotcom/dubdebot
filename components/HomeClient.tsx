@@ -69,6 +69,11 @@ export default function HomeClient({ user, conversations, steps, xrayScore, quot
 
           <h2 className="home-q">לאיזה חדר נכנסים היום?</h2>
           <RoomsGrid />
+          <Link className="home-card home-story home-studio" href="/studio">
+            <span className="home-next-ico"><Icon name="image" size={22} /></span>
+            <div className="home-next-txt"><small>סטודיו גרפיקה</small><b>לעצב פוסט, סטורי או מודעה</b><span>8 סגנונות, ניר כותב את הטקסט, מורידים בלחיצה.</span></div>
+            <Icon name="arrow" size={20} />
+          </Link>
 
           {next && (
             <section className="home-card home-next" aria-label="הצעד הבא שלך">
