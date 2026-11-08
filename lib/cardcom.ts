@@ -24,7 +24,8 @@ function tokenCreds() {
   const t = Number(process.env.CARDCOM_TOKEN_TERMINAL);
   const name = process.env.CARDCOM_TOKEN_API_NAME || process.env.CARDCOM_API_NAME;
   if (!t || !name) return creds();
-  return { TerminalNumber: t, ApiName: name };
+  const pass = process.env.CARDCOM_TOKEN_API_PASSWORD;
+  return pass ? { TerminalNumber: t, ApiName: name, ApiPassword: pass } : { TerminalNumber: t, ApiName: name };
 }
 
 async function post<T>(path: string, body: Record<string, unknown>): Promise<T> {
