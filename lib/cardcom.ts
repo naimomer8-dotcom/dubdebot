@@ -19,7 +19,7 @@ function creds() {
   return { TerminalNumber: terminal, ApiName: apiName };
 }
 
-/** Monthly renewals can run on a separate tokens / standing-order terminal (e.g. 200314). Falls back to the main terminal. */
+/** Subscriptions (first payment that saves the card + monthly renewals) run on the tokens / standing-order terminal (200314) when set. Falls back to the main terminal. */
 function tokenCreds() {
   const t = Number(process.env.CARDCOM_TOKEN_TERMINAL);
   const name = process.env.CARDCOM_TOKEN_API_NAME || process.env.CARDCOM_API_NAME;
@@ -54,7 +54,7 @@ export async function createPaymentPage(o: {
   const url = appUrl();
   const pay = Math.max(1, Math.min(12, Math.round(o.payments)));
   const body = (op: string) => ({
-    ...creds(),
+    ...tokenCreds(),
     Operation: op, // ChargeAndCreateToken keeps a token for the monthly renewal after the year
     ReturnValue: o.orderId,
     Amount: o.amount,
@@ -101,7 +101,10 @@ export type LpResult = {
   TranzactionInfo?: { ResponseCode?: number; TranzactionId?: number; Amount?: number; Last4CardDigitsString?: string; NumberOfPayments?: number; DocumentNumber?: number; DocumentUrl?: string } | null;
 };
 
-export function getPaymentResult(lowProfileId: string) {
+export async function getPaymentResult(lowProfileId: string) {
+  // the page was opened on the tokens terminal when one is set; older pages were opened on the main terminal
+  const r = await post<LpResult>("LowProfile/GetLpResult", { ...tokenCreds(), LowProfileId: lowProfileId });
+  if (r.ResponseCode === 0 || !process.env.CARDCOM_TOKEN_TERMINAL) return r;
   return post<LpResult>("LowProfile/GetLpResult", { ...creds(), LowProfileId: lowProfileId });
 }
 
