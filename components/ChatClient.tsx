@@ -44,17 +44,11 @@ const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).
 
 /** "Nir talks about this in lesson X, from minute m:ss" – opens the course video right at that point. */
 function VideoRef({ v }: { v: NonNullable<ChatMessage["video"]> }) {
-  const [open, setOpen] = useState(false);
   return (
     <div className="video-ref">
-      <button className="video-ref-btn" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
-        <Icon name="eye" size={15} /> ניר מדבר על זה ב{v.title}, מדקה <bdi>{mmss(v.start)}</bdi>
-      </button>
-      {open && (
-        <div className="video-ref-frame">
-          <iframe src={`https://player.vimeo.com/video/${encodeURIComponent(v.id)}?autoplay=1#t=${Math.floor(v.start)}s`} allow="autoplay; fullscreen; picture-in-picture" allowFullScreen title={v.title} />
-        </div>
-      )}
+      <a className="video-ref-btn" href={`/courses/v/${encodeURIComponent(v.id)}?t=${Math.floor(v.start)}`}>
+        <Icon name="play" size={15} /> ניר מדבר על זה ב{v.title}, מדקה <bdi>{mmss(v.start)}</bdi>
+      </a>
     </div>
   );
 }

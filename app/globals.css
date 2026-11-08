@@ -2444,3 +2444,4 @@ html[data-fs="lg"] body { zoom: 1.15; }
 .cp-lt { flex: 1; min-width: 0; line-height: 1.4; }
 .cp-list small { color: var(--text-3); font-size: 13px; flex-shrink: 0; }
 .crs-ctas { display: flex; flex-direction: column; gap: 6px; } .crs-cta-2 { font-size: 13.5px; color: var(--text-2); text-align: center; text-decoration: underline; text-underline-offset: 3px; }
+.video-ref-btn { text-decoration: none; }

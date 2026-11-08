@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return { title: c ? `${c.title} | Duvdevani Platform` : "Duvdevani Platform" };
 }
 
-export default async function CoursePage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ l?: string; t?: string }> }) {
+export default async function CoursePage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ l?: string; t?: string; v?: string }> }) {
   const { id } = await params;
   const sp = await searchParams;
   const course = courseOf(id);
@@ -33,6 +33,6 @@ export default async function CoursePage({ params, searchParams }: { params: Pro
   const lessons: Lesson[] = (data ?? []).map((v, i) => ({ id: String(v.id), n: i + 1, title: String(v.name ?? "").replace(/\s+/g, " ").trim(), duration: v.duration ?? 0, embed: locked ? "" : String(v.embed_url ?? "") }));
   return (
     <CoursePlayer user={shell.user} conversations={shell.conversations} course={{ id: course.id, title: course.title, blurb: course.blurb }} lessons={lessons} locked={locked}
-      startLesson={Number(sp.l) || null} startAt={Number(sp.t) || 0} />
+      startLesson={sp.v ? (lessons.find((x) => x.id === sp.v)?.n ?? null) : Number(sp.l) || null} startAt={Number(sp.t) || 0} />
   );
 }
