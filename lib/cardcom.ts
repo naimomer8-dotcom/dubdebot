@@ -28,6 +28,11 @@ function tokenCreds() {
   return pass ? { TerminalNumber: t, ApiName: name, ApiPassword: pass } : { TerminalNumber: t, ApiName: name };
 }
 
+/** Which terminal opens the payment page. The tokens terminal only when CARDCOM_PAGE_ON_TOKEN_TERMINAL=1 (it failed with "unexpected error" on 8.11), otherwise the main one. */
+function pageCreds() {
+  return process.env.CARDCOM_PAGE_ON_TOKEN_TERMINAL === "1" ? tokenCreds() : creds();
+}
+
 async function post<T>(path: string, body: Record<string, unknown>): Promise<T> {
   const r = await fetch(`${BASE}/${path}`, {
     method: "POST",
@@ -55,7 +60,7 @@ export async function createPaymentPage(o: {
   const url = appUrl();
   const pay = Math.max(1, Math.min(12, Math.round(o.payments)));
   const body = (op: string) => ({
-    ...tokenCreds(),
+    ...pageCreds(),
     Operation: op, // ChargeAndCreateToken keeps a token for the monthly renewal after the year
     ReturnValue: o.orderId,
     Amount: o.amount,
