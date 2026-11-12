@@ -2474,3 +2474,10 @@ html[data-fs="lg"] body { zoom: 1.15; }
 .room-chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
 .room-chip { min-height: 48px; padding: 10px 16px; border-radius: 999px; border: 1px solid var(--hair-2); background: #131315; color: var(--text); font: 600 15.5px var(--sans); cursor: pointer; text-align: start; }
 .room-chip:hover { border-color: var(--gold); background: rgba(226,198,142,.08); }
+/* public webinar signup */
+.ws-card .ws-h1{font-size:44px;line-height:1.02}
+.ws-when{margin:0;font-weight:800;font-size:20px;color:#fff}
+.ws-consent{display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.5;color:#b9b0a1;cursor:pointer}
+.ws-consent input{margin-top:3px;width:18px;height:18px;accent-color:var(--gold,#e2c68e);flex:none}
+.ws-done{display:flex;flex-direction:column;gap:14px}
+.ws-done h2{margin:0;font-family:var(--display);font-size:42px;line-height:1}
