@@ -2,6 +2,7 @@ import { db } from "./supabase";
 import type { Offers } from "./plans";
 import { referrerOf } from "./referral";
 import { giftFromCookie } from "./webinarGift";
+import { offerFromCookie } from "./offerLink";
 
 const H = 3600_000;
 
@@ -30,6 +31,18 @@ export async function offersFor(userId: string): Promise<Offers> {
     const end = new Date(send.sent_at).getTime() + 72 * H;
     if (end > now) out.installmentsAtOnetime = new Date(end).toISOString();
   }
+  const link = await offerFromCookie(now);
+  if (link && (!out.installmentsAtOnetime || link > out.installmentsAtOnetime)) out.installmentsAtOnetime = link;
+  return out;
+}
+
+/** Offers for a visitor who is not signed in: the webinar gift and the /o link offer held by this browser. */
+export async function guestOffers(): Promise<Offers> {
+  const out: Offers = {};
+  const gift = await webinarGiftFor(null);
+  if (gift) out.webinarHalf = gift;
+  const link = await offerFromCookie();
+  if (link) out.installmentsAtOnetime = link;
   return out;
 }
 

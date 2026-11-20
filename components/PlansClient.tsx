@@ -44,7 +44,7 @@ const DEALS = (offers: Offers, trial: boolean) => {
     { tag: "תשלום אחד", title: `חיסכון של ${ils(basicSave)} בשנה`, text: "Platform Basic בתשלום אחד יוצא ₪229 לחודש במקום ₪299.", live: true },
     { tag: "Platform Pro", title: `${ils(priceOf("pro", "onetime").net)} בתשלום אחד`, text: `במקום ${ils(priceOf("pro", "installments").net)} ב-12 תשלומים. חיסכון של ${ils(proSave)}.`, live: true },
     { tag: "חודש המתנה", title: "Platform Private בחצי מחיר", text: offers.privateHalf ? `₪295 במקום ₪590, בתוקף עד ${fmt(offers.privateHalf)}.` : "₪295 במקום ₪590 למי שמצטרף לפני שחודש המתנה נגמר.", live: !!offers.privateHalf || trial },
-    { tag: "72 שעות", title: "12 תשלומים במחיר של תשלום אחד", text: offers.installmentsAtOnetime ? `₪229 לחודש במקום ₪299, בתוקף עד ${fmt(offers.installmentsAtOnetime)}.` : "הצעה שנפתחת לזמן קצר, נשלחת בוואטסאפ ובמייל.", live: !!offers.installmentsAtOnetime },
+    { tag: "72 שעות", title: "12 תשלומים במחיר של תשלום אחד", text: offers.installmentsAtOnetime ? `בכל המסלולים, בתוקף עד ${fmt(offers.installmentsAtOnetime)}.` : "הצעה שנפתחת לזמן קצר, נשלחת בוואטסאפ ובמייל.", live: !!offers.installmentsAtOnetime },
     { tag: "שדרוג", title: "משלמים רק את ההפרש", text: "עוברים למסלול גבוה יותר בכל רגע, והשנה ממשיכה מאותו תאריך.", live: false },
     { tag: "חבר מביא חבר", title: "החבר נכנס ב-50% הנחה", text: `מי שמצטרף דרך הקישור האישי שלך מקבל 50% הנחה על השנה הראשונה. ואתה מקבל מקום בסדנה "${WORKSHOP.name}" עם ניר דובדבני על כל חבר שהצטרף.`, live: !!offers.friendHalf },
     { tag: "שנה שנייה", title: `רק ${ils(RENEWAL_MONTHLY)} לחודש`, text: "אחרי השנה הראשונה הכל ממשיך במחיר סמלי, בלי לסלוק מחדש.", live: false },
@@ -132,7 +132,7 @@ export default function PlansClient({ user, conversations, focus, offers = {}, a
               {offers.friendHalf && <p><b>חבר הביא אותך:</b> 50% הנחה על השנה הראשונה בכל מסלול. המחירים כאן כבר אחרי ההנחה.</p>}
               {offers.privateHalf && !offers.friendHalf && <p><b>בונוס מצטרפים בחודש המתנה:</b> Platform Private בחצי מחיר, ₪295 + מע״מ במקום ₪590. בתוקף עד {fmt(offers.privateHalf)}.</p>}
               {offers.webinarHalf && <p><b>המתנה מהוובינר:</b> Platform Private ב-50% הנחה על השנה הראשונה. בתוקף עד {fmt(offers.webinarHalf)}.</p>}
-              {offers.installmentsAtOnetime && <p><b>הצעת 72 שעות:</b> 12 תשלומים במחיר של תשלום אחד, ₪229 לחודש + מע״מ במקום ₪299. בתוקף עד {fmt(offers.installmentsAtOnetime)}.</p>}
+              {offers.installmentsAtOnetime && <p><b>הצעת 72 שעות:</b> 12 תשלומים במחיר של תשלום אחד, בכל המסלולים. בתוקף עד {fmt(offers.installmentsAtOnetime)}.</p>}
             </div>
           </div>
         )}
