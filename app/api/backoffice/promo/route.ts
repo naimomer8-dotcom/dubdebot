@@ -10,6 +10,7 @@ const NETWORKS = ["instagram", "facebook", "tiktok", "youtube", "other"] as cons
 export async function GET() {
   const admin = await getAdmin();
   if (!admin) return json({ error: "unauthorized" }, 401);
+  if (admin.dataSince) return json({ error: "hidden" }, 403); // partner admins (Olmo) do not see ad budgets
   const supabase = db();
   const { data: rows } = await supabase.from("promo_spend").select("id, spent_on, amount, network, note, created_by, created_at").order("spent_on", { ascending: false }).order("created_at", { ascending: false }).limit(500);
   const list = rows ?? [];
@@ -25,6 +26,7 @@ export async function GET() {
 export async function POST(req: Request) {
   const admin = await getAdmin();
   if (!admin) return json({ error: "unauthorized" }, 401);
+  if (admin.dataSince) return json({ error: "hidden" }, 403); // partner admins (Olmo) do not see ad budgets
   const b = await req.json().catch(() => ({}));
   const amount = Math.round(Number(String(b.amount ?? "").replace(/[^\d.]/g, "")) * 100) / 100;
   if (!Number.isFinite(amount) || amount <= 0 || amount > 1_000_000) return json({ error: "סכום לא תקין" }, 400);
@@ -39,6 +41,7 @@ export async function POST(req: Request) {
 export async function DELETE(req: Request) {
   const admin = await getAdmin();
   if (!admin) return json({ error: "unauthorized" }, 401);
+  if (admin.dataSince) return json({ error: "hidden" }, 403); // partner admins (Olmo) do not see ad budgets
   const { id } = await req.json().catch(() => ({}));
   if (!id) return json({ error: "missing id" }, 400);
   await db().from("promo_spend").delete().eq("id", String(id));

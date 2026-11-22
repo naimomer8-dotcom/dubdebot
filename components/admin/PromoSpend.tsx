@@ -19,9 +19,11 @@ export default function PromoSpend() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [del, setDel] = useState<string | null>(null);
+  const [hidden, setHidden] = useState(false);
 
   const load = useCallback(async () => {
     const r = await fetch("/api/backoffice/promo", { cache: "no-store" }).catch(() => null);
+    if (r?.status === 403) return setHidden(true);
     if (!r?.ok) return;
     const j = await r.json();
     setRows(j.rows.map((x: Row) => ({ ...x, amount: Number(x.amount) })));
@@ -56,6 +58,7 @@ export default function PromoSpend() {
     load();
   }
 
+  if (hidden) return null;
   return (
     <section className="ps glass edge">
       <header className="ps-h">
