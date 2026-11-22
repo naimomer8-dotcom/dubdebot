@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import Icon from "./Icon";
 import { FIN_FIELDS, calc, type FinData, type FinRow } from "@/lib/financials";
@@ -110,7 +111,7 @@ export default function FinancialsCard({ initial }: { initial: FinRow[] }) {
         </form>
       ) : (
         <div className="fin-actions">
-          <a className="btn btn-glass btn-sm" href={`/chat?new=1&tool=financials`}><Icon name="spark" size={15} /> ניתוח עם ניר</a>
+          <Link className="btn btn-glass btn-sm" href={`/chat?new=1&tool=financials`}><Icon name="spark" size={15} /> ניתוח עם ניר</Link>
           {live.marketingPct > 0 && <span className="pill">שיווק: {live.marketingPct}% מההכנסות</span>}
           {live.salariesPct > 0 && <span className="pill">שכר: {live.salariesPct}% מההכנסות</span>}
           {live.cash > 0 && <span className="pill">בבנק: {money(live.cash)}</span>}

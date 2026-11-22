@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { nextWebinar, webinarLabel, WEBINAR_PUBLIC, WEBINAR_TIME } from "@/lib/webinarDates";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown, { Components } from "react-markdown";
@@ -509,7 +510,7 @@ export default function ChatClient({
                       </button>
                     ))}
                   </div>
-                  <div className="welcome-label welcome-label-row"><span>כסף בעסק</span><a href="/money">בדיקת כסף ב-2 דקות <Icon name="arrowLeft" size={14} /></a></div>
+                  <div className="welcome-label welcome-label-row"><span>כסף בעסק</span><Link href="/money">בדיקת כסף ב-2 דקות <Icon name="arrowLeft" size={14} /></Link></div>
                   <div className="money-chips">
                     {MONEY_STARTERS.map((q) => (
                       <button key={q.b} className="next-chip money-chip" onClick={() => send(q.t)}><Icon name="coin" size={15} /> {q.b}</button>
@@ -773,7 +774,7 @@ export default function ChatClient({
       )}
       {toast && (
         <div className="saved-toast" role="status">
-          <Icon name="check" size={18} /> {toast.text} {toast.link && <a href="/vault">לתיק ←</a>}
+          <Icon name="check" size={18} /> {toast.text} {toast.link && <Link href="/vault">לתיק ←</Link>}
         </div>
       )}
       {confetti > 0 && <Confetti key={confetti} />}
