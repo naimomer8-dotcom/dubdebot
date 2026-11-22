@@ -20,6 +20,13 @@ type SyncPayload = {
   status?: string | null;
 };
 
+/**
+ * Fireberry "סטטוס מכירתי" (statuscode) codes on the opportunity. 2 = ליד חדש, 8 = פולואפ,
+ * 9 = נקבעה פגישה, 11 = עסקה נסגרה בהצלחה, 12 = תהליך מכירה לא צלח. Statuses with no Fireberry
+ * equivalent (no_answer, met) leave the Fireberry status as is.
+ */
+const FB_STATUS: Record<string, number> = { new: 2, callback: 8, scheduled: 9, sold: 11, not_relevant: 12 };
+
 /** Mirror one CRM update to Fireberry (via Make). Never throws; returns whether it was delivered. */
 export async function syncCrm(p: SyncPayload): Promise<boolean> {
   const url = process.env.CRM_WEBHOOK_URL;
@@ -29,7 +36,7 @@ export async function syncCrm(p: SyncPayload): Promise<boolean> {
     const r = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...p, phone, phone_e164: `+972${phone.replace(/^0/, "")}`, at: new Date().toISOString(), source: "Duvdevani Platform · בק אופיס", notetext_json: JSON.stringify(`~~~ Duvdevani Platform · CRM ~~~\n${p.text}${p.admin ? `\nנציג: ${p.admin}` : ""}`).slice(1, -1) }),
+      body: JSON.stringify({ ...p, phone, fb_status: (p.status && FB_STATUS[p.status]) || undefined,phone_e164: `+972${phone.replace(/^0/, "")}`, at: new Date().toISOString(), source: "Duvdevani Platform · בק אופיס", notetext_json: JSON.stringify(`~~~ Duvdevani Platform · CRM ~~~\n${p.text}${p.admin ? `\nנציג: ${p.admin}` : ""}`).slice(1, -1) }),
     });
     return r.ok;
   } catch (e) {
