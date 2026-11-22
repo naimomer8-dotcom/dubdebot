@@ -2,6 +2,8 @@
 export const WEBINAR_FIRST = "2026-11-15";
 export const WEBINAR_EVERY_DAYS = 14;
 export const WEBINAR_TIME = "21:00";
+/** Off switch for the webinar track (w_* / wm_* reminders before and after each webinar). Paused 22.11.2026 by Omer. */
+export const WEBINAR_TRACK_ON = false;
 export const WEBINAR_DAY = "יום ראשון";
 export const WEBINAR_TITLE = "מנועי צמיחה לעסק שלך לשנת 2027";
 /** One recurring Zoom webinar (Evyatar's account, Nir as panelist): the same link for every date. */
@@ -48,6 +50,7 @@ function nextWebinarDate(now: number): string {
  */
 export type WebinarKind = "week" | "eve" | "day" | "after";
 export function webinarMoment(now = Date.now()): { kind: WebinarKind; date: string; next: string } | null {
+  if (!WEBINAR_TRACK_ON) return null;
   const today = ilDate(now);
   const next = nextWebinarDate(now);
   const at = (d: string, days: number) => ilDate(Date.parse(d + "T12:00:00Z") + days * DAY);
