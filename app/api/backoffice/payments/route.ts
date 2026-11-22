@@ -1,5 +1,5 @@
 import { db } from "@/lib/supabase";
-import { getAdmin, json } from "@/lib/adminAuth";
+import { getAdmin, hiddenFor, json } from "@/lib/adminAuth";
 import { activateSubscription } from "@/lib/subscription";
 import { PLANS, type Tier } from "@/lib/plans";
 import { PAY_METHODS, PAY_STATUSES, VAT_RATE, round2, type Payment, type PayStatus, type RepRequest } from "@/lib/payments";
@@ -30,9 +30,15 @@ export async function GET() {
     supabase.from("admins").select("id, display_name"),
   ]);
   const adminName = new Map((admins ?? []).map((a) => [a.id, a.display_name as string]));
-  const userById = new Map((users ?? []).map((u) => [u.id as string, u]));
+  // A partner admin (data_since) sees only purchases and customers from their start date on.
+  const pastBuyers = new Set((users ?? []).filter((u) => hiddenFor(admin, u.paid_at as string | null)).map((u) => u.id as string));
+  for (const o of (orders ?? []) as OrderRow[]) if (o.status === "paid" && o.user_id && hiddenFor(admin, (o.paid_at as string) ?? o.created_at)) pastBuyers.add(o.user_id);
+  const visibleUsers = (users ?? []).filter((u) => !pastBuyers.has(u.id as string));
+  const visibleOrders = ((orders ?? []) as OrderRow[]).filter((o) => !hiddenFor(admin, ((o.paid_at as string) ?? o.created_at)) && !(o.user_id && pastBuyers.has(o.user_id)));
+  const visibleLeads = (leads ?? []).filter((l) => !hiddenFor(admin, l.created_at as string) && !(l.user_id && pastBuyers.has(l.user_id as string)));
+  const userById = new Map(visibleUsers.map((u) => [u.id as string, u]));
 
-  const payments: Payment[] = ((orders ?? []) as OrderRow[]).map((o) => {
+  const payments: Payment[] = visibleOrders.map((o) => {
     const u = o.user_id ? userById.get(o.user_id) : undefined;
     return {
       id: o.id,
@@ -80,7 +86,7 @@ export async function GET() {
     }
     requests.push({ key: `o:${p.id}`, orderId: p.id, userId: p.userId, name: p.name, phone: p.phone, email: p.email, tier: p.tier, billing: p.billing, net: p.net, total: p.total, createdAt: p.createdAt, via: p.channel === "rep" ? "rep" : "self", note: p.notes });
   }
-  for (const l of leads ?? []) {
+  for (const l of visibleLeads) {
     if (l.meeting_type !== "renewal" || l.status === "done") continue;
     const uid = (l.user_id as string) ?? null;
     if (uid && (seenUsers.has(uid) || paidAfter(uid, l.created_at as string))) continue;
@@ -92,7 +98,7 @@ export async function GET() {
   // funnel: people who asked for a rep (rep-channel orders + purchase/renewal leads)
   const repLeads = [
     ...payments.filter((p) => p.channel === "rep" && p.source === "checkout").map((p) => ({ userId: p.userId, createdAt: p.createdAt })),
-    ...(leads ?? []).filter((l) => l.trigger === "rep_requested" || l.meeting_type === "renewal").map((l) => ({ userId: (l.user_id as string) ?? null, createdAt: l.created_at as string })),
+    ...visibleLeads.filter((l) => l.trigger === "rep_requested" || l.meeting_type === "renewal").map((l) => ({ userId: (l.user_id as string) ?? null, createdAt: l.created_at as string })),
   ];
 
   return json({
@@ -100,7 +106,7 @@ export async function GET() {
     payments,
     requests,
     repLeads,
-    users: (users ?? []).map((u) => ({ id: u.id, name: u.full_name, email: u.email, phone: u.phone, createdAt: u.created_at, plan: u.plan, tier: u.tier, billing: u.billing, accessUntil: u.access_until, yearEndsAt: u.year_ends_at, renewalMode: u.renewal_mode })),
+    users: visibleUsers.map((u) => ({ id: u.id, name: u.full_name, email: u.email, phone: u.phone, createdAt: u.created_at, plan: u.plan, tier: u.tier, billing: u.billing, accessUntil: u.access_until, yearEndsAt: u.year_ends_at, renewalMode: u.renewal_mode })),
   });
 }
 

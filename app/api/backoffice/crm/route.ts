@@ -1,5 +1,5 @@
 import { db } from "@/lib/supabase";
-import { getAdmin, json } from "@/lib/adminAuth";
+import { getAdmin, hiddenFor, json } from "@/lib/adminAuth";
 import { isCrmStatus, logActivity, MEETING_LABEL, PARTNERS, statusLabel } from "@/lib/crm";
 import { planById } from "@/lib/plans";
 
@@ -19,18 +19,23 @@ export async function GET() {
     supabase.from("external_sales").select("id, user_id, customer_name, customer_phone, partner, product, amount_net, commission_pct, commission_amount, commission_paid, sold_at, admin_id, note, created_at").order("sold_at", { ascending: false }).limit(2000),
   ]);
   const userIds = [...new Set((leads ?? []).map((l) => l.user_id).filter(Boolean))] as string[];
-  const users = new Map<string, { plan: string; tier: string | null; access_until: string | null; created_at: string }>();
+  const users = new Map<string, { plan: string; tier: string | null; access_until: string | null; created_at: string; paid_at: string | null }>();
   for (let i = 0; i < userIds.length; i += 500) {
-    const { data } = await supabase.from("users").select("id, plan, tier, access_until, created_at").in("id", userIds.slice(i, i + 500));
+    const { data } = await supabase.from("users").select("id, plan, tier, access_until, created_at, paid_at").in("id", userIds.slice(i, i + 500));
     for (const u of data ?? []) users.set(u.id, u);
   }
   const now = Date.now();
-  const rows = (leads ?? []).map((l) => {
+  // A partner admin (data_since) does not see customers who bought before their start date.
+  const pastBuyers = new Set([...users.entries()].filter(([, u]) => hiddenFor(admin, u.paid_at)).map(([id]) => id));
+  const rows = (leads ?? []).filter((l) => !(l.user_id && pastBuyers.has(l.user_id))).map((l) => {
     const u = l.user_id ? users.get(l.user_id) : undefined;
     const status = !u ? "lead" : u.plan === "paid" ? "paid" : u.access_until && Date.parse(u.access_until) < now ? "expired" : "trial";
     return { ...l, user: u ? { status, tier: u.tier ? planById(u.tier)?.name ?? u.tier : null, signedUp: u.created_at } : null };
   });
-  return json({ me: admin, admins: admins ?? [], leads: rows, activities: acts ?? [], sales: sales ?? [] });
+  const leadIds = new Set(rows.map((l) => l.id));
+  const visibleActs = (acts ?? []).filter((a) => !a.lead_id || leadIds.has(a.lead_id));
+  const visibleSales = (sales ?? []).filter((s) => !hiddenFor(admin, s.sold_at) && !(s.user_id && pastBuyers.has(s.user_id)));
+  return json({ me: admin, admins: admins ?? [], leads: rows, activities: visibleActs, sales: visibleSales });
 }
 
 /** Update a lead: status / assign / meeting time / next call / note / call logged. Every change is logged and mirrored to Fireberry. */

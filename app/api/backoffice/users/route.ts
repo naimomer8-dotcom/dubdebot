@@ -1,5 +1,5 @@
 import { db } from "@/lib/supabase";
-import { getAdmin, json } from "@/lib/adminAuth";
+import { getAdmin, hiddenFor, json } from "@/lib/adminAuth";
 import { accessOf } from "@/lib/session";
 import { activateSubscription } from "@/lib/subscription";
 import { PLANS, type Billing, type Tier } from "@/lib/plans";
@@ -29,7 +29,9 @@ export async function GET() {
     if (s) s.n++;
     else stats.set(c.user_id, { n: 1, last: c.updated_at });
   }
-  const rows = (users ?? []).map((u) => {
+  // A partner admin (data_since) does not see customers who bought before their start date, or older requests.
+  const pastBuyers = new Set((users ?? []).filter((u) => hiddenFor(admin, u.paid_at)).map((u) => u.id));
+  const rows = (users ?? []).filter((u) => !pastBuyers.has(u.id)).map((u) => {
     const a = accessOf(u);
     const st = stats.get(u.id);
     const profile = (u.profile ?? {}) as Record<string, unknown>;
@@ -62,7 +64,8 @@ export async function GET() {
       moneyLevel: moneyFromProfile(profile)?.levelLabel ?? null,
     };
   });
-  return json({ admin, users: rows, leads: leads ?? [] });
+  const visibleLeads = (leads ?? []).filter((l) => !hiddenFor(admin, l.created_at) && !(l.user_id && pastBuyers.has(l.user_id)));
+  return json({ admin, users: rows, leads: visibleLeads });
 }
 
 /** Back-office actions on one user: paid (1 year), extend30, block, note. */
