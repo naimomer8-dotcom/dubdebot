@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Sidebar from "./Sidebar";
 import Icon from "./Icon";
 import { MoreSheet } from "./BottomNav";
@@ -16,6 +16,31 @@ import OnboardingCard from "./OnboardingCard";
 
 const DAYS = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
 const MONTHS = ["בינואר", "בפברואר", "במרץ", "באפריל", "במאי", "ביוני", "ביולי", "באוגוסט", "בספטמבר", "באוקטובר", "בנובמבר", "בדצמבר"];
+
+/** Real questions owners ask, rotated in the ask bar and offered as one-tap chips. */
+const HINTS = [
+  "איך מעלים מחירים בלי לאבד לקוחות?",
+  "למה יש מחזור ואין רווח?",
+  "תבנה לי תכנית שיווק לחודש הקרוב",
+  "איך סוגרים יותר בשיחת מכירה?",
+  "כמה באמת נשאר לי בסוף החודש?",
+];
+const CHIPS = [
+  { b: "להעלות מחירים", t: "איך אני מעלה מחירים בעסק שלי בלי לאבד לקוחות?" },
+  { b: "מחזור בלי רווח", t: "יש לי מחזור טוב אבל לא נשאר לי כסף. איפה הכסף בורח?" },
+  { b: "תכנית שיווק", t: "תבנה לי תכנית שיווק ל-30 הימים הקרובים לעסק שלי." },
+  { b: "לסגור יותר", t: "איך אני סוגר יותר עסקאות בשיחת מכירה?" },
+];
+
+function RotatingHint() {
+  const [i, setI] = useState(0);
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    const t = setInterval(() => setI((n) => (n + 1) % HINTS.length), 3200);
+    return () => clearInterval(t);
+  }, []);
+  return <span className="ask-hint" key={i}>{HINTS[i]}</span>;
+}
 
 function greeting(h: number) {
   if (h >= 5 && h < 12) return "בוקר טוב";
@@ -58,35 +83,44 @@ export default function HomeClient({ user, conversations, steps, xrayScore, quot
 
           <div className="home-hello">
             <p>יום {DAYS[now.getDay()]} · {now.getDate()} {MONTHS[now.getMonth()]}</p>
-            <h1>{greeting(now.getHours())}, {user.firstName}</h1>
+            <h1>{greeting(now.getHours())}, <em>{user.firstName}</em></h1>
           </div>
 
 
-          <Link className="home-ask home-ask-top" href="/chat?new=1">
-            <img src="/nir/talk-face.jpg" alt="" />
-            <span>שאלו את ניר כל דבר על העסק…</span>
+          <Link className="home-ask home-ask-top" href="/chat?new=1" aria-label="שאלו את ניר כל דבר על העסק">
+            <span className="ask-face"><img src="/nir/talk-face.jpg" alt="" /><em aria-hidden="true" /></span>
+            <RotatingHint />
             <i><Icon name="mic" size={17} /></i>
           </Link>
+          <div className="home-chips" role="group" aria-label="שאלות מהירות לניר">
+            {CHIPS.map((c) => <button key={c.b} className="home-chip" onClick={() => ask(c.t)}>{c.b}</button>)}
+          </div>
+
+          {next && (
+            <section className="home-card home-next" aria-label="הצעד הבא שלך">
+              <div className="home-next-row">
+                <span className="home-next-ico"><Icon name={next.key === "xray" ? "scan" : next.key === "money" ? "coin" : next.key === "events" ? "calendar" : next.key === "vault" ? "vault" : "chat"} size={22} /></span>
+                <div className="home-next-txt">
+                  <small>הצעד הבא שלך · {doneCount} מתוך {steps.length}</small>
+                  <b>{next.title}</b>
+                  {next.sub && <span>{next.sub}</span>}
+                </div>
+                <button className="home-go" onClick={() => runStep(next)}>{next.key === "wa" ? "להצטרף" : "להתחיל"}</button>
+              </div>
+              <div className="home-bar" aria-hidden="true">
+                {steps.map((s) => <i key={s.key} className={s.done ? "on" : s === next ? "now" : ""} />)}
+              </div>
+            </section>
+          )}
 
           <h2 className="home-q">לאיזה חדר נכנסים היום?</h2>
           <RoomsGrid />
           <Link className="home-card home-story home-studio" href="/studio">
-            <span className="home-next-ico"><Icon name="image" size={22} /></span>
+            <span className="home-next-ico"><Icon name="spark" size={22} /></span>
             <div className="home-next-txt"><small>סטודיו גרפיקה</small><b>לעצב פוסט, סטורי או מודעה</b><span>8 סגנונות, ניר כותב את הטקסט, מורידים בלחיצה.</span></div>
             <Icon name="arrow" size={20} />
           </Link>
 
-          {next && (
-            <section className="home-card home-next" aria-label="הצעד הבא שלך">
-              <span className="home-next-ico"><Icon name={next.key === "xray" ? "scan" : next.key === "money" ? "coin" : next.key === "events" ? "calendar" : next.key === "vault" ? "vault" : "chat"} size={22} /></span>
-              <div className="home-next-txt">
-                <small>הצעד הבא שלך · {doneCount} מתוך {steps.length}</small>
-                <b>{next.title}</b>
-                <span>{next.sub}</span>
-              </div>
-              <button className="home-go" onClick={() => runStep(next)}>{next.key === "wa" ? "להצטרף" : "להתחיל"}</button>
-            </section>
-          )}
 
           <Link className="home-card home-story" href="/rooms/social#story">
             <span className="home-next-ico"><Icon name="image" size={22} /></span>
