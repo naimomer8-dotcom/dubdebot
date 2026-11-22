@@ -2697,3 +2697,43 @@ a.home-card:active, button.home-card:active { transform: scale(.985); }
 .home-hero { box-shadow: 0 0 0 1px rgba(226,198,142,.3), 0 30px 70px -40px rgba(226,198,142,.5); }
 .home-hero-btn { background: var(--grad-gold); color: #17130b; font-weight: 800; }
 .home-avatar { background: var(--grad-gold); box-shadow: 0 0 0 2px rgba(7,7,8,1), 0 0 0 3.5px rgba(226,198,142,.55); }
+
+/* ===== v5 everywhere: same gold, same feel as the new home ===== */
+/* Tactile presses on every button and card */
+.btn, .icon-btn, .room-act, .room-chip, .starter, .next-chip, .chip, .chip-btn, .home-card { -webkit-tap-highlight-color: transparent; }
+.btn:active, .room-act:active, .room-chip:active { transform: scale(.97); }
+.btn { transition: transform .15s var(--ease), filter .2s, background .2s, border-color .2s, color .2s; }
+.btn-primary { background: var(--grad-gold); box-shadow: var(--shadow-gold); }
+.btn-primary:hover { filter: brightness(1.06); }
+
+/* Rooms: gold section titles, gold-edged action cards */
+.room-sub { background: var(--grad-text); -webkit-background-clip: text; background-clip: text; color: transparent; display: flex; align-items: center; gap: 10px; }
+.room-sub::after { content: ""; flex: 1; height: 1px; background: linear-gradient(to left, rgba(226,198,142,.45), transparent); }
+.room-act { position: relative; overflow: hidden; border-color: rgba(226,198,142,.2); transition: border-color .2s var(--ease), box-shadow .25s var(--ease), transform .15s var(--ease); }
+.room-act::after { content: ""; position: absolute; top: 0; inset-inline: 18%; height: 1px; background: linear-gradient(90deg, transparent, rgba(246,230,194,.7), transparent); pointer-events: none; }
+.room-act:hover { border-color: rgba(226,198,142,.55); box-shadow: 0 14px 36px -24px rgba(226,198,142,.6); }
+.room-act.main { border-color: rgba(226,198,142,.5); background: radial-gradient(120% 140% at 100% 0%, rgba(226,198,142,.13), transparent 55%), #131315; }
+.room-chip { color: var(--gold); border-color: rgba(226,198,142,.35); background: rgba(226,198,142,.06); transition: border-color .2s, background .2s, transform .15s; }
+.room-chip:hover { border-color: var(--gold-2); background: rgba(226,198,142,.12); }
+.room-actions .room-act, .room-chip-row .room-chip { animation: homeIn .5s var(--ease) both; }
+.room-actions .room-act:nth-child(3) { animation-delay: .06s; } .room-actions .room-act:nth-child(4) { animation-delay: .12s; }
+.room-actions .room-act:nth-child(5) { animation-delay: .18s; } .room-actions .room-act:nth-child(n+6) { animation-delay: .24s; }
+
+/* Chat empty state: gold-lit question cards that rise in */
+.starter { overflow: hidden; border-color: rgba(226,198,142,.24); }
+.starter::after { content: ""; position: absolute; top: 0; inset-inline: 18%; height: 1px; background: linear-gradient(90deg, transparent, rgba(246,230,194,.7), transparent); pointer-events: none; }
+.starter:hover { border-color: rgba(226,198,142,.55); box-shadow: 0 14px 36px -24px rgba(226,198,142,.6); }
+.starter:active { transform: scale(.98); }
+.starter-grid .starter { animation: homeIn .5s var(--ease) both; }
+.starter-grid .starter:nth-child(2) { animation-delay: .07s; } .starter-grid .starter:nth-child(3) { animation-delay: .14s; } .starter-grid .starter:nth-child(n+4) { animation-delay: .21s; }
+.next-chip { border-color: rgba(226,198,142,.35); color: var(--gold-hi); }
+.next-chip:hover { background: rgba(226,198,142,.1); border-color: var(--gold-2); }
+
+/* Courses & money: gold display titles */
+.crs-sec-h h2 { background: var(--grad-text); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.crs-sec-h { border-bottom-color: rgba(226,198,142,.25); }
+
+@media (prefers-reduced-motion: reduce) {
+  .room-actions .room-act, .room-chip-row .room-chip, .starter-grid .starter { animation: none; }
+}
+.room-head h1 { font-family: var(--display); font-size: 42px; line-height: 1; font-weight: 700; background: var(--grad-text); -webkit-background-clip: text; background-clip: text; color: transparent; }
