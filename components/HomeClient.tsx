@@ -11,7 +11,7 @@ import { storyOfDay } from "@/lib/rooms";
 import { trackWaJoin } from "./EventsPopup";
 import type { ConvItem, ShellUser } from "@/lib/data";
 import type { Step } from "@/lib/home";
-import { webinarLabel, WEBINAR_TIME, WEBINAR_WA_GROUP } from "@/lib/webinarDates";
+import { webinarLabel, WEBINAR_PUBLIC, WEBINAR_TIME, WEBINAR_WA_GROUP } from "@/lib/webinarDates";
 
 const DAYS = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
 const MONTHS = ["בינואר", "בפברואר", "במרץ", "באפריל", "במאי", "ביוני", "ביולי", "באוגוסט", "בספטמבר", "באוקטובר", "בנובמבר", "בדצמבר"];
@@ -102,10 +102,17 @@ export default function HomeClient({ user, conversations, steps, xrayScore, quot
               <small>הרנטגן שלך</small>
               {xrayScore !== null ? <b className="num">{xrayScore}<em>/100</em></b> : <b>עוד לא נבדק</b>}
             </Link>
-            <button className="home-card home-mini" onClick={() => window.dispatchEvent(new Event("dd:open-events"))}>
-              <small>הוובינר הבא</small>
-              <b>{webinarLabel(webinarDate)} · {WEBINAR_TIME}</b>
-            </button>
+            {WEBINAR_PUBLIC ? (
+              <button className="home-card home-mini" onClick={() => window.dispatchEvent(new Event("dd:open-events"))}>
+                <small>הוובינר הבא</small>
+                <b>{webinarLabel(webinarDate)} · {WEBINAR_TIME}</b>
+              </button>
+            ) : (
+              <Link className="home-card home-mini" href="/plans">
+                <small>המסלולים</small>
+                <b>פגישה אישית עם ניר</b>
+              </Link>
+            )}
           </div>
 
           <section className="home-hero home-hero-sm" aria-label="המשפט של ניר להיום">

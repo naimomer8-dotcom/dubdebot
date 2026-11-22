@@ -4,6 +4,8 @@ export const WEBINAR_EVERY_DAYS = 14;
 export const WEBINAR_TIME = "21:00";
 /** Off switch for the webinar track (w_* / wm_* reminders before and after each webinar). Paused 22.11.2026 by Omer. */
 export const WEBINAR_TRACK_ON = false;
+/** Off switch for the webinar in the app UI: chat bar, chat CTA, home tile, seat popup, /webinar page and the /w link. Paused 22.11.2026 by Omer. */
+export const WEBINAR_PUBLIC = false;
 export const WEBINAR_DAY = "יום ראשון";
 export const WEBINAR_TITLE = "מנועי צמיחה לעסק שלך לשנת 2027";
 /** One recurring Zoom webinar (Evyatar's account, Nir as panelist): the same link for every date. */

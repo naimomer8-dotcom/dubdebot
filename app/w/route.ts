@@ -1,4 +1,4 @@
-import { nextWebinar, webinarLabel, webinarLinks, WEBINAR_TIME, WEBINAR_TITLE, WEBINAR_ZOOM_URL } from "@/lib/webinars";
+import { nextWebinar, webinarLabel, webinarLinks, WEBINAR_PUBLIC, WEBINAR_TIME, WEBINAR_TITLE, WEBINAR_ZOOM_URL } from "@/lib/webinars";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -8,6 +8,7 @@ const BOT = /facebookexternalhit|WhatsApp|Facebot|Twitterbot|TelegramBot|Slackbo
 /** Short stable link used in every WhatsApp/email: always points at the next webinar.
  * Link-preview bots get a branded card instead of Zoom's generic one. */
 export async function GET(req: Request) {
+  if (!WEBINAR_PUBLIC) return Response.redirect(new URL("/", req.url).toString(), 302); // webinar paused
   const date = nextWebinar();
   if (BOT.test(req.headers.get("user-agent") ?? "")) {
     const app = new URL(req.url).origin;

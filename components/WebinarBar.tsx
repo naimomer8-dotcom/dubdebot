@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Icon from "./Icon";
-import { nextWebinar, webinarLabel, WEBINAR_TIME, WEBINAR_TITLE, WEBINAR_WA_GROUP } from "@/lib/webinarDates";
+import { nextWebinar, webinarLabel, WEBINAR_PUBLIC, WEBINAR_TIME, WEBINAR_TITLE, WEBINAR_WA_GROUP } from "@/lib/webinarDates";
 
 /** Banner under the chat header: the next live webinar + the quiet WhatsApp updates group. Dismissible per webinar date. */
 export default function WebinarBar() {
@@ -14,7 +14,7 @@ export default function WebinarBar() {
     try { hidden = localStorage.getItem(key) === "1"; } catch {}
     setShow(!hidden);
   }, [key]);
-  if (!show) return null;
+  if (!WEBINAR_PUBLIC || !show) return null;
   const close = () => { try { localStorage.setItem(key, "1"); } catch {} setShow(false); };
   return (
     <div className="webinar-bar" role="region" aria-label="הוובינר הבא">

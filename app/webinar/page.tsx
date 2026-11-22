@@ -1,4 +1,5 @@
-import { nextWebinar, webinarLabel, WEBINAR_TIME, WEBINAR_TITLE, WEBINAR_WA_GROUP } from "@/lib/webinars";
+import { redirect } from "next/navigation";
+import { nextWebinar, webinarLabel, WEBINAR_PUBLIC, WEBINAR_TIME, WEBINAR_TITLE, WEBINAR_WA_GROUP } from "@/lib/webinars";
 import WebinarSignupForm from "@/components/WebinarSignupForm";
 
 export const dynamic = "force-dynamic";
@@ -9,6 +10,7 @@ export const metadata = {
 };
 
 export default async function WebinarPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  if (!WEBINAR_PUBLIC) redirect("/");
   const sp = await searchParams;
   const pick = (k: string) => (typeof sp[k] === "string" ? (sp[k] as string) : "");
   const utm = { utm_source: pick("utm_source"), utm_medium: pick("utm_medium"), utm_campaign: pick("utm_campaign"), utm_content: pick("utm_content") };

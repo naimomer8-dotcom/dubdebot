@@ -1,6 +1,6 @@
 "use client";
 
-import { nextWebinar, webinarLabel, WEBINAR_TIME } from "@/lib/webinarDates";
+import { nextWebinar, webinarLabel, WEBINAR_PUBLIC, WEBINAR_TIME } from "@/lib/webinarDates";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown, { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -614,6 +614,14 @@ export default function ChatClient({
                             <div className="cta-actions">
                               <a className="btn btn-primary btn-sm" href="/plans?up=private" onClick={() => track("cta_plans", { tier: "private" })}>יועץ אישי · Platform Private</a>
                               <a className="btn btn-glass btn-sm" href="/plans?up=upgrade" onClick={() => track("cta_plans", { tier: "upgrade" })}><Icon name="crown" size={16} /> פגישה עם ניר · Upgrade</a>
+                            </div>
+                          </>
+                        ) : !WEBINAR_PUBLIC ? (
+                          <>
+                            <p>רוצה שנבנה את זה יחד על העסק שלך? יועץ מהצוות שלי יחזור אליך.</p>
+                            <div className="cta-actions">
+                              <button className="btn btn-primary btn-sm" onClick={() => openLead("advisor", m.cta ?? null)}>שנציג יחזור אליי</button>
+                              <a className="btn btn-glass btn-sm" href="/plans" onClick={() => track("cta_plans", { tier: "any" })}>למסלולים</a>
                             </div>
                           </>
                         ) : (

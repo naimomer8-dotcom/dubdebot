@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Icon from "./Icon";
 import { WORKSHOP_GIFT } from "@/lib/liveEvents";
-import { webinarLabel, WEBINAR_TIME, WEBINAR_TITLE, WEBINAR_WA_GROUP } from "@/lib/webinarDates";
+import { webinarLabel, WEBINAR_PUBLIC, WEBINAR_TIME, WEBINAR_TITLE, WEBINAR_WA_GROUP } from "@/lib/webinarDates";
 
 type State = { workshop: boolean; webinar: boolean; waJoined: boolean; workshopOpen: boolean; webinarDate: string };
 type Step = "events" | "done" | "wa" | null;
@@ -34,8 +34,9 @@ export default function EventsPopup() {
     let alive = true;
     fetch("/api/registrations", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
-      .then((s: State | null) => {
-        if (!alive || !s) return;
+      .then((raw: State | null) => {
+        if (!alive || !raw) return;
+        const s = WEBINAR_PUBLIC ? raw : { ...raw, webinar: true }; // webinar paused: never offer a seat
         const needWorkshop = s.workshopOpen && !s.workshop;
         const needEvents = (needWorkshop || !s.webinar) && dismissed < 2;
         const needWa = !s.waJoined && !waLocal && !waSeen;
@@ -51,8 +52,9 @@ export default function EventsPopup() {
   // the home screen's "סדנה" step / webinar tile reopen the seat picker on demand
   useEffect(() => {
     const open = () => {
-      fetch("/api/registrations", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).then((s: State | null) => {
-        if (!s) return;
+      fetch("/api/registrations", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).then((raw: State | null) => {
+        if (!raw) return;
+        const s = WEBINAR_PUBLIC ? raw : { ...raw, webinar: true };
         setSt(s);
         setPick({ workshop: s.workshopOpen && !s.workshop, webinar: !s.webinar });
         setStep(s.webinar && (s.workshop || !s.workshopOpen) ? "done" : "events");
@@ -146,7 +148,7 @@ export default function EventsPopup() {
                 <h2 id="evp-h" className="evp-title">המקום שלך שמור</h2>
                 <div className="evp-list">
                   {st.workshop && <p className="evp-line">📍 <b>הסדנה:</b> {WORKSHOP_GIFT.dateLabel}, {WORKSHOP_GIFT.time}, {WORKSHOP_GIFT.place}</p>}
-                  {st.webinar && <p className="evp-line">💻 <b>הוובינר:</b> יום ראשון {wDate} ב-{WEBINAR_TIME}. הקישור לזום יגיע אליך לפני.</p>}
+                  {WEBINAR_PUBLIC && st.webinar && <p className="evp-line">💻 <b>הוובינר:</b> יום ראשון {wDate} ב-{WEBINAR_TIME}. הקישור לזום יגיע אליך לפני.</p>}
                 </div>
                 <div className="evp-wa-box">
                   <b>עוד צעד אחד: הצטרפו לקבוצת הוואטסאפ</b>
@@ -157,7 +159,7 @@ export default function EventsPopup() {
               <>
                 <span className="evp-ok evp-ok-wa"><Icon name="chat" size={28} /></span>
                 <h2 id="evp-h" className="evp-title">הצטרפו לקבוצת העדכונים</h2>
-                <p className="evp-sub" style={{ textAlign: "center" }}>קישורים לזום, תזכורות לוובינר ולסדנה, וחומרים מניר. קבוצה שקטה, רק עדכונים.</p>
+                <p className="evp-sub" style={{ textAlign: "center" }}>{WEBINAR_PUBLIC ? "קישורים לזום, תזכורות לוובינר ולסדנה, וחומרים מניר." : "תזכורות לסדנה וחומרים מניר."} קבוצה שקטה, רק עדכונים.</p>
               </>
             )}
             <a className="btn btn-primary evp-cta evp-wa" href={WEBINAR_WA_GROUP} target="_blank" rel="noopener noreferrer" onClick={join}><Icon name="chat" size={18} /> להצטרפות לקבוצה בוואטסאפ</a>
