@@ -126,7 +126,7 @@ export default function RegisterForm() {
     { t: "עוד שנייה ואתה בפנים", s: "שני אישורים קצרים, והפלטפורמה נפתחת." },
   ];
 
-  if (done) return <ThankYou first={first} onEnter={() => router.push("/home")} />;
+  if (done) return <ThankYou first={first} phone={form.phone} onEnter={() => router.push("/home")} />;
 
   return (
     <div className="stepper glass edge">
@@ -217,11 +217,9 @@ export default function RegisterForm() {
   );
 }
 
-const WORKSHOP_URL = "https://script.google.com/macros/s/AKfycbzxfY5HKv0uZMoiDcXRrXcm3S6k6gOsEuRlxd-2rZWk0BZmRX7RqnS-027e5hCPSHx-/exec?utm_source=whatsapp";
-const STAR = ["להתחבר", "להוביל", "להציג פתרון", "לענות להתנגדויות (\"יקר לי\", \"אני אחשוב על זה\")", "לסגור"];
 
-/** Shown right after a successful signup: welcome + the sales workshop gift. */
-function ThankYou({ first, onEnter }: { first: string; onEnter: () => void }) {
+/** Shown right after a successful signup: registered + the onboarding & training meeting (a rep calls within 24h). */
+function ThankYou({ first, phone, onEnter }: { first: string; phone: string; onEnter: () => void }) {
   const [wa, setWa] = useState(true);
   return (
     <div className="stepper glass edge ty">
@@ -241,24 +239,19 @@ function ThankYou({ first, onEnter }: { first: string; onEnter: () => void }) {
         <Mascot size={64} mood="wink" />
         <div>
           <h3 className="step-title">{first ? `${first}, אתה בפנים` : "אתה בפנים"}</h3>
-          <p className="step-sub">החשבון נפתח. 30 יום במתנה מתחילים עכשיו.</p>
+          <p className="step-sub">החשבון נפתח, ופגישת ההטמעה שלך כבר בתור.</p>
         </div>
       </div>
 
-      <div className="ty-gift">
-        <span className="ty-tag">🎁 חלק קטן מעוד הרבה הפתעות גדולות שתקבלו</span>
-        <h4 className="ty-title">סדנת מכירות: פשוט למכור יותר</h4>
-        <p className="ty-sub">4 שעות פרונטליות, במתנה</p>
-        <p className="ty-quote">22 שנה אני רואה עסקים מצוינים שמפסידים עסקאות. לא בגלל המוצר. בגלל השיחה.</p>
-        <p className="ty-lead">מודל הכוכב, 5 שלבים:</p>
-        <ol className="ty-star">{STAR.map((t, i) => <li key={i}><b className="num">{i + 1}</b><span>{t}</span></li>)}</ol>
-        <ul className="ty-meta">
-          <li>🗓️ יום ראשון 15.11</li>
-          <li>⏰ התכנסות 9:00 | <bdi dir="ltr">10:00–14:00</bdi></li>
-          <li>📍 מרכז ניר דובדבני, הנגב 2, איירפורט סיטי</li>
-        </ul>
-        <p className="ty-note">המקומות מוגבלים, ההרשמה מראש בלבד:</p>
-        <a className="btn btn-primary ty-cta" href={WORKSHOP_URL} target="_blank" rel="noopener">שריינו לי מקום בסדנה</a>
+      <div className="ty-gift ty-onb">
+        <span className="ty-tag">✓ ההרשמה הושלמה</span>
+        <h4 className="ty-title">נרשמת לפלטפורמה + פגישת הטמעה והדרכה</h4>
+        <ol className="ty-steps">
+          <li className="done"><b className="num">1</b><span><strong>גישה מלאה לפלטפורמה</strong><small>30 יום במתנה, מתחילים עכשיו</small></span></li>
+          <li className="now"><b className="num">2</b><span><strong>נציג יחזור אליך תוך 24 שעות</strong><small>לתיאום פגישת ההדרכה וההטמעה{phone ? <> · <bdi dir="ltr">{phone}</bdi></> : null}</small></span></li>
+          <li><b className="num">3</b><span><strong>פגישת הטמעה והדרכה על המערכת</strong><small>איך מפעילים את הפלטפורמה לקידום העסק שלך</small></span></li>
+        </ol>
+        <p className="ty-note">שמור את המספר. נתקשר אליך מהצוות של ניר דובדבני.</p>
       </div>
 
       <button type="button" className="btn btn-ghost ty-enter" onClick={onEnter}>כניסה לפלטפורמה <Icon name="arrow" size={18} className="ico-move" /></button>

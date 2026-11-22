@@ -97,6 +97,7 @@ export default function LibraryDashboard({ adminName }: { adminName: string }) {
           <span className="badge">ספריית וידאו</span>
           <nav className="rv-nav" aria-label="ניווט בניהול">
             <a href="/admin">ניהול מנויים</a>
+          <a href="/admin/crm">CRM לידים</a>
             <a href="/admin/payments">הכנסות</a>
             <a href="/admin/library" className="on" aria-current="page">ספריית וידאו</a>
           </nav>

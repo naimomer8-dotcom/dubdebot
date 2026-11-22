@@ -334,6 +334,7 @@ export default function PaymentsDashboard({ adminName, preview }: { adminName: s
           <span className="badge">דשבורד הכנסות</span>
           <nav className="rv-nav" aria-label="ניווט בניהול">
             <a href="/admin">ניהול מנויים</a>
+          <a href="/admin/crm">CRM לידים</a>
             <a href="/admin/payments" className="on" aria-current="page">הכנסות</a>
             <a href="/admin/library">ספריית וידאו</a>
           </nav>

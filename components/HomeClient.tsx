@@ -12,6 +12,7 @@ import { trackWaJoin } from "./EventsPopup";
 import type { ConvItem, ShellUser } from "@/lib/data";
 import type { Step } from "@/lib/home";
 import { webinarLabel, WEBINAR_PUBLIC, WEBINAR_TIME, WEBINAR_WA_GROUP } from "@/lib/webinarDates";
+import OnboardingCard from "./OnboardingCard";
 
 const DAYS = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
 const MONTHS = ["בינואר", "בפברואר", "במרץ", "באפריל", "במאי", "ביוני", "ביולי", "באוגוסט", "בספטמבר", "באוקטובר", "בנובמבר", "בדצמבר"];
@@ -96,6 +97,8 @@ export default function HomeClient({ user, conversations, steps, xrayScore, quot
             </div>
             <Icon name="arrow" size={20} />
           </Link>
+
+          <OnboardingCard />
 
           <div className="home-row">
             <Link className="home-card home-mini" href="/xray">
