@@ -96,6 +96,8 @@ export default function HomeClient({ user, conversations, steps, xrayScore, quot
             {CHIPS.map((c) => <button key={c.b} className="home-chip" onClick={() => ask(c.t)}>{c.b}</button>)}
           </div>
 
+          <OnboardingCard />
+
           {next && (
             <section className="home-card home-next" aria-label="הצעד הבא שלך">
               <div className="home-next-row">
@@ -132,7 +134,6 @@ export default function HomeClient({ user, conversations, steps, xrayScore, quot
             <Icon name="arrow" size={20} />
           </Link>
 
-          <OnboardingCard />
 
           <div className="home-row">
             <Link className="home-card home-mini" href="/xray">
