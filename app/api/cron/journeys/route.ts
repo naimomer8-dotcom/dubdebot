@@ -57,7 +57,15 @@ export async function GET(req: Request) {
   }
   // abandoned checkouts: a pending order older than an hour, nothing paid since
   const { data: pending } = await supabase.from("orders").select("id, user_id, created_at, tier").eq("status", "pending").lt("created_at", new Date(Date.now() - 3600_000).toISOString()).gt("created_at", new Date(Date.now() - 7 * 86400_000).toISOString()).limit(2000);
+  // never chase someone who already paid (on this order or another one since)
+  const pendingUsers = [...new Set((pending ?? []).map((o) => o.user_id))];
+  const paidSince = new Map<string, string>();
+  for (let i = 0; i < pendingUsers.length; i += 500) {
+    const { data: paid } = await supabase.from("orders").select("user_id, created_at").eq("status", "paid").in("user_id", pendingUsers.slice(i, i + 500));
+    for (const p of paid ?? []) if (!paidSince.has(p.user_id) || p.created_at > paidSince.get(p.user_id)!) paidSince.set(p.user_id, p.created_at);
+  }
   for (const o of pending ?? []) {
+    if ((paidSince.get(o.user_id) ?? "") >= o.created_at) continue;
     const key = `c_abandon:${o.id}`;
     if (!(sent.get(o.user_id)?.has(key))) {
       due.push({ userId: o.user_id, stage: key });

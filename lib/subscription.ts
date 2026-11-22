@@ -50,6 +50,9 @@ export async function activateSubscription(opts: { userId: string; tier: Tier; b
     order = data;
   }
 
+  // the customer paid: earlier unfinished checkouts are no longer "abandoned" (no reminder, no rep alert, no duplicate in the dashboard)
+  await supabase.from("orders").update({ status: "cancelled", notes: "בוטל אוטומטית: הלקוח שילם בהזמנה אחרת", updated_at: new Date().toISOString() }).eq("user_id", opts.userId).eq("status", "pending").then(() => {}, (e: unknown) => console.error("close pending orders", e));
+
   const enroll = await enrollAllCourses({ email: u.email, full_name: u.full_name, phone: u.phone });
   if (!enroll.ok) await alert(`schooler:${opts.userId}`, "פתיחת קורסים ב-Schooler נכשלה", [`מנוי: ${u.full_name} · ${u.email}`, `תוצאה: ${JSON.stringify((enroll as { results?: unknown }).results ?? (enroll as { reason?: string }).reason).slice(0, 400)}`, "המנוי שילם אבל הקורסים לא נפתחו. אפשר לנסות שוב מעמוד 'הקורסים שלי' או לפתוח ידנית."], 60 * 24);
   const now2 = new Date().toISOString();
