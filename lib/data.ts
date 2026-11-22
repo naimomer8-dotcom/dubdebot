@@ -10,7 +10,7 @@ export async function loadShell(userId: string): Promise<{ user: ShellUser; conv
   const [{ data: u }, { data: convs }, { count }] = await Promise.all([
     supabase.from("users").select("id, full_name, phone, email, plan, tier, access_until, renewal_requested_at, renewal_mode, marketing_consent, marketing_consent_text_version").eq("id", userId).maybeSingle(),
     supabase.from("conversations").select("id, title, mode, updated_at, pinned, folder").eq("user_id", userId).eq("archived", false).order("pinned", { ascending: false }).order("updated_at", { ascending: false }).limit(200),
-    supabase.from("leads").select("id", { count: "exact", head: true }).eq("user_id", userId),
+    supabase.from("leads").select("id", { count: "exact", head: true }).eq("user_id", userId).neq("meeting_type", "onboarding"), // the automatic onboarding lead is not a request the user made
   ]);
   if (!u) return null;
   return {

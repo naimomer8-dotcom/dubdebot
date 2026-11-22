@@ -17,7 +17,7 @@ export async function GET() {
   const [{ data: users }, { data: convs }, { data: leads }, { data: usage }] = await Promise.all([
     supabase.from("users").select("id, full_name, email, phone, created_at, plan, tier, billing, renewal_mode, access_until, paid_at, paid_by, renewal_requested_at, admin_note, profile, marketing_consent, marketing_consent_at, marketing_consent_source, marketing_consent_text_version").order("created_at", { ascending: false }).limit(2000),
     supabase.from("conversations").select("user_id, updated_at").order("updated_at", { ascending: false }).limit(20000),
-    supabase.from("leads").select("id, user_id, meeting_type, full_name, phone, email, note, created_at, status").order("created_at", { ascending: false }).limit(500),
+    supabase.from("leads").select("id, user_id, meeting_type, full_name, phone, email, note, created_at, status").neq("meeting_type", "onboarding").order("created_at", { ascending: false }).limit(500), // onboarding leads live in /admin/crm
     supabase.from("user_usage_30d").select("user_id, answers, tokens_in, tokens_out, answers_today"),
   ]);
   // Flash-Lite list prices (USD per 1M tokens) → shekels at ~3.7
