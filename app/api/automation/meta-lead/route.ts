@@ -6,6 +6,7 @@ import { STAGES, render, emailParts, noAstral } from "@/lib/journeys";
 import { nextWebinar, webinarLabel, webinarLinks, WEBINAR_TIME, WEBINAR_WA_GROUP } from "@/lib/webinars";
 import { LEGACY_MARKETING_CONSENT_TEXT } from "@/lib/legal";
 import { openOnboardingLead } from "@/lib/crm";
+import { sendDp2 } from "@/lib/dp2";
 
 export const runtime = "nodejs";
 
@@ -83,6 +84,7 @@ export async function POST(req: Request) {
   await openOnboardingLead({ userId: u.id, fullName: fullName.length >= 2 ? fullName : email.split("@")[0], phone, email, source: "meta_lead_form" }).catch((e) => console.error("onboarding lead", e));
 
   // Fireberry (deduped by phone in Make) + Rav Messer marketing list
+  await sendDp2(u.id, "welcome").catch((e) => console.error("dp2 welcome", e));
   await emit("signup", u.id, { marketing_consent: consent, utm: { utm_source: "facebook", utm_medium: "lead_form", utm_campaign: meta.campaign, utm_adset: meta.adset, utm_ad: meta.ad }, source: "meta_lead_form" });
 
   // welcome now (marketing → needs consent; never on Shabbat)

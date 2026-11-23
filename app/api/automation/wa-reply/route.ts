@@ -1,0 +1,96 @@
+import { timingSafeEqual } from "crypto";
+import { db } from "@/lib/supabase";
+import { alert } from "@/lib/alerts";
+import { logActivity } from "@/lib/crm";
+import { normalizeIsraeliPhone } from "@/lib/validation";
+
+export const runtime = "nodejs";
+
+/**
+ * WhatsApp button replies from ManyChat (flows "DP2 | reply rep / slot / postpone", External Request with
+ * Full Contact Data). ?k=<WA_REPLY_TOKEN>&r=rep|slot|postpone.
+ * The reply lands on the person's onboarding lead as a note (mirrored to Fireberry), sets "לחזור אליו"
+ * and alerts the team.
+ */
+const SLOTS: { word: string; label: string; hour: number }[] = [
+  { word: "בוקר", label: "בוקר", hour: 9 },
+  { word: "צהר", label: "צהריים", hour: 13 },
+  { word: "ערב", label: "ערב", hour: 18 },
+];
+
+/** Next working-day time in Israel at `hour` (skips Friday after 14:00 and Saturday). */
+function nextAt(hour: number) {
+  for (let add = 0; add < 4; add++) {
+    const d = new Date(Date.now() + add * 86400_000);
+    const ymd = d.toLocaleDateString("en-CA", { timeZone: "Asia/Jerusalem" });
+    const wd = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Jerusalem", weekday: "short" }).format(d);
+    if (wd === "Sat" || (wd === "Fri" && hour >= 13)) continue;
+    // Israel is UTC+2 / +3: build the local time and correct by the actual offset
+    const guess = new Date(`${ymd}T${String(hour).padStart(2, "0")}:00:00Z`);
+    const offH = Number(new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Jerusalem", hour: "2-digit", hour12: false }).format(guess)) - hour;
+    const t = new Date(guess.getTime() - offH * 3600_000);
+    if (t.getTime() > Date.now() + 15 * 60_000) return t;
+  }
+  return new Date(Date.now() + 3600_000);
+}
+
+function pickPhone(b: Record<string, unknown>): string | null {
+  const cf = (b.custom_fields ?? {}) as Record<string, unknown>;
+  const tries = [b.whatsapp_phone, b.phone, ...Object.values(cf)];
+  for (const t of tries) {
+    const p = normalizeIsraeliPhone(String(t ?? ""));
+    if (p) return p;
+  }
+  return null;
+}
+
+export async function POST(req: Request) {
+  const url = new URL(req.url);
+  const token = process.env.WA_REPLY_TOKEN || "";
+  const k = Buffer.from(url.searchParams.get("k") ?? "");
+  if (!token || k.length !== token.length || !timingSafeEqual(k, Buffer.from(token))) return new Response("unauthorized", { status: 401 });
+  const kind = url.searchParams.get("r") ?? "rep";
+  const b = (await req.json().catch(() => ({}))) as Record<string, unknown>;
+  const phone = pickPhone(b);
+  const text = String(b.last_input_text ?? "").trim().slice(0, 200);
+  if (!phone) return Response.json({ ok: false, reason: "no phone" });
+
+  const supabase = db();
+  const { data: user } = await supabase.from("users").select("id, full_name, email").eq("phone", phone).maybeSingle();
+  let { data: lead } = await supabase.from("leads").select("id, user_id, full_name, phone, email, status, assigned_to").eq("phone", phone).order("created_at", { ascending: false }).limit(1).maybeSingle();
+  if (!lead && user) {
+    const { data } = await supabase.from("leads").select("id, user_id, full_name, phone, email, status, assigned_to").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
+    lead = data;
+  }
+  const name = lead?.full_name ?? user?.full_name ?? String(b.name ?? "");
+
+  let body = "";
+  const upd: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  if (kind === "slot") {
+    const s = SLOTS.find((x) => text.includes(x.word));
+    const at = nextAt(s?.hour ?? 9);
+    upd.next_call_at = at.toISOString();
+    if (!["scheduled", "met", "sold"].includes(lead?.status ?? "")) upd.status = "callback";
+    body = `ענה בוואטסאפ: נוח לחזור אליו ב${s?.label ?? (text || "בוקר")}. נקבע "לחזור אליו" ל-${at.toLocaleString("he-IL", { timeZone: "Asia/Jerusalem", weekday: "short", day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" })}.`;
+  } else if (kind === "postpone") {
+    upd.status = "callback";
+    upd.next_call_at = new Date().toISOString();
+    body = "ענה בוואטסאפ: מבקש לדחות את הפגישה. לחזור אליו לתאם מועד חדש.";
+  } else {
+    upd.next_call_at = new Date().toISOString();
+    if (!["scheduled", "met", "sold"].includes(lead?.status ?? "")) upd.status = "callback";
+    body = `ענה בוואטסאפ: ${text ? `"${text}" · ` : ""}רוצה שנציג יחזור אליו. ליד חם, לחזור היום.`;
+  }
+
+  if (lead) {
+    await supabase.from("leads").update(upd).eq("id", lead.id);
+    await logActivity({ leadId: lead.id, userId: lead.user_id, adminId: null, kind: "note", body, contact: { phone: lead.phone, full_name: lead.full_name, email: lead.email }, status: (upd.status as string) ?? null });
+  }
+  let rep = "";
+  if (lead?.assigned_to) {
+    const { data: a } = await supabase.from("admins").select("display_name").eq("id", lead.assigned_to).maybeSingle();
+    rep = a?.display_name ?? "";
+  }
+  await alert(`wa_reply:${phone}:${kind}`, `${kind === "postpone" ? "מבקש לדחות פגישה" : "ליד חם מוואטסאפ"}: ${name}`, [`${name} · ${phone}`, body, rep ? `נציג משויך: ${rep}` : "אין נציג משויך. לשייך ולחזור.", lead ? "" : "לא נמצא ליד ב-CRM למספר הזה."], 30);
+  return Response.json({ ok: true, lead: !!lead });
+}

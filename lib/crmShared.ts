@@ -5,6 +5,7 @@ export const CRM_STATUSES = [
   { id: "callback", label: "לחזור אליו", tone: "" },
   { id: "scheduled", label: "נקבעה פגישה", tone: "gold" },
   { id: "met", label: "הפגישה התקיימה", tone: "gold" },
+  { id: "no_show", label: "לא הגיע לפגישה", tone: "" },
   { id: "sold", label: "נסגרה מכירה", tone: "green" },
   { id: "not_relevant", label: "לא רלוונטי", tone: "" },
 ] as const;

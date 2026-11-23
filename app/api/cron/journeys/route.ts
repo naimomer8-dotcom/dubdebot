@@ -5,6 +5,7 @@ import { PLANS } from "@/lib/plans";
 import { refLink } from "@/lib/referral";
 import { alert } from "@/lib/alerts";
 import { TOOLS } from "@/lib/persona";
+import { dp2On } from "@/lib/dp2";
 import { webinarMoment, nextWebinar, webinarLabel, webinarLinks, WEBINAR_TIME, WEBINAR_WA_GROUP } from "@/lib/webinars";
 
 export const runtime = "nodejs";
@@ -43,7 +44,9 @@ export async function GET(req: Request) {
   const app = process.env.PUBLIC_APP_URL || "https://dubdebot.vercel.app";
   const due: { userId: string; stage: string }[] = [];
   // the day before and the day of each webinar, non-members get the webinar message instead of the regular stage
-  const wm = webinarMoment();
+  // DP2 (journeys2 + /api/cron/dp2-tick) owns the trial and lost tracks and has no webinar
+  const dp2 = dp2On();
+  const wm = dp2 ? null : webinarMoment();
   for (const u of (users ?? []) as (Omit<JourneyUser, "has_financials"> & { marketing_consent: boolean | null })[]) {
     // Israeli anti-spam law: marketing only with consent; transactional notices go to everyone
     const optOut = u.marketing_opt_out || !u.marketing_consent;
@@ -53,7 +56,7 @@ export async function GET(req: Request) {
       if (!sent.get(u.id)?.has(key)) { due.push({ userId: u.id, stage: key }); continue; }
     }
     const s = dueStage({ ...u, marketing_opt_out: optOut, has_financials: hasFin.has(u.id) }, sent.get(u.id) ?? new Set());
-    if (s) due.push({ userId: u.id, stage: s.key });
+    if (s && !(dp2 && (s.track === "trial" || s.track === "lost"))) due.push({ userId: u.id, stage: s.key });
   }
   // abandoned checkouts: a pending order older than an hour, nothing paid since
   const { data: pending } = await supabase.from("orders").select("id, user_id, created_at, tier").eq("status", "pending").lt("created_at", new Date(Date.now() - 3600_000).toISOString()).gt("created_at", new Date(Date.now() - 7 * 86400_000).toISOString()).limit(2000);

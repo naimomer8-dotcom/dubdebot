@@ -2,6 +2,7 @@ import { db } from "@/lib/supabase";
 import { getAdmin, hiddenFor, json } from "@/lib/adminAuth";
 import { isCrmStatus, logActivity, MEETING_LABEL, PARTNERS, statusLabel } from "@/lib/crm";
 import { planById } from "@/lib/plans";
+import { onLeadChange } from "@/lib/dp2";
 
 export const runtime = "nodejs";
 
@@ -85,6 +86,16 @@ export async function PATCH(req: Request) {
   if (b.assignTo !== undefined) {
     const { data: who } = b.assignTo ? await supabase.from("admins").select("display_name").eq("id", String(b.assignTo)).maybeSingle() : { data: null };
     await log("assign", who ? `הליד הועבר ל${who.display_name}` : "הליד שוחרר מהשיוך");
+  }
+  // DP2: the status drives the customer message (confirmation, "we tried calling", no-show, after the meeting)
+  if (lead.meeting_type === "onboarding" && (b.status !== undefined || upd.meeting_at)) {
+    let repName = admin.displayName as string | null;
+    const repId = (upd.assigned_to as string | undefined) ?? null;
+    if (repId && repId !== admin.id) {
+      const { data: r } = await supabase.from("admins").select("display_name").eq("id", repId).maybeSingle();
+      repName = r?.display_name ?? repName;
+    }
+    await onLeadChange({ userId: lead.user_id, leadId: lead.id, status: (upd.status as string) ?? lead.status, prevStatus: lead.status, meetingAt: (upd.meeting_at as string | null) ?? null, repName, note });
   }
   return json({ ok: true, synced });
 }

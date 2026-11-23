@@ -9,6 +9,7 @@ import { emit } from "@/lib/automation";
 import { PRIVACY_VERSION, MARKETING_CONSENT_VERSION, consentFields, clientIp } from "@/lib/legal";
 import { capi, capiCtx } from "@/lib/metaCapi";
 import { openOnboardingLead } from "@/lib/crm";
+import { sendDp2 } from "@/lib/dp2";
 
 export const runtime = "nodejs";
 
@@ -70,6 +71,7 @@ export async function POST(req: Request) {
     await supabase.from("events").insert({ user_id: existing.id, type: "marketing_consent", meta: { source: "signup_claim", version: MARKETING_CONSENT_VERSION } });
     await emit("signup", existing.id, { marketing_consent: marketingConsent, utm, claimed: true });
     await openOnboardingLead({ userId: existing.id, fullName, phone, email, source: "signup_claim" }).catch((e) => console.error("onboarding lead", e));
+    await sendDp2(existing.id, "welcome").catch((e) => console.error("dp2 welcome", e));
     await setSession(existing.id);
     const eventId = `reg_${existing.id}`;
     await capi("CompleteRegistration", eventId, { email, phone, userId: existing.id, ...capiCtx(req) }, { content_name: "30 יום במתנה", status: "claimed" });
@@ -120,6 +122,7 @@ export async function POST(req: Request) {
   await supabase.from("events").insert({ user_id: userId, type: "marketing_consent", meta: { source: "signup", version: MARKETING_CONSENT_VERSION } });
   await emit("signup", userId, { marketing_consent: marketingConsent, utm });
   await openOnboardingLead({ userId, fullName, phone, email, source: "signup" }).catch((e) => console.error("onboarding lead", e));
+  await sendDp2(userId, "welcome").catch((e) => console.error("dp2 welcome", e));
   await setSession(userId);
   const eventId = `reg_${userId}`;
   await capi("CompleteRegistration", eventId, { email, phone, userId, ...capiCtx(req) }, { content_name: "30 יום במתנה", status: "new" });
