@@ -45,7 +45,8 @@ export async function GET(req: Request) {
   const due: { userId: string; stage: string }[] = [];
   // the day before and the day of each webinar, non-members get the webinar message instead of the regular stage
   // DP2 (journeys2 + /api/cron/dp2-tick) owns the trial and lost tracks and has no webinar
-  const dp2 = dp2Live();
+  // Old trial / lost / webinar tracks are retired (23.11.2026): webinar messages stop, DP2 owns the sales journey
+  const dp2 = dp2Live() || process.env.OLD_SALES_JOURNEY_OFF === "1";
   const wm = dp2 ? null : webinarMoment();
   for (const u of (users ?? []) as (Omit<JourneyUser, "has_financials"> & { marketing_consent: boolean | null })[]) {
     // Israeli anti-spam law: marketing only with consent; transactional notices go to everyone
