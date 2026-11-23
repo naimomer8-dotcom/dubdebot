@@ -1,6 +1,6 @@
 import { db } from "@/lib/supabase";
 import { alert } from "@/lib/alerts";
-import { dp2On, meetingWhen, sendDp2 } from "@/lib/dp2";
+import { dp2Live, dp2On, meetingWhen, sendDp2 } from "@/lib/dp2";
 import { dueDayStage, ilParts, isQuiet, isShabbat } from "@/lib/journeys2";
 
 export const runtime = "nodejs";
@@ -91,7 +91,7 @@ export async function GET(req: Request) {
   if (!isShabbat(now) && il.min >= 10 * 60 && il.min < 20 * 60) {
     const since = new Date(now - 100 * D).toISOString();
     const [{ data: users }, { data: leads }, { data: sends }] = await Promise.all([
-      supabase.from("users").select("id, plan, created_at, access_until, questions_count").gte("created_at", since).neq("plan", "paid").limit(20000),
+      supabase.from("users").select("id, phone, plan, created_at, access_until, questions_count").gte("created_at", since).neq("plan", "paid").limit(20000),
       supabase.from("leads").select("user_id, status, meeting_at, created_at").eq("meeting_type", "onboarding").gte("created_at", since).limit(20000),
       supabase.from("journey_sends").select("user_id, stage, sent_at").like("stage", "dp2:%").gte("sent_at", since).limit(200000),
     ]);
@@ -119,7 +119,9 @@ export async function GET(req: Request) {
       if (!/^dp2:(meeting_set|reminder_|no_answer|no_show)/.test(s.stage)) last.set(s.user_id, Math.max(last.get(s.user_id) ?? 0, Date.parse(s.sent_at)));
     }
     const due: { id: string; key: string }[] = [];
+    const test = (process.env.DP2_TEST_PHONES ?? "").split(",").map((p) => p.replace(/\D/g, "").replace(/^972/, "0")).filter(Boolean);
     for (const u of users ?? []) {
+      if (!dp2Live() && !test.includes(String(u.phone ?? ""))) continue;
       if ((last.get(u.id) ?? 0) > now - 20 * H) continue;
       const l = lead.get(u.id);
       const key = dueDayStage(

@@ -11,7 +11,10 @@ import { TOOLS } from "./persona";
  * "Duvdevani Platform – DP2 Journeys" (DP2_WEBHOOK_URL). Every send is claimed in journey_sends under a
  * unique stage key first, so retries never double-send. Off unless DP2_ENABLED=1.
  */
-export const dp2On = () => process.env.DP2_ENABLED === "1" && !!process.env.DP2_WEBHOOK_URL;
+export const dp2On = () => (process.env.DP2_ENABLED === "1" || process.env.DP2_ENABLED === "test") && !!process.env.DP2_WEBHOOK_URL;
+/** DP2_ENABLED=1: everyone. DP2_ENABLED=test: only the phones in DP2_TEST_PHONES (comma separated), the old journey keeps running. */
+export const dp2Live = () => process.env.DP2_ENABLED === "1" && !!process.env.DP2_WEBHOOK_URL;
+const testPhones = () => (process.env.DP2_TEST_PHONES ?? "").split(",").map((p) => p.replace(/\D/g, "").replace(/^972/, "0")).filter(Boolean);
 const app = () => process.env.PUBLIC_APP_URL || "https://dubdebot.vercel.app";
 
 export function meetingWhen(iso: string) {
@@ -78,6 +81,10 @@ export async function sendDp2(userId: string, key: string, opts: { claim?: strin
 
   const contact = await contactOf(userId);
   if (!contact) return { sent: false, reason: "no user" };
+  if (!dp2Live() && !testPhones().includes(contact.phone)) {
+    await supabase.from("journey_sends").delete().eq("user_id", userId).eq("stage", claim);
+    return { sent: false, reason: "test mode" };
+  }
   const { data: u } = await supabase.from("users").select("marketing_consent, marketing_opt_out").eq("id", userId).maybeSingle();
   // Israeli anti-spam law: marketing only with consent and no opt-out; service messages go to everyone
   if (st.kind === "marketing" && (!u?.marketing_consent || u?.marketing_opt_out)) {

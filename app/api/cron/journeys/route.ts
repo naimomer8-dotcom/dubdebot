@@ -5,7 +5,7 @@ import { PLANS } from "@/lib/plans";
 import { refLink } from "@/lib/referral";
 import { alert } from "@/lib/alerts";
 import { TOOLS } from "@/lib/persona";
-import { dp2On } from "@/lib/dp2";
+import { dp2Live } from "@/lib/dp2";
 import { webinarMoment, nextWebinar, webinarLabel, webinarLinks, WEBINAR_TIME, WEBINAR_WA_GROUP } from "@/lib/webinars";
 
 export const runtime = "nodejs";
@@ -45,7 +45,7 @@ export async function GET(req: Request) {
   const due: { userId: string; stage: string }[] = [];
   // the day before and the day of each webinar, non-members get the webinar message instead of the regular stage
   // DP2 (journeys2 + /api/cron/dp2-tick) owns the trial and lost tracks and has no webinar
-  const dp2 = dp2On();
+  const dp2 = dp2Live();
   const wm = dp2 ? null : webinarMoment();
   for (const u of (users ?? []) as (Omit<JourneyUser, "has_financials"> & { marketing_consent: boolean | null })[]) {
     // Israeli anti-spam law: marketing only with consent; transactional notices go to everyone
