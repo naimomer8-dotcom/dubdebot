@@ -10,7 +10,7 @@ const H = 3600_000;
 const D = 24 * H;
 
 /**
- * DP2 tick (every 10 minutes, from Supabase pg_cron). Bearer CRON_SECRET.
+ * DP2 tick (every 10 minutes, from Supabase pg_cron). Bearer CRON_SECRET or DP2_TICK_TOKEN.
  * 1. queued messages whose time has come (quiet hours / Shabbat / "an hour after the meeting")
  * 2. meeting reminders: 20:00 the evening before, and 2 hours before
  * 3. trial / lost day messages (10:00–20:00, one per person per day)
@@ -18,8 +18,10 @@ const D = 24 * H;
  * ?dry=1 lists what would happen.
  */
 export async function GET(req: Request) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret || req.headers.get("authorization") !== `Bearer ${secret}`) return new Response("unauthorized", { status: 401 });
+  // Vercel cron (CRON_SECRET) or the Supabase pg_cron job (DP2_TICK_TOKEN, kept in Supabase Vault)
+  const auth = req.headers.get("authorization") ?? "";
+  const okAuth = [process.env.CRON_SECRET, process.env.DP2_TICK_TOKEN].some((s) => !!s && auth === `Bearer ${s}`);
+  if (!okAuth) return new Response("unauthorized", { status: 401 });
   const dry = new URL(req.url).searchParams.get("dry") === "1";
   if (!dp2On() && !dry) return Response.json({ skipped: "DP2 off" });
   const supabase = db();
