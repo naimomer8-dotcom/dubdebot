@@ -250,9 +250,10 @@ function ThankYou({ first, phone, onEnter }: { first: string; phone: string; onE
         <h4 className="ty-title">30 יום ייעוץ עסקי + רבע שעה של הסבר אישי, במתנה</h4>
         <ol className="ty-steps">
           <li className="done"><b className="num">1</b><span><strong>הייעוץ פתוח לך</strong><small>השיטה של ניר, 24/6, מתחילים עכשיו</small></span></li>
-          <li className="now"><b className="num">2</b><span><strong>בחר מתי נוח שנתקשר</strong><small>רבע שעה שבה נראה לך הכל בלייב, על העסק שלך{phone ? <> · <bdi dir="ltr">{phone}</bdi></> : null}</small></span></li>
-          <li><b className="num">3</b><span><strong>יוצאים עם צעד ברור</strong><small>איך להוציא מהייעוץ את המקסימום לשיווק ולמכירות</small></span></li>
+          <li className="now"><b className="num">2</b><span><strong>רוצה לעבוד עם ניר ברצינות?</strong><small>מצטרפים כבר עכשיו, ממשיכים בלי הפסקה אחרי 30 הימים</small></span></li>
+          <li><b className="num">3</b><span><strong>ורבע שעה של הסבר אישי במתנה</strong><small>בוחרים מתי נוח שנתקשר{phone ? <> · <bdi dir="ltr">{phone}</bdi></> : null}</small></span></li>
         </ol>
+        <a className="btn btn-primary ty-buy" href="/plans">להצטרפות עכשיו · כל המסלולים <Icon name="arrow" size={18} className="ico-move" /></a>
         <CallPicker />
         <p className="ty-note">שמור את המספר. נתקשר אליך מהצוות של ניר דובדבני.</p>
       </div>

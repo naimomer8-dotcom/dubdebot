@@ -1,6 +1,7 @@
 /**
  * Journey v2 (DP2, 23.11.2026, after Nir's call): the offer is "30 יום ייעוץ עסקי במתנה" plus a free 15-minute
- * personal explanation call for everyone (morning / noon / evening); self-checkout is the fast lane. No webinar. Spec: the "פלואו אוטומציות · Duvdevani Platform" doc.
+ * personal explanation call (morning / noon / evening). Self-checkout comes FIRST in every message; the call is
+ * the second option. No webinar. Spec: the "פלואו אוטומציות · Duvdevani Platform" doc.
  *
  * WhatsApp goes out as ManyChat flows ("DP2 | dp2_*") through the Make scenario "Duvdevani Platform –
  * DP2 Journeys" (DP2_WEBHOOK_URL); emails ride the same scenario into Rav Messer (no emojis there).
@@ -17,13 +18,13 @@ export type Stage2 = {
 const SIGN = "\n\nניר דובדבני";
 
 export const STAGES2: Stage2[] = [
-  { key: "welcome", kind: "service", wa: "dp3_welcome", subject: "30 יום ייעוץ עסקי במתנה. מתחילים", email: "{{first_name}}, ניר כאן.\nנרשמת ל-30 יום ייעוץ עסקי במתנה. מהרגע הזה השיטה שלי זמינה לך 24/6: הבוט שעובד כמו שאני עובד, הרנטגן העסקי שמראה איפה העסק חלש, והתיק העסקי שמחזיק את המספרים שלך.\nובגלל שיש פה הרבה אפשרויות, מגיעה לך גם רבע שעה של הסבר אישי במתנה. מישהו מהצוות שלי יתקשר, יראה לך הכל בלייב ויחדד איך להשתמש בזה כדי לשווק ולמכור יותר.\nבחר מתי נוח שנתקשר, בוקר, צהריים או ערב:\n{{app_url}}/home\nמי שכבר יודע שהוא ממשיך איתי גם אחרי 30 הימים, כל המסלולים כאן:\n{{plans_url}}" + SIGN },
-  { key: "no_answer", kind: "service", wa: "dp3_no_answer", subject: "", email: null },
-  { key: "h24", kind: "service", wa: "dp3_24h", subject: "", email: null },
-  { key: "h72", kind: "marketing", wa: "dp3_72h_nir", subject: "רבע השעה שלך עוד מחכה", email: "{{first_name}}, ניר כאן.\n22 שנה אני פוגש בעלי עסקים, והבעיה כמעט אף פעם היא לא ידע. היא בהירות: מה הצעד הבא, ואיפה הכסף בורח.\nבשביל זה נתתי לך 30 יום ייעוץ איתי, ורבע שעה של הסבר אישי שמחבר את זה לעסק שלך.\nעוד לא דיברנו? בחר כאן מתי נוח שנתקשר:\n{{app_url}}/home\nמי שכבר החליט להמשיך איתי, מצטרף כאן:\n{{plans_url}}" + SIGN },
-  { key: "meeting_set", kind: "service", wa: "dp3_meeting_set", subject: "נקבע: {{meeting_when}}", email: "{{first_name}}, נקבע.\nרבע שעה של הסבר אישי: {{meeting_when}}, עם {{rep_name}}.\nתגיע עם שאלה אחת שבוערת לך בעסק. נראה לך בלייב איך להפעיל את הייעוץ על העסק שלך, ויוצאים משם עם צעד ברור." + SIGN },
+  { key: "welcome", kind: "marketing", wa: "dp3_welcome", subject: "30 יום ייעוץ עסקי במתנה. מתחילים", email: "{{first_name}}, ניר כאן.\nנרשמת ל-30 יום ייעוץ עסקי במתנה. מהרגע הזה השיטה שלי זמינה לך 24/6: הבוט שעובד כמו שאני עובד, הרנטגן העסקי שמראה איפה העסק חלש, והתיק העסקי שמחזיק את המספרים שלך.\nמי שרוצה לעבוד איתי ברצינות, בלי הפסקה אחרי 30 הימים, מצטרף כבר עכשיו בכמה קליקים:\n{{plans_url}}\nומגיעה לך גם רבע שעה של הסבר אישי במתנה: מישהו מהצוות שלי יראה לך הכל בלייב, על העסק שלך. בחר מתי נוח שנתקשר:\n{{app_url}}/home" + SIGN },
+  { key: "no_answer", kind: "marketing", wa: "dp3_no_answer", subject: "", email: null },
+  { key: "h24", kind: "marketing", wa: "dp3_24h", subject: "", email: null },
+  { key: "h72", kind: "marketing", wa: "dp3_72h_nir", subject: "למה בניתי את הייעוץ הזה", email: "{{first_name}}, ניר כאן.\n22 שנה אני פוגש בעלי עסקים, והבעיה כמעט אף פעם היא לא ידע. היא בהירות: מה הצעד הבא, ואיפה הכסף בורח.\nבשביל זה בניתי את הייעוץ הזה: הבוט שעובד לפי השיטה שלי, רנטגן שמראה איפה העסק חלש, ותיק שמחזיק את המספרים שלך.\nמי שרציני מצטרף לבד, בשתי דקות:\n{{plans_url}}\nמעדיף לדבר קודם? בחר כאן מתי נוח שנתקשר:\n{{app_url}}/home" + SIGN },
+  { key: "meeting_set", kind: "marketing", wa: "dp3_meeting_set", subject: "נקבע: {{meeting_when}}", email: "{{first_name}}, נקבע.\nרבע שעה של הסבר אישי: {{meeting_when}}, עם {{rep_name}}.\nתגיע עם שאלה אחת שבוערת לך בעסק. יוצאים משם עם צעד ברור.\nלא רוצה לחכות לשיחה? מצטרפים כבר עכשיו, בכמה קליקים:\n{{plans_url}}" + SIGN },
   { key: "reminder", kind: "service", wa: "dp3_reminder", subject: "", email: null },
-  { key: "no_show", kind: "service", wa: "dp3_no_show", subject: "", email: null },
+  { key: "no_show", kind: "marketing", wa: "dp3_no_show", subject: "", email: null },
   { key: "after_meeting", kind: "marketing", wa: "dp3_after_meeting", subject: "עכשיו מתחיל החלק החשוב", email: "{{first_name}}, ניר כאן.\nדיברת עם {{rep_name}}, ועכשיו מתחיל החלק שמבדיל בין מי שמדבר למי שעושה: ביצוע.\nהצעד הראשון שלך לשבוע הקרוב: {{next_step}}\nממשיכים לעבוד איתי גם אחרי 30 הימים? מצטרפים כאן:\n{{plans_url}}\nרוצה לבנות את זה לעומק, אחד על אחד? השב למייל הזה ונקבע פגישת אסטרטגיה." + SIGN },
   { key: "d1", kind: "marketing", wa: "dp3_d1", subject: "", email: null },
   { key: "d3_xray", kind: "marketing", wa: "dp3_d3_xray", subject: "12 השאלות שאני שואל כשאני נכנס לעסק", email: "{{first_name}}, ניר כאן.\nכשאני נכנס לעסק, אני שואל 12 שאלות. שמתי אותן ב\"רנטגן העסקי\": 3 דקות, ואתה רואה בדיוק איפה העסק שלך חלש:\n{{app_url}}/xray\nמי שכבר יודע שהוא ממשיך איתי, מצטרף כאן:\n{{plans_url}}" + SIGN },

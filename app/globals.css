@@ -2757,3 +2757,5 @@ a.home-card:active, button.home-card:active { transform: scale(.985); }
 .crm-script { margin: 10px 0; padding: 10px 12px; border: 1px solid var(--gold-2, #D6B56E); border-radius: 12px; }
 .crm-script summary { cursor: pointer; font-weight: 700; }
 .crm-script ol { margin: 8px 0 0; padding-inline-start: 20px; display: grid; gap: 6px; font-size: 14px; }
+.ty-buy { display: flex; justify-content: center; margin-top: 12px; }
+.onb-buy { width: fit-content; margin-top: 10px; }

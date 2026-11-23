@@ -70,7 +70,8 @@ export default function OnboardingCard() {
         ) : (
           <>
             <b>איך להוציא מהייעוץ את המקסימום לשיווק ולמכירות שלך</b>
-            <span className="muted">מישהו מהצוות של ניר יראה לך הכל בלייב, על העסק שלך.</span>
+            <span className="muted">מישהו מהצוות של ניר יראה לך הכל בלייב, על העסק שלך. ומי שכבר החליט לא צריך לחכות לשיחה.</span>
+            <a className="btn btn-primary btn-sm onb-buy" href="/plans">להצטרפות עכשיו</a>
             <CallPicker onPicked={(at) => setO({ ...o, callAt: at })} />
           </>
         )}
