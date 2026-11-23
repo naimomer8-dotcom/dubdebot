@@ -20,7 +20,7 @@ const SIGN = "\n\nניר דובדבני";
 export const STAGES2: Stage2[] = [
   { key: "welcome", kind: "marketing", wa: "dp3_welcome", subject: "30 יום ייעוץ עסקי במתנה. מתחילים", email: "{{first_name}}, ניר כאן.\nנרשמת ל-30 יום ייעוץ עסקי במתנה. מהרגע הזה השיטה שלי זמינה לך 24/6: הבוט שעובד כמו שאני עובד, הרנטגן העסקי שמראה איפה העסק חלש, והתיק העסקי שמחזיק את המספרים שלך.\nמי שרוצה לעבוד איתי ברצינות, בלי הפסקה אחרי 30 הימים, מצטרף כבר עכשיו בכמה קליקים:\n{{plans_url}}\nומגיעה לך גם רבע שעה של הסבר אישי במתנה: מישהו מהצוות שלי יראה לך הכל בלייב, על העסק שלך. בחר מתי נוח שנתקשר:\n{{app_url}}/home" + SIGN },
   { key: "no_answer", kind: "marketing", wa: "dp3_no_answer", subject: "", email: null },
-  { key: "h24", kind: "marketing", wa: "dp3_24h", subject: "", email: null },
+  { key: "h24", kind: "marketing", wa: "dp3_h24", subject: "", email: null },
   { key: "h72", kind: "marketing", wa: "dp3_72h_nir", subject: "למה בניתי את הייעוץ הזה", email: "{{first_name}}, ניר כאן.\n22 שנה אני פוגש בעלי עסקים, והבעיה כמעט אף פעם היא לא ידע. היא בהירות: מה הצעד הבא, ואיפה הכסף בורח.\nבשביל זה בניתי את הייעוץ הזה: הבוט שעובד לפי השיטה שלי, רנטגן שמראה איפה העסק חלש, ותיק שמחזיק את המספרים שלך.\nמי שרציני מצטרף לבד, בשתי דקות:\n{{plans_url}}\nמעדיף לדבר קודם? בחר כאן מתי נוח שנתקשר:\n{{app_url}}/home" + SIGN },
   { key: "meeting_set", kind: "marketing", wa: "dp3_meeting_set", subject: "נקבע: {{meeting_when}}", email: "{{first_name}}, נקבע.\nרבע שעה של הסבר אישי: {{meeting_when}}, עם {{rep_name}}.\nתגיע עם שאלה אחת שבוערת לך בעסק. יוצאים משם עם צעד ברור.\nלא רוצה לחכות לשיחה? מצטרפים כבר עכשיו, בכמה קליקים:\n{{plans_url}}" + SIGN },
   { key: "reminder", kind: "service", wa: "dp3_reminder", subject: "", email: null },

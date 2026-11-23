@@ -2,7 +2,7 @@ import { createHmac } from "crypto";
 import { db } from "./supabase";
 import { contactOf } from "./automation";
 import { alert } from "./alerts";
-import { emailParts, noAstral } from "./journeys";
+import { noAstral } from "./journeys";
 import { nextSendable, render2, stage2 } from "./journeys2";
 import { TOOLS } from "./persona";
 
@@ -54,6 +54,30 @@ export async function topTool(userId: string) {
 function nextStep(raw?: string) {
   const t = String(raw ?? "").split("\n")[0].trim().replace(/[.\s]+$/, "").slice(0, 200);
   return t ? `${t}.` : "לבחור דבר אחד מהתכנית ולהתחיל לבצע.";
+}
+
+/**
+ * Rav Messer list "Duvdevani Platform – מסע DP3": the template has 8 paragraph fields (dp_b1..dp_b8, 255 chars each)
+ * and a "להצטרפות עכשיו" button. One paragraph per field so lines never run together; a bare URL line joins the
+ * line before it; the signature is in the template footer. No emojis (Rav Messer cuts the text at them).
+ */
+export function emailLines(text: string, slots = 8, max = 255): string[] {
+  const lines: string[] = [];
+  for (const raw of noAstral(text).split("\n")) {
+    const l = raw.trim();
+    if (!l || l === "ניר דובדבני") continue;
+    if (/^https?:\/\/\S+$/.test(l) && lines.length) lines[lines.length - 1] = `${lines[lines.length - 1]} ${l}`;
+    else lines.push(l);
+  }
+  // too many paragraphs: fold the tail into the last slot
+  while (lines.length > slots) lines.splice(slots - 1, 2, `${lines[slots - 1]} ${lines[slots]}`);
+  const out = lines.map((l) => {
+    if (l.length <= max) return l;
+    const cut = l.slice(0, max);
+    return cut.slice(0, Math.max(cut.lastIndexOf(" "), max - 20));
+  });
+  while (out.length < slots) out.push("");
+  return out;
 }
 
 type Extra = { meeting_when?: string; rep_name?: string; next_step?: string };
@@ -114,7 +138,7 @@ export async function sendDp2(userId: string, key: string, opts: { claim?: strin
       email: !!st.email && !!contact.email,
       email_subject: noAstral(render2(st.subject, vars)),
       text: emailText,
-      email_parts: emailParts(emailText),
+      email_parts: emailLines(emailText),
       vars,
       transactional: st.kind === "service",
     },
