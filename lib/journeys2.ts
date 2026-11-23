@@ -1,6 +1,6 @@
 /**
- * Journey v2 (DP2, 23.11.2026): value-first messages, self-checkout first and a rep as the second option,
- * no webinar. Spec: the "פלואו אוטומציות · Duvdevani Platform" doc.
+ * Journey v2 (DP2, 23.11.2026, after Nir's call): the offer is "30 יום ייעוץ עסקי במתנה" plus a free 15-minute
+ * personal explanation call for everyone (morning / noon / evening); self-checkout is the fast lane. No webinar. Spec: the "פלואו אוטומציות · Duvdevani Platform" doc.
  *
  * WhatsApp goes out as ManyChat flows ("DP2 | dp2_*") through the Make scenario "Duvdevani Platform –
  * DP2 Journeys" (DP2_WEBHOOK_URL); emails ride the same scenario into Rav Messer (no emojis there).
@@ -14,36 +14,32 @@ export type Stage2 = {
   email: string | null;
 };
 
-const SIGN = "\n\nצוות Duvdevani Platform";
+const SIGN = "\n\nניר דובדבני";
 
 export const STAGES2: Stage2[] = [
-  // Track 1 · from signup to the onboarding meeting
-  { key: "welcome", kind: "service", wa: "dp2_welcome", subject: "ברוך הבא לפלטפורמה של ניר דובדבני", email: "{{first_name}}, ברוך הבא לפלטפורמה של ניר דובדבני.\nב-30 הימים הקרובים יש לך גישה מלאה לכל הכלים: הבוט שמכיר את השיטה של ניר, הרנטגן העסקי והתיק העסקי.\nכדי שתתחיל נכון, שמרנו לך גם פגישת הטמעה אישית, בלי עלות. נציג מהצוות ייצור איתך קשר תוך 24 שעות לתיאום.\nרוצה להתחיל כבר עכשיו? כתוב לבוט במשפט אחד מה הכי מעסיק אותך בעסק, ותקבל צעד ראשון:\n{{app_url}}\n\nרוצה להצטרף כבר עכשיו? כל המסלולים, והצטרפות בכמה קליקים:\n{{plans_url}}" + SIGN },
-  { key: "no_answer", kind: "service", wa: "dp2_no_answer", subject: "", email: null },
-  { key: "h24", kind: "service", wa: "dp2_24h", subject: "", email: null },
-  { key: "h72", kind: "marketing", wa: "dp2_72h_nir", subject: "למה בניתי את פגישת ההטמעה", email: "{{first_name}}, ניר כאן.\nרציתי להסביר למה בניתי את פגישת ההטמעה. 22 שנה אני רואה שבעלי עסקים לא נתקעים מחוסר ידע, אלא מחוסר בהירות: לא ברור מה הצעד הבא ואיפה הכסף בורח.\nבפגישה הצוות שלי עושה איתך שלושה דברים: מאתר את צוואר הבקבוק המרכזי בעסק, מכניס את המספרים שלך למערכת, ובונה איתך תכנית ל-30 הימים הקרובים.\nרוצה? השב למייל הזה ונתאם מועד שנוח לך.\n\nרוצה להצטרף כבר עכשיו? כל המסלולים, והצטרפות בכמה קליקים:\n{{plans_url}}\n\nניר" },
-  { key: "meeting_set", kind: "service", wa: "dp2_meeting_set", subject: "הפגישה נקבעה: {{meeting_when}}", email: "{{first_name}}, הפגישה נקבעה.\nפגישת הטמעה והדרכה: {{meeting_when}}, עם {{rep_name}}.\nכדי להפיק ממנה את המקסימום, כדאי להגיע עם: מחזור חודשי משוער, האתגר הכי גדול שלך עכשיו, וחצי שעה שקטה.\n\nרוצה להצטרף כבר עכשיו? כל המסלולים, והצטרפות בכמה קליקים:\n{{plans_url}}" + SIGN },
-  { key: "reminder", kind: "service", wa: "dp2_reminder", subject: "", email: null },
-  { key: "no_show", kind: "service", wa: "dp2_no_show", subject: "", email: null },
-  { key: "after_meeting", kind: "marketing", wa: "dp2_after_meeting", subject: "תודה על הפגישה. הנה הצעד הבא", email: "{{first_name}}, תודה על הפגישה.\nהסיכום והתכנית שבנית עם {{rep_name}} שמורים בתיק העסקי שלך:\n{{app_url}}/vault\nהצעד הראשון לשבוע הקרוב: {{next_step}}\nואם כבר עכשיו ברור לך שאתה רוצה להמשיך אחרי הניסיון, אפשר לבחור מסלול כאן:\n{{plans_url}}" + SIGN },
-  // Track 2 · the 30-day trial
-  { key: "d1", kind: "marketing", wa: "dp2_d1", subject: "", email: null },
-  { key: "d3_xray", kind: "marketing", wa: "dp2_d3_xray", subject: "12 השאלות שניר שואל כשהוא נכנס לעסק", email: "{{first_name}}, יש בפלטפורמה כלי שנקרא \"רנטגן עסקי\".\nאלה 12 השאלות שניר שואל כשהוא נכנס לעסק חדש. 3 דקות של מענה, ואתה מקבל תמונה ברורה של החוזקות שלך ושל הנקודה שהכי שווה לטפל בה ראשונה:\n{{app_url}}/xray\n\nרוצה להצטרף כבר עכשיו? כל המסלולים, והצטרפות בכמה קליקים:\n{{plans_url}}" + SIGN },
-  { key: "d7_active", kind: "marketing", wa: "dp2_d7_active", subject: "", email: null },
-  { key: "d7_quiet", kind: "marketing", wa: "dp2_d7_quiet", subject: "", email: null },
-  { key: "d10_vault", kind: "marketing", wa: "dp2_d10_vault", subject: "תשובות על המספרים שלך, לא תשובות כלליות", email: "{{first_name}}, ככל שהבוט מכיר את העסק שלך טוב יותר, התשובות שלו מדויקות יותר.\nבתיק העסקי מכניסים כמה נתונים בסיסיים (מחזור, הוצאות, לקוחות), וזה לוקח בערך 2 דקות. מאותו רגע כל תשובה מותאמת למספרים שלך:\n{{app_url}}/vault\n\nרוצה להצטרף כבר עכשיו? כל המסלולים, והצטרפות בכמה קליקים:\n{{plans_url}}" + SIGN },
-  { key: "d14", kind: "marketing", wa: "dp2_d14", subject: "שבועיים בפלטפורמה: מה בנית ועל מה להתמקד", email: "{{first_name}}, עברו שבועיים. עד עכשיו בנית: {{built_summary}}.\nבשבועיים הבאים כדאי לבחור דבר אחד מתוך התכנית ולהביא אותו לביצוע. זה מה שמייצר את התוצאה הראשונה.\nכל המסלולים, והצטרפות בכמה קליקים:\n{{plans_url}}\nואם תרצה ליווי בזה, פגישת ההטמעה עדיין שמורה לך. השב למייל הזה ונתאם." + SIGN },
-  // Track 3 · the decision: self-checkout first, a rep for whoever prefers to talk
-  { key: "d21", kind: "marketing", wa: "dp2_d21", subject: "מה כבר בנית, ומה ממשיך בחברות", email: "{{first_name}}, עברו שלושה שבועות מאז שהצטרפת. רצינו לעצור רגע ולהראות מה כבר בנית: {{built_summary}}.\nהחברות בפלטפורמה ממשיכה בדיוק מאותה נקודה: הבוט זוכר את העסק שלך, התכניות נשמרות, ומדי חודש נוספים כלים ותכנים חדשים של ניר.\nכאן אפשר לראות את המסלולים ולהצטרף בכמה קליקים:\n{{plans_url}}\nיש שאלה לפני? השב למייל הזה ונחזור אליך." + SIGN },
-  { key: "d25", kind: "marketing", wa: "dp2_d25", subject: "", email: null },
-  { key: "d27_faq", kind: "marketing", wa: null, subject: "שאלות נפוצות לפני שמחליטים", email: "{{first_name}}, ריכזנו את השאלות שהכי שואלים אותנו לקראת סוף הניסיון.\nכמה זה עולה? כל המסלולים והמחירים מופיעים בעמוד המסלולים, עם מה שכלול בכל אחד.\nמה ההבדל בין המסלולים? כולם כוללים את הבוט, התיק העסקי והתכנים. המסלולים הגבוהים מוסיפים ליווי אישי של יועץ מהצוות או של ניר.\nמה קורה לנתונים בסוף הניסיון? הכל נשמר: השיחות, התכניות והתיק. כשמצטרפים, ממשיכים מאותה נקודה.\nאיך מבטלים? בלחיצה, מעמוד המסלולים.\nלכל המסלולים:\n{{plans_url}}\nרוצה לדבר עם נציג? השב למייל הזה." + SIGN },
-  { key: "d29", kind: "service", wa: "dp2_d29", subject: "", email: null },
-  { key: "d30", kind: "marketing", wa: "dp2_d30", subject: "תקופת הניסיון הסתיימה. הכל שמור", email: "{{first_name}}, תקופת הניסיון הסתיימה.\nהשיחות, התכניות והתיק העסקי שמורים אצלנו, ואפשר לחזור אליהם בכל רגע דרך הצטרפות:\n{{plans_url}}\nאם משהו לא היה ברור או חסר לך, נשמח לשמוע. השב למייל הזה." + SIGN },
-  // Track 4 · the trial ended without joining
-  { key: "lost_d3", kind: "marketing", wa: "dp2_lost_d3", subject: "כל מה שבנית שמור", email: "{{first_name}}, רק רצינו שתדע: כל מה שבנית בפלטפורמה שמור, התכניות, השיחות והתיק העסקי.\nאם תרצה לחזור, הכל ממשיך מאותה נקודה:\n{{plans_url}}\nואם יש משהו שחסר לך, השב למייל הזה ונשמח לשמוע." + SIGN },
-  { key: "lost_d10", kind: "marketing", wa: null, subject: "תובנה אחת מניר: אסטרטגיה מנצחת טקטיקה", email: "{{first_name}}, תובנה אחת מ-22 שנה של ליווי עסקים.\nרוב בעלי העסקים מחפשים את הטקטיקה הבאה: עוד קמפיין, עוד כלי, עוד הנחה. אבל העסקים שגדלים באמת מתחילים מהשאלה האסטרטגית: איפה הכסף בורח, ומה הדבר האחד שאם נשנה אותו, כל השאר יזוז.\nהשבוע, נסה לכתוב במשפט אחד מה הדבר הזה אצלך. זה כבר חצי מהדרך.\nואם תרצה שהבוט יעזור לך לחשוב על זה עם המספרים שלך, הכל מחכה לך כאן:\n{{plans_url}}" + SIGN },
-  { key: "lost_d30", kind: "marketing", wa: "dp2_lost_d30", subject: "", email: null },
-  { key: "lost_d60", kind: "marketing", wa: null, subject: "הדלת פתוחה", email: "{{first_name}}, זו ההודעה האחרונה שלנו בנושא.\nהפלטפורמה ממשיכה לגדול: כלים חדשים ותכנים חדשים של ניר נוספים כל חודש, וכל מה שבנית אצלנו עדיין שמור.\nאם תרצה לחזור בעתיד, הכל ממשיך מאותה נקודה:\n{{plans_url}}\nמכאן תמשיך לקבל רק את הדיוור הכללי, אם אישרת אותו." + SIGN },
+  { key: "welcome", kind: "service", wa: "dp3_welcome", subject: "30 יום ייעוץ עסקי במתנה. מתחילים", email: "{{first_name}}, ניר כאן.\nנרשמת ל-30 יום ייעוץ עסקי במתנה. מהרגע הזה השיטה שלי זמינה לך 24/6: הבוט שעובד כמו שאני עובד, הרנטגן העסקי שמראה איפה העסק חלש, והתיק העסקי שמחזיק את המספרים שלך.\nובגלל שיש פה הרבה אפשרויות, מגיעה לך גם רבע שעה של הסבר אישי במתנה. מישהו מהצוות שלי יתקשר, יראה לך הכל בלייב ויחדד איך להשתמש בזה כדי לשווק ולמכור יותר.\nבחר מתי נוח שנתקשר, בוקר, צהריים או ערב:\n{{app_url}}/home\nמי שכבר יודע שהוא ממשיך איתי גם אחרי 30 הימים, כל המסלולים כאן:\n{{plans_url}}" + SIGN },
+  { key: "no_answer", kind: "service", wa: "dp3_no_answer", subject: "", email: null },
+  { key: "h24", kind: "service", wa: "dp3_24h", subject: "", email: null },
+  { key: "h72", kind: "marketing", wa: "dp3_72h_nir", subject: "רבע השעה שלך עוד מחכה", email: "{{first_name}}, ניר כאן.\n22 שנה אני פוגש בעלי עסקים, והבעיה כמעט אף פעם היא לא ידע. היא בהירות: מה הצעד הבא, ואיפה הכסף בורח.\nבשביל זה נתתי לך 30 יום ייעוץ איתי, ורבע שעה של הסבר אישי שמחבר את זה לעסק שלך.\nעוד לא דיברנו? בחר כאן מתי נוח שנתקשר:\n{{app_url}}/home\nמי שכבר החליט להמשיך איתי, מצטרף כאן:\n{{plans_url}}" + SIGN },
+  { key: "meeting_set", kind: "service", wa: "dp3_meeting_set", subject: "נקבע: {{meeting_when}}", email: "{{first_name}}, נקבע.\nרבע שעה של הסבר אישי: {{meeting_when}}, עם {{rep_name}}.\nתגיע עם שאלה אחת שבוערת לך בעסק. נראה לך בלייב איך להפעיל את הייעוץ על העסק שלך, ויוצאים משם עם צעד ברור." + SIGN },
+  { key: "reminder", kind: "service", wa: "dp3_reminder", subject: "", email: null },
+  { key: "no_show", kind: "service", wa: "dp3_no_show", subject: "", email: null },
+  { key: "after_meeting", kind: "marketing", wa: "dp3_after_meeting", subject: "עכשיו מתחיל החלק החשוב", email: "{{first_name}}, ניר כאן.\nדיברת עם {{rep_name}}, ועכשיו מתחיל החלק שמבדיל בין מי שמדבר למי שעושה: ביצוע.\nהצעד הראשון שלך לשבוע הקרוב: {{next_step}}\nממשיכים לעבוד איתי גם אחרי 30 הימים? מצטרפים כאן:\n{{plans_url}}\nרוצה לבנות את זה לעומק, אחד על אחד? השב למייל הזה ונקבע פגישת אסטרטגיה." + SIGN },
+  { key: "d1", kind: "marketing", wa: "dp3_d1", subject: "", email: null },
+  { key: "d3_xray", kind: "marketing", wa: "dp3_d3_xray", subject: "12 השאלות שאני שואל כשאני נכנס לעסק", email: "{{first_name}}, ניר כאן.\nכשאני נכנס לעסק, אני שואל 12 שאלות. שמתי אותן ב\"רנטגן העסקי\": 3 דקות, ואתה רואה בדיוק איפה העסק שלך חלש:\n{{app_url}}/xray\nמי שכבר יודע שהוא ממשיך איתי, מצטרף כאן:\n{{plans_url}}" + SIGN },
+  { key: "d7_active", kind: "marketing", wa: "dp3_d7_active", subject: "", email: null },
+  { key: "d7_quiet", kind: "marketing", wa: "dp3_d7_quiet", subject: "", email: null },
+  { key: "d10_vault", kind: "marketing", wa: "dp3_d10_vault", subject: "תשובה כללית או תשובה עם המספרים שלך", email: "{{first_name}}, ניר כאן.\nשאלה כללית מקבלת תשובה כללית. מי שמכניס את המספרים שלו מקבל תשובה שמזיזה כסף.\n2 דקות בתיק העסקי:\n{{app_url}}/vault\nולהמשך איתי אחרי 30 הימים, כל המסלולים כאן:\n{{plans_url}}" + SIGN },
+  { key: "d14", kind: "marketing", wa: "dp3_d14", subject: "שבועיים. מה עכשיו", email: "{{first_name}}, שבועיים של ייעוץ.\nעד עכשיו בנית: {{built_summary}}.\nעכשיו החלק שמבדיל בין מי שמדבר למי שעושה: לבחור דבר אחד ולהביא אותו לביצוע.\nממשיכים איתי גם אחרי 30 הימים? מצטרפים כאן:\n{{plans_url}}\nרוצה לבנות את זה אחד על אחד בפגישת אסטרטגיה? השב למייל הזה." + SIGN },
+  { key: "d21", kind: "marketing", wa: "dp3_d21", subject: "שלושה שבועות. מה ממשיך כשממשיכים", email: "{{first_name}}, ניר כאן.\nשלושה שבועות. בנית: {{built_summary}}.\nמי שממשיך איתי לא מתחיל מאפס: הבוט זוכר את העסק שלך, התכניות נשמרות, וכל חודש נכנסים כלים ותכנים חדשים שלי.\nמצטרפים בכמה קליקים:\n{{plans_url}}\nשאלה לפני? השב למייל הזה ומישהו מהצוות שלי יחזור אליך." + SIGN },
+  { key: "d25", kind: "marketing", wa: "dp3_d25", subject: "", email: null },
+  { key: "d27_faq", kind: "marketing", wa: null, subject: "4 שאלות ששואלים אותי לפני שמחליטים", email: "{{first_name}}, ניר כאן. ריכזתי את השאלות ששואלים אותי הכי הרבה בשלב הזה.\nכמה זה עולה? כל המסלולים והמחירים בעמוד המסלולים, עם מה שכלול בכל אחד.\nמה ההבדל בין המסלולים? כולם כוללים את הבוט, התיק העסקי והתכנים. הגבוהים מוסיפים פגישות אחד על אחד עם הצוות שלי, או איתי.\nמה קורה לנתונים? הכל נשמר. מי שמצטרף ממשיך מאותה נקודה.\nאיך מבטלים? בלחיצה, מעמוד המסלולים.\nמצטרפים כאן:\n{{plans_url}}\nרוצה לדבר עם מישהו מהצוות? השב למייל הזה." + SIGN },
+  { key: "d29", kind: "service", wa: "dp3_d29", subject: "", email: null },
+  { key: "d30", kind: "marketing", wa: "dp3_d30", subject: "30 ימי הייעוץ הסתיימו. הכל שמור", email: "{{first_name}}, ניר כאן.\n30 ימי הייעוץ הסתיימו. השיחות, התכניות והתיק שמורים ומחכים לך.\nחוזרים בכמה קליקים:\n{{plans_url}}\nמשהו היה חסר לך? השב למייל הזה ותגיד לי." + SIGN },
+  { key: "lost_d3", kind: "marketing", wa: "dp3_lost_d3", subject: "כל מה שבנית שמור", email: "{{first_name}}, ניר כאן.\nכל מה שבנית אצלי שמור. העסק שלך לא מחכה, והייעוץ שלך לא צריך לחכות.\nחוזרים מאותה נקודה, בכמה קליקים:\n{{plans_url}}" + SIGN },
+  { key: "lost_d10", kind: "marketing", wa: null, subject: "אסטרטגיה מנצחת טקטיקה", email: "{{first_name}}, ניר כאן.\nרוב בעלי העסקים מחפשים את הטקטיקה הבאה: עוד קמפיין, עוד כלי, עוד הנחה. העסקים שגדלים באמת מתחילים מהשאלה האסטרטגית: איפה הכסף בורח, ומה הדבר האחד שאם תשנה אותו, כל השאר יזוז.\nהשבוע, תכתוב במשפט אחד מה הדבר הזה אצלך. זה כבר חצי מהדרך.\nרוצה לעבוד על זה איתי, עם המספרים שלך? חוזרים כאן:\n{{plans_url}}" + SIGN },
+  { key: "lost_d30", kind: "marketing", wa: "dp3_lost_d30", subject: "", email: null },
+  { key: "lost_d60", kind: "marketing", wa: null, subject: "הדלת פתוחה", email: "{{first_name}}, ניר כאן. זו ההודעה האחרונה שלי בנושא.\nהייעוץ ממשיך לגדול, כל חודש נכנסים כלים ותכנים חדשים, וכל מה שבנית אצלי עדיין שמור.\nכשתרצה לחזור, הכל ממשיך מאותה נקודה:\n{{plans_url}}" + SIGN },
 ];
 
 export const stage2 = (key: string) => STAGES2.find((s) => s.key === key) ?? null;
@@ -58,12 +54,14 @@ export type Person2 = {
   hasXray: boolean;
   leadStatus: string | null; // onboarding lead status
   meetingAt: number | null;
+  /** the person picked a time for the 15-minute call (WhatsApp button or the home card) */
+  callPicked?: boolean;
 };
 
 /**
  * The trial / lost day stage due now (the latest one wins, earlier ones are skipped; each is sent once).
- * Marketing day messages are skipped while a meeting is scheduled (the rep is on it). 24h / 72h only go to
- * people with no meeting yet. A paid member leaves this journey.
+ * Marketing day messages are skipped while a meeting is scheduled (the rep is on it). 24h goes to people who have
+ * not picked a call time yet, 72h to people who have not had the call yet. A paid member leaves this journey.
  */
 export function dueDayStage(p: Person2, sent: Set<string>, now = Date.now()): string | null {
   if (p.paid) return null;
@@ -86,7 +84,8 @@ export function dueDayStage(p: Person2, sent: Set<string>, now = Date.now()): st
       if (noMeetingYet && age < 4) cands.push("h72");
       if (!p.hasXray) cands.push("d3_xray");
     } else if (age >= 1) {
-      if (noMeetingYet && age < 2) cands.push("h24");
+      // "pick a time for your call": only to people who have not picked one and were not reached yet
+      if (noMeetingYet && !p.callPicked && age < 2) cands.push("h24");
       if (p.questions === 0) cands.push("d1");
     }
   } else {

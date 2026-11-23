@@ -92,7 +92,7 @@ export async function GET(req: Request) {
     const since = new Date(now - 100 * D).toISOString();
     const [{ data: users }, { data: leads }, { data: sends }] = await Promise.all([
       supabase.from("users").select("id, phone, plan, created_at, access_until, questions_count").gte("created_at", since).neq("plan", "paid").limit(20000),
-      supabase.from("leads").select("user_id, status, meeting_at, created_at").eq("meeting_type", "onboarding").gte("created_at", since).limit(20000),
+      supabase.from("leads").select("user_id, status, meeting_at, next_call_at, created_at").eq("meeting_type", "onboarding").gte("created_at", since).limit(20000),
       supabase.from("journey_sends").select("user_id, stage, sent_at").like("stage", "dp2:%").gte("sent_at", since).limit(200000),
     ]);
     const ids = (users ?? []).map((u) => u.id);
@@ -107,7 +107,7 @@ export async function GET(req: Request) {
       for (const r of f ?? []) fin.add(r.user_id);
       for (const r of x ?? []) xr.add(r.user_id);
     }
-    const lead = new Map<string, { status: string; meeting_at: string | null }>();
+    const lead = new Map<string, { status: string; meeting_at: string | null; next_call_at: string | null }>();
     for (const l of leads ?? []) if (l.user_id && !lead.has(l.user_id)) lead.set(l.user_id, l);
     const sent = new Map<string, Set<string>>();
     const last = new Map<string, number>();
@@ -125,7 +125,7 @@ export async function GET(req: Request) {
       if ((last.get(u.id) ?? 0) > now - 20 * H) continue;
       const l = lead.get(u.id);
       const key = dueDayStage(
-        { createdAt: Date.parse(u.created_at), accessUntil: u.access_until ? Date.parse(u.access_until) : null, paid: u.plan === "paid", questions: u.questions_count ?? 0, hasFinancials: fin.has(u.id), hasXray: xr.has(u.id), leadStatus: l?.status ?? null, meetingAt: l?.meeting_at ? Date.parse(l.meeting_at) : null },
+        { createdAt: Date.parse(u.created_at), accessUntil: u.access_until ? Date.parse(u.access_until) : null, paid: u.plan === "paid", questions: u.questions_count ?? 0, hasFinancials: fin.has(u.id), hasXray: xr.has(u.id), leadStatus: l?.status ?? null, meetingAt: l?.meeting_at ? Date.parse(l.meeting_at) : null, callPicked: !!l?.next_call_at },
         sent.get(u.id) ?? new Set(),
         now,
       );
@@ -164,8 +164,35 @@ export async function GET(req: Request) {
         `פגישות היום: ${today?.length ?? 0}${today?.length ? ` (${today.map((m) => `${m.full_name} ${meetingWhen(m.meeting_at!).split("בשעה ")[1]}`).join(", ")})` : ""}`,
         `ענו בוואטסאפ ומחכים לנציג: ${new Set((hot ?? []).map((h) => h.lead_id)).size}`,
         `ניסיונות שנגמרים השבוע: ${ending?.length ?? 0}`,
+        "",
+        ...(await funnel(supabase, now)),
       ], 60 * 20);
     }
   }
   return Response.json({ ok: true, dry, ...out });
+}
+
+/** Nir's monthly funnel (23.11): 300 signups, 30% ask for the 15-minute call, 15–20% of calls buy, 30 strategy meetings. */
+async function funnel(supabase: ReturnType<typeof db>, now: number) {
+  const il = new Date(now).toLocaleDateString("en-CA", { timeZone: "Asia/Jerusalem" });
+  const monthStart = new Date(`${il.slice(0, 7)}-01T00:00:00+02:00`).toISOString();
+  const day = Number(il.slice(8, 10));
+  const [{ count: signups }, { data: asked }, { count: held }, { count: sales }, { count: strategy }] = await Promise.all([
+    supabase.from("users").select("id", { count: "exact", head: true }).gte("created_at", monthStart),
+    supabase.from("lead_activities").select("lead_id").eq("kind", "note").or('body.like."ענה בוואטסאפ*",body.like."בחר מועד באתר*"').gte("created_at", monthStart).limit(5000),
+    supabase.from("leads").select("id", { count: "exact", head: true }).eq("meeting_type", "onboarding").in("status", ["met", "sold"]).gte("updated_at", monthStart),
+    supabase.from("orders").select("id", { count: "exact", head: true }).eq("status", "paid").gte("paid_at", monthStart),
+    supabase.from("leads").select("id", { count: "exact", head: true }).in("meeting_type", ["advisor", "nir"]).gte("created_at", monthStart),
+  ]);
+  const n = signups ?? 0;
+  const a = new Set((asked ?? []).map((x) => x.lead_id)).size;
+  const pct = (x: number, of: number) => (of ? `${Math.round((100 * x) / of)}%` : "0%");
+  return [
+    "משפך החודש (יעדי ניר):",
+    `נרשמו: ${n} מתוך 300 (${(n / Math.max(1, day)).toFixed(1)} ביום, יעד 10)`,
+    `ביקשו שיחה: ${a} (${pct(a, n)}, יעד 30%)`,
+    `שיחות שהתקיימו: ${held ?? 0}`,
+    `רכישות: ${sales ?? 0} (${pct(sales ?? 0, held ?? 0)} מהשיחות, יעד 15–20%)`,
+    `פגישות אסטרטגיה: ${strategy ?? 0} מתוך 30`,
+  ];
 }

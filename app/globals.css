@@ -2748,3 +2748,12 @@ a.home-card:active, button.home-card:active { transform: scale(.985); }
 .buy-inv input[aria-invalid="true"] { border-color: #d9534f; }
 .buy-inv small { display: block; margin-top: 8px; font-size: 12px; color: var(--text-3); }
 @media (max-width: 480px) { .buy-inv-grid { grid-template-columns: 1fr; } }
+
+/* 15-minute call picker (home card + thank-you page) */
+.call-pick { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.call-slots { display: flex; flex-wrap: wrap; gap: 8px; }
+.call-slots .btn { min-width: 84px; }
+.call-ok { display: flex; align-items: center; gap: 6px; margin: 10px 0 0; color: var(--gold-2, #D6B56E); font-weight: 600; }
+.crm-script { margin: 10px 0; padding: 10px 12px; border: 1px solid var(--gold-2, #D6B56E); border-radius: 12px; }
+.crm-script summary { cursor: pointer; font-weight: 700; }
+.crm-script ol { margin: 8px 0 0; padding-inline-start: 20px; display: grid; gap: 6px; font-size: 14px; }

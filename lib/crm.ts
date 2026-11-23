@@ -68,7 +68,7 @@ export async function openOnboardingLead(u: { userId: string; fullName: string; 
   if (existing) return existing.id as string;
   const { data: lead } = await supabase
     .from("leads")
-    .insert({ user_id: u.userId, meeting_type: "onboarding", full_name: u.fullName, phone: u.phone ?? "", email: u.email, status: "new", trigger: u.source, note: "נרשם לפלטפורמה. לתאם פגישת הטמעה והדרכה תוך 24 שעות." })
+    .insert({ user_id: u.userId, meeting_type: "onboarding", full_name: u.fullName, phone: u.phone ?? "", email: u.email, status: "new", trigger: u.source, note: "נרשם ל-30 יום ייעוץ במתנה. שיחת הסבר של רבע שעה: להתקשר תוך 24 שעות (קודם מי שבחר מועד)." })
     .select("id")
     .single();
   if (!lead) return null;
@@ -77,7 +77,7 @@ export async function openOnboardingLead(u: { userId: string; fullName: string; 
     userId: u.userId,
     adminId: null,
     kind: "status",
-    body: "נרשם לפלטפורמה וקיבל פגישת הטמעה והדרכה. נציג חוזר אליו תוך 24 שעות לתיאום.",
+    body: "נרשם ל-30 יום ייעוץ במתנה וקיבל שיחת הסבר של רבע שעה. נציג מתקשר תוך 24 שעות.",
     contact: { phone: u.phone, full_name: u.fullName, email: u.email },
     sync: "onboarding_opened",
     status: "new",

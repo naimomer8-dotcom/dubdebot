@@ -90,7 +90,8 @@ export default function CrmBoard({ adminName }: { adminName: string }) {
       .filter((l) => type === "all" || l.meeting_type === type)
       .filter((l) => !mine || l.assigned_to === data?.me.id)
       .filter((l) => !s || [l.full_name, l.phone, l.email ?? ""].some((x) => x.toLowerCase().includes(s)))
-      .sort((a, b) => Number(late(b)) - Number(late(a)) || Number(dueCall(b)) - Number(dueCall(a)) || b.created_at.localeCompare(a.created_at));
+      // people who picked a time for their call come first (Nir, 23.11), then leads waiting more than 24h
+      .sort((a, b) => Number(dueCall(b)) - Number(dueCall(a)) || Number(late(b)) - Number(late(a)) || b.created_at.localeCompare(a.created_at));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, status, type, mine, q]);
 
@@ -229,6 +230,7 @@ function LeadDrawer({ lead, acts, sales, admins, adminName, onClose, reload, fla
           {lead.email && <span className="muted crm-mail" dir="ltr">{lead.email}</span>}
         </div>
         {(lead.summary || lead.note) && <p className="crm-sum">{lead.summary || lead.note}</p>}
+        {lead.meeting_type === "onboarding" && <CallScript />}
 
         <section className="crm-sec">
           <h3>סטטוס</h3>
@@ -394,5 +396,23 @@ function SalesView({ sales, leads, adminName, reload, flash }: { sales: Sale[]; 
         </table>
       </div>
     </>
+  );
+}
+
+/** Nir's call script for the 15-minute explanation call (23.11): six parts, in this order. */
+const SCRIPT: [string, string][] = [
+  ["הסבר בלייב", "פותחים איתו את המערכת: שאלה אמיתית מהעסק שלו, רנטגן, תיק עסקי, תסריט מכירה. שיראה תוצר על העסק שלו."],
+  ["מכירה", "\"כדי שזה ימשיך לעבוד בשבילך אחרי 30 הימים\": מסלול מתאים, קישור לסליקה עצמית או סגירה בטלפון."],
+  ["פגישה", "מי שצריך עומק: פגישת אסטרטגיה. ניר 2,500 ₪, נדב/תומר 279 ₪, כלולה ב-Private. הרצליה או צפון."],
+  ["כנס", "הזמנה לכנס הקרוב של ניר."],
+  ["פולואו-אפ", "לא סגר? \"לחזור אליו\" עם מועד וסיבה."],
+  ["חבר מביא חבר", "\"מי עוד בעל עסק שצריך את זה?\" שם וטלפון, ומקבל 30 יום ייעוץ במתנה."],
+];
+function CallScript() {
+  return (
+    <details className="crm-script">
+      <summary>תסריט שיחה · רבע שעה · 6 שלבים</summary>
+      <ol>{SCRIPT.map(([t, d]) => <li key={t}><b>{t}</b> {d}</li>)}</ol>
+    </details>
   );
 }

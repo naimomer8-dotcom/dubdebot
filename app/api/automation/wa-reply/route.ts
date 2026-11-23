@@ -3,6 +3,7 @@ import { db } from "@/lib/supabase";
 import { alert } from "@/lib/alerts";
 import { logActivity } from "@/lib/crm";
 import { normalizeIsraeliPhone } from "@/lib/validation";
+import { SLOTS, nextAt, whenLabel } from "@/lib/callSlots";
 
 export const runtime = "nodejs";
 
@@ -12,28 +13,6 @@ export const runtime = "nodejs";
  * The reply lands on the person's onboarding lead as a note (mirrored to Fireberry), sets "לחזור אליו"
  * and alerts the team.
  */
-const SLOTS: { word: string; label: string; hour: number }[] = [
-  { word: "בוקר", label: "בוקר", hour: 9 },
-  { word: "צהר", label: "צהריים", hour: 13 },
-  { word: "ערב", label: "ערב", hour: 18 },
-];
-
-/** Next working-day time in Israel at `hour` (skips Friday after 14:00 and Saturday). */
-function nextAt(hour: number) {
-  for (let add = 0; add < 4; add++) {
-    const d = new Date(Date.now() + add * 86400_000);
-    const ymd = d.toLocaleDateString("en-CA", { timeZone: "Asia/Jerusalem" });
-    const wd = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Jerusalem", weekday: "short" }).format(d);
-    if (wd === "Sat" || (wd === "Fri" && hour >= 13)) continue;
-    // Israel is UTC+2 / +3: build the local time and correct by the actual offset
-    const guess = new Date(`${ymd}T${String(hour).padStart(2, "0")}:00:00Z`);
-    const offH = Number(new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Jerusalem", hour: "2-digit", hour12: false }).format(guess)) - hour;
-    const t = new Date(guess.getTime() - offH * 3600_000);
-    if (t.getTime() > Date.now() + 15 * 60_000) return t;
-  }
-  return new Date(Date.now() + 3600_000);
-}
-
 function pickPhone(b: Record<string, unknown>): string | null {
   const cf = (b.custom_fields ?? {}) as Record<string, unknown>;
   const tries = [b.whatsapp_phone, b.phone, ...Object.values(cf)];
@@ -71,7 +50,7 @@ export async function POST(req: Request) {
     const at = nextAt(s?.hour ?? 9);
     upd.next_call_at = at.toISOString();
     if (!["scheduled", "met", "sold"].includes(lead?.status ?? "")) upd.status = "callback";
-    body = `ענה בוואטסאפ: נוח לחזור אליו ב${s?.label ?? (text || "בוקר")}. נקבע "לחזור אליו" ל-${at.toLocaleString("he-IL", { timeZone: "Asia/Jerusalem", weekday: "short", day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" })}.`;
+    body = `ענה בוואטסאפ: ביקש את שיחת ההסבר (רבע שעה) ב${s?.label ?? (text || "בוקר")}. נקבע "לחזור אליו" ל-${whenLabel(at)}.`;
   } else if (kind === "postpone") {
     upd.status = "callback";
     upd.next_call_at = new Date().toISOString();
@@ -79,7 +58,9 @@ export async function POST(req: Request) {
   } else {
     upd.next_call_at = new Date().toISOString();
     if (!["scheduled", "met", "sold"].includes(lead?.status ?? "")) upd.status = "callback";
-    body = `ענה בוואטסאפ: ${text ? `"${text}" · ` : ""}רוצה שנציג יחזור אליו. ליד חם, לחזור היום.`;
+    body = text.includes("אסטרטגיה")
+      ? "ענה בוואטסאפ: מבקש פגישת אסטרטגיה (ניר / נדב / תומר). ליד חם, לחזור היום ולקבוע."
+      : `ענה בוואטסאפ: ${text ? `"${text}" · ` : ""}רוצה שנציג יחזור אליו. ליד חם, לחזור היום.`;
   }
 
   if (lead) {

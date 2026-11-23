@@ -82,13 +82,13 @@ export default function Landing() {
             <p className="hero-slogan">בואו לפגוש את הפוטנציאל הפיננסי האמיתי שלכם !!!</p>
             <p className="lead">פלטפורמה היברידית ואקטיבית על בסיס שיטת האלפא של ניר דובדבני. דובדבוט זמין לך 24/6 ובונה איתך תחזית, תוכנית ותסריט מכירה, ומסביבו קורסים דיגיטליים, הסדנה "להעיר את הכסף שבך" פעם ברבעון ופגישה אסטרטגית חודשית בזום עם ניר.</p>
             <div className="hero-mcta">
-              <button className="btn btn-primary btn-lg" onClick={() => goSignup()}>להתחיל 30 יום במתנה <Icon name="arrow" size={18} className="ico-move" /></button>
+              <button className="btn btn-primary btn-lg" onClick={() => goSignup()}>לקבל 30 יום ייעוץ עסקי במתנה <Icon name="arrow" size={18} className="ico-move" /></button>
               <a className="btn btn-glass btn-lg" href="/platform">מה זה הפלטפורמה</a>
             </div>
             <ul className="hero-points">
               <li><Icon name="check" size={18} /> 22 שנה של ליווי ויותר מ-23,000 עסקים שעברו את השיטה</li>
               <li><Icon name="check" size={18} /> תוצרים אמיתיים: תחזית, תוכנית, תסריט</li>
-              <li><Icon name="check" size={18} /> 30 יום במתנה. בלי כרטיס אשראי</li>
+              <li><Icon name="check" size={18} /> 30 יום ייעוץ עסקי + רבע שעה הסבר אישי, במתנה. בלי כרטיס אשראי</li>
             </ul>
             <div className="hero-proof">
               <div><b>22</b><span>שנות ליווי</span></div>
@@ -221,7 +221,7 @@ export default function Landing() {
               </div>
               <blockquote className="h-display">״החזון שלי: שלא יהיה עסק בישראל <span className="gold">בלי Duvdevani Platform.</span>״</blockquote>
               <cite>ניר דובדבני · מייסד קבוצת דובדבני</cite>
-              <button className="btn btn-primary btn-lg" onClick={() => goSignup()}>להתחיל 30 יום במתנה <Icon name="arrow" size={18} className="ico-move" /></button>
+              <button className="btn btn-primary btn-lg" onClick={() => goSignup()}>לקבל 30 יום ייעוץ עסקי במתנה <Icon name="arrow" size={18} className="ico-move" /></button>
             </div>
           </div>
         </section>
@@ -245,7 +245,7 @@ export default function Landing() {
 
         {showSticky && (
           <button className="btn btn-primary mobile-cta" onClick={() => goSignup()}>
-            30 יום במתנה <Icon name="arrow" size={18} />
+            30 יום ייעוץ במתנה <Icon name="arrow" size={18} />
           </button>
         )}
       </div>

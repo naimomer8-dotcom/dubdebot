@@ -14,7 +14,7 @@ export const statusLabel = (s: string) => CRM_STATUSES.find((x) => x.id === s)?.
 export const isCrmStatus = (s: unknown): s is CrmStatus => CRM_STATUSES.some((x) => x.id === s);
 
 export const MEETING_LABEL: Record<string, string> = {
-  onboarding: "פגישת הטמעה והדרכה",
+  onboarding: "שיחת הסבר (רבע שעה במתנה)",
   advisor: "פגישת יועץ",
   nir: "פגישה עם ניר",
   renewal: "חידוש / מנוי",

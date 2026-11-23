@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Mascot, { Mood } from "./Mascot";
 import Icon from "./Icon";
+import { CallPicker } from "./OnboardingCard";
 import { trackWaJoin } from "./EventsPopup";
 import { WEBINAR_WA_GROUP } from "@/lib/webinarDates";
 import PasswordField from "./PasswordField";
@@ -220,7 +221,8 @@ export default function RegisterForm() {
 
 /** Shown right after a successful signup: registered + the onboarding & training meeting (a rep calls within 24h). */
 function ThankYou({ first, phone, onEnter }: { first: string; phone: string; onEnter: () => void }) {
-  const [wa, setWa] = useState(true);
+  // the webinar WhatsApp-group popup is retired (23.11): the thank-you page now leads to picking the call time
+  const [wa, setWa] = useState(false);
   return (
     <div className="stepper glass edge ty">
       {wa && (
@@ -239,22 +241,23 @@ function ThankYou({ first, phone, onEnter }: { first: string; phone: string; onE
         <Mascot size={64} mood="wink" />
         <div>
           <h3 className="step-title">{first ? `${first}, אתה בפנים` : "אתה בפנים"}</h3>
-          <p className="step-sub">החשבון נפתח, ופגישת ההטמעה שלך כבר בתור.</p>
+          <p className="step-sub">30 יום ייעוץ עסקי במתנה מתחילים עכשיו.</p>
         </div>
       </div>
 
       <div className="ty-gift ty-onb">
         <span className="ty-tag">✓ ההרשמה הושלמה</span>
-        <h4 className="ty-title">נרשמת לפלטפורמה + פגישת הטמעה והדרכה</h4>
+        <h4 className="ty-title">30 יום ייעוץ עסקי + רבע שעה של הסבר אישי, במתנה</h4>
         <ol className="ty-steps">
-          <li className="done"><b className="num">1</b><span><strong>גישה מלאה לפלטפורמה</strong><small>30 יום במתנה, מתחילים עכשיו</small></span></li>
-          <li className="now"><b className="num">2</b><span><strong>נציג יחזור אליך תוך 24 שעות</strong><small>לתיאום פגישת ההדרכה וההטמעה{phone ? <> · <bdi dir="ltr">{phone}</bdi></> : null}</small></span></li>
-          <li><b className="num">3</b><span><strong>פגישת הטמעה והדרכה על המערכת</strong><small>איך מפעילים את הפלטפורמה לקידום העסק שלך</small></span></li>
+          <li className="done"><b className="num">1</b><span><strong>הייעוץ פתוח לך</strong><small>השיטה של ניר, 24/6, מתחילים עכשיו</small></span></li>
+          <li className="now"><b className="num">2</b><span><strong>בחר מתי נוח שנתקשר</strong><small>רבע שעה שבה נראה לך הכל בלייב, על העסק שלך{phone ? <> · <bdi dir="ltr">{phone}</bdi></> : null}</small></span></li>
+          <li><b className="num">3</b><span><strong>יוצאים עם צעד ברור</strong><small>איך להוציא מהייעוץ את המקסימום לשיווק ולמכירות</small></span></li>
         </ol>
+        <CallPicker />
         <p className="ty-note">שמור את המספר. נתקשר אליך מהצוות של ניר דובדבני.</p>
       </div>
 
-      <button type="button" className="btn btn-ghost ty-enter" onClick={onEnter}>כניסה לפלטפורמה <Icon name="arrow" size={18} className="ico-move" /></button>
+      <button type="button" className="btn btn-ghost ty-enter" onClick={onEnter}>כניסה לייעוץ <Icon name="arrow" size={18} className="ico-move" /></button>
     </div>
   );
 }
