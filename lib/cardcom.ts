@@ -56,6 +56,7 @@ export async function createPaymentPage(o: {
   payments: number; // 1 or 12
   productName: string;
   customer: { name: string; email: string | null; phone: string | null };
+  invoice?: { name: string; taxId: string; address?: string; city?: string } | null;
 }) {
   const url = appUrl();
   const pay = Math.max(1, Math.min(12, Math.round(o.payments)));
@@ -80,7 +81,10 @@ export async function createPaymentPage(o: {
     AdvancedDefinition: { MinNumOfPayments: pay, MaxNumOfPayments: pay, SelectedNumOfPayments: pay },
     Document: {
       DocumentTypeToCreate: "TaxInvoiceAndReceipt",
-      Name: (o.customer.name || "לקוח").slice(0, 50),
+      Name: (o.invoice?.name || o.customer.name || "לקוח").slice(0, 50),
+      TaxId: o.invoice?.taxId || undefined,
+      AddressLine1: o.invoice?.address || undefined,
+      City: o.invoice?.city || undefined,
       Email: o.customer.email || undefined,
       Mobile: o.customer.phone || undefined,
       IsSendByEmail: true,
@@ -117,7 +121,7 @@ export async function getPaymentResult(lowProfileId: string) {
 export type TranResult = { ResponseCode: number; Description?: string; TranzactionId?: number; Amount?: number; DocumentNumber?: number; DocumentUrl?: string; Last4CardDigitsString?: string };
 
 /** Charges a stored token (used for the monthly renewal). ExternalUniqTranId prevents a double charge. */
-export function chargeToken(o: { token: string; expMMYY: string; amount: number; uniqueId: string; productName: string; customer: { name: string; email: string | null; phone: string | null } }) {
+export function chargeToken(o: { token: string; expMMYY: string; amount: number; uniqueId: string; productName: string; customer: { name: string; email: string | null; phone: string | null }; invoice?: { name: string | null; taxId: string | null; address?: string | null; city?: string | null } | null }) {
   return post<TranResult>("Transactions/Transaction", {
     ...tokenCreds(),
     Amount: o.amount,
@@ -129,7 +133,10 @@ export function chargeToken(o: { token: string; expMMYY: string; amount: number;
     CardOwnerInformation: { FullName: o.customer.name, CardOwnerEmail: o.customer.email ?? undefined, Phone: o.customer.phone ?? undefined },
     Document: {
       DocumentTypeToCreate: "TaxInvoiceAndReceipt",
-      Name: (o.customer.name || "לקוח").slice(0, 50),
+      Name: (o.invoice?.name || o.customer.name || "לקוח").slice(0, 50),
+      TaxId: o.invoice?.taxId || undefined,
+      AddressLine1: o.invoice?.address || undefined,
+      City: o.invoice?.city || undefined,
       Email: o.customer.email ?? undefined,
       IsSendByEmail: true,
       Languge: "he",

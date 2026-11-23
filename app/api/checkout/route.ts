@@ -6,6 +6,7 @@ import { PLANS, priceOf, TIER_RANK, type Billing, type Tier } from "@/lib/plans"
 import { offersFor } from "@/lib/offers";
 import { cardcomReady, createPaymentPage } from "@/lib/cardcom";
 import { alert } from "@/lib/alerts";
+import { parseInvoice } from "@/lib/invoice";
 
 export const runtime = "nodejs";
 const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
@@ -14,8 +15,16 @@ const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: 
  * Starts a purchase. Creates a pending order and:
  * - when Cardcom is configured (CARDCOM_TERMINAL + CARDCOM_API_NAME) → returns its hosted payment URL;
  * - until then → opens a "purchase" lead so a rep sends a payment link within 24h.
- * Body: { tier, billing, via?: "self" | "rep" }
+ * Body: { tier, billing, via?: "self" | "rep", invoice?: { name, taxId, address, city } }
+ * Self-checkout requires invoice details (ת.ז / ח.פ) for the Cardcom tax invoice; they are saved on the user for next time.
  */
+export async function GET() {
+  const s = await getSession();
+  if (!s) return json({ error: "unauthorized" }, 401);
+  const { data: u } = await db().from("users").select("full_name, invoice_name, invoice_tax_id, invoice_address, invoice_city").eq("id", s.userId).maybeSingle();
+  return json({ name: u?.invoice_name || u?.full_name || "", taxId: u?.invoice_tax_id || "", address: u?.invoice_address || "", city: u?.invoice_city || "" });
+}
+
 export async function POST(req: Request) {
   const s = await getSession();
   if (!s) return json({ error: "unauthorized" }, 401);
@@ -26,6 +35,9 @@ export async function POST(req: Request) {
   const billing = (b.billing === "installments" ? "installments" : "onetime") as Billing;
   const via = b.via === "rep" ? "rep" : "self";
   if (!PLANS.some((p) => p.id === tier)) return json({ error: "מסלול לא קיים" }, 400);
+  const inv = b.invoice ? parseInvoice(b.invoice) : null;
+  if (via === "self" && !inv?.ok) return json({ error: inv && !inv.ok ? inv.error : "צריך למלא פרטים לחשבונית." }, 422);
+  const invoice = inv?.ok ? inv.value : null;
 
   const supabase = db();
   const { data: u } = await supabase.from("users").select("id, full_name, phone, email, plan, tier").eq("id", s.userId).single();
@@ -50,10 +62,11 @@ export async function POST(req: Request) {
 
   const { data: order, error } = await supabase
     .from("orders")
-    .insert({ user_id: s.userId, tier, billing, amount_net: net, vat, amount_total: total, status: "pending", channel: via, installments: billing === "installments" ? 12 : 1, customer_name: u.full_name, customer_phone: u.phone, customer_email: u.email, source: "checkout", kind: Object.keys(offers).length ? `annual:offer:${Object.keys(offers).join("+")}` : "annual" })
+    .insert({ user_id: s.userId, tier, billing, amount_net: net, vat, amount_total: total, status: "pending", channel: via, installments: billing === "installments" ? 12 : 1, customer_name: u.full_name, customer_phone: u.phone, customer_email: u.email, invoice_name: invoice?.name ?? null, invoice_tax_id: invoice?.taxId ?? null, invoice_address: invoice?.address || null, invoice_city: invoice?.city || null, source: "checkout", kind: Object.keys(offers).length ? `annual:offer:${Object.keys(offers).join("+")}` : "annual" })
     .select("id")
     .single();
   if (error || !order) return json({ error: "משהו השתבש. נסה שוב." }, 500);
+  if (invoice) await supabase.from("users").update({ invoice_name: invoice.name, invoice_tax_id: invoice.taxId, invoice_address: invoice.address || null, invoice_city: invoice.city || null }).eq("id", s.userId);
 
   // campaign params from the plan page link (utm_*, fbclid, gclid, ref), kept for attribution
   const utm: Record<string, string> = {};
@@ -71,6 +84,7 @@ export async function POST(req: Request) {
         payments,
         productName: `${planName} · ${owned ? "שדרוג מנוי" : "מנוי שנתי"} · Duvdevani Platform`,
         customer: { name: u.full_name ?? "", email: u.email ?? null, phone: u.phone ?? null },
+        invoice,
       });
       if (lp.ResponseCode === 0 && lp.Url && lp.LowProfileId) {
         await supabase.from("orders").update({ lp_id: lp.LowProfileId, provider: "cardcom" }).eq("id", order.id);
@@ -92,7 +106,7 @@ export async function POST(req: Request) {
     full_name: u.full_name,
     phone: u.phone,
     email: u.email,
-    note: `${owned ? `שדרוג מ-${owned} ל-` : "רכישת "}${planName}${offers.privateHalf && tier === "private" ? " · בונוס Private בחצי מחיר" : ""}${offers.installmentsAtOnetime && billing === "installments" ? " · הצעת 72 שעות: תשלומים במחיר תשלום אחד" : ""} · ${billing === "installments" ? "12 תשלומים" : "תשלום אחד"} · ₪${total.toLocaleString("he-IL")} כולל מע״מ · הזמנה ${order.id.slice(0, 8)}`,
+    note: `${owned ? `שדרוג מ-${owned} ל-` : "רכישת "}${planName}${offers.privateHalf && tier === "private" ? " · בונוס Private בחצי מחיר" : ""}${offers.installmentsAtOnetime && billing === "installments" ? " · הצעת 72 שעות: תשלומים במחיר תשלום אחד" : ""} · ${billing === "installments" ? "12 תשלומים" : "תשלום אחד"} · ₪${total.toLocaleString("he-IL")} כולל מע״מ · הזמנה ${order.id.slice(0, 8)}${invoice ? ` · חשבונית: ${invoice.name}, ${invoice.taxId}` : ""}`,
     trigger: via === "rep" ? "rep_requested" : "checkout_no_provider",
   });
   await supabase.from("users").update({ renewal_requested_at: new Date().toISOString() }).eq("id", s.userId);

@@ -13,6 +13,7 @@ import { Brand } from "./BrandBar";
 import { WORKSHOP } from "@/lib/money";
 import { BONUS_COURSE, BOOKS, COURSES, PLANS, REGULAR_MONTHLY, RENEWAL_MONTHLY, WORKSHOP_VALUE, TIER_RANK, VAT, ils, priceOf, type Billing, type Offers, type Plan, type Tier } from "@/lib/plans";
 import type { ConvItem, ShellUser } from "@/lib/data";
+import { validTaxId, type InvoiceDetails } from "@/lib/invoice";
 
 type Done = { status: "rep" | "provider_pending"; total: number; plan: string; via: "self" | "rep" };
 
@@ -62,6 +63,13 @@ export default function PlansClient({ user, conversations, focus, offers = {}, a
   const [done, setDone] = useState<Done | null>(null);
   const [side, setSide] = useState(false);
   const [faq, setFaq] = useState<number | null>(0);
+  const [inv, setInv] = useState<InvoiceDetails>({ name: "", taxId: "", address: "", city: "" });
+  const [invLoaded, setInvLoaded] = useState(false);
+  // saved invoice details (prefilled from the last purchase, or the account name)
+  useEffect(() => {
+    if (!pick || !user || invLoaded) return;
+    fetch("/api/checkout").then((r) => (r.ok ? r.json() : null)).then((j) => { if (j) setInv({ name: j.name ?? "", taxId: j.taxId ?? "", address: j.address ?? "", city: j.city ?? "" }); setInvLoaded(true); }).catch(() => setInvLoaded(true));
+  }, [pick, user, invLoaded]);
 
   const [renewal, setRenewal] = useState(user?.access.renewalMode ?? "none");
   async function toggleRenewal() {
@@ -95,10 +103,14 @@ export default function PlansClient({ user, conversations, focus, offers = {}, a
     if (!pick) return;
     if (!user) { window.location.href = ctaHref(pick.id, billing, false, carried(new URLSearchParams(window.location.search))); return; }
     if (!agree) { setErr("צריך לאשר את תנאי השימוש ותנאי החידוש."); return; }
+    if (via === "self") {
+      if (inv.name.trim().length < 2) { setErr("צריך למלא שם לחשבונית (שם מלא או שם העסק)."); return; }
+      if (!validTaxId(inv.taxId)) { setErr("מספר ת.ז / ח.פ לא תקין. בודקים שיש 9 ספרות."); return; }
+    }
     setBusy(via);
     setErr("");
     pixelTrack("InitiateCheckout", { content_name: pick.id, content_category: billing, currency: "ILS" });
-    const r = await fetch("/api/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tier: pick.id, billing, via, utm: carried(new URLSearchParams(window.location.search)) }) }).catch(() => null);
+    const r = await fetch("/api/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tier: pick.id, billing, via, invoice: inv.taxId || via === "self" ? inv : undefined, utm: carried(new URLSearchParams(window.location.search)) }) }).catch(() => null);
     const j = r ? await r.json().catch(() => ({})) : {};
     setBusy(null);
     if (!r?.ok) { setErr(j.error ?? "משהו השתבש. נסה שוב."); return; }
@@ -284,6 +296,18 @@ export default function PlansClient({ user, conversations, focus, offers = {}, a
               );
             })()}
             <p className="buy-renew"><Icon name="clock" size={14} /> {trial ? "השנה מתחילה בסוף חודש המתנה. " : ""}אחרי השנה: {ils(RENEWAL_MONTHLY)} + מע״מ לחודש אוטומטית, ביטול בכל רגע.</p>
+            {user && (
+              <fieldset className="buy-inv">
+                <legend>פרטים לחשבונית</legend>
+                <div className="buy-inv-grid">
+                  <label><span>שם לחשבונית *</span><input value={inv.name} onChange={(e) => setInv({ ...inv, name: e.target.value })} placeholder="שם מלא או שם העסק" autoComplete="name" maxLength={50} /></label>
+                  <label><span>ת.ז / ח.פ *</span><input value={inv.taxId} onChange={(e) => setInv({ ...inv, taxId: e.target.value.replace(/\D/g, "").slice(0, 9) })} inputMode="numeric" placeholder="9 ספרות" maxLength={9} dir="ltr" aria-invalid={inv.taxId.length >= 5 && !validTaxId(inv.taxId)} /></label>
+                  <label><span>כתובת</span><input value={inv.address} onChange={(e) => setInv({ ...inv, address: e.target.value })} placeholder="רחוב ומספר" autoComplete="street-address" maxLength={80} /></label>
+                  <label><span>עיר</span><input value={inv.city} onChange={(e) => setInv({ ...inv, city: e.target.value })} placeholder="עיר" autoComplete="address-level2" maxLength={40} /></label>
+                </div>
+                <small>החשבונית נשלחת למייל שלך אוטומטית אחרי התשלום.</small>
+              </fieldset>
+            )}
             {user ? (
               <label className="buy-agree"><input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} /> קראתי ואני מסכים ל<Link href="/terms" target="_blank">תנאי השימוש</Link>, כולל החידוש החודשי אחרי השנה. ידוע לי ש<b>אפשר לבטל בתוך 14 יום</b>, בכפוף למדיניות הביטול שבתנאים.</label>
             ) : (

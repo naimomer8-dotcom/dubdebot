@@ -29,7 +29,7 @@ export async function GET(req: Request) {
   const soon = new Date(Date.now() + 86400_000).toISOString();
   const { data: due } = await supabase
     .from("users")
-    .select("id, full_name, email, phone, access_until, card_token, card_exp, last_renewal_attempt_at, year_ends_at")
+    .select("id, full_name, email, phone, access_until, card_token, card_exp, last_renewal_attempt_at, year_ends_at, invoice_name, invoice_tax_id, invoice_address, invoice_city")
     .eq("plan", "paid")
     .eq("renewal_mode", "monthly69")
     .not("card_token", "is", null)
@@ -45,7 +45,7 @@ export async function GET(req: Request) {
     await supabase.from("users").update({ last_renewal_attempt_at: new Date().toISOString() }).eq("id", u.id);
     const period = new Date(u.access_until).toISOString().slice(0, 7);
     try {
-      const r = await chargeToken({ token: u.card_token!, expMMYY: u.card_exp ?? "", amount: total, uniqueId: `renew-${u.id}-${period}`, productName: "Duvdevani Platform · חידוש חודשי", customer: { name: u.full_name ?? "", email: u.email, phone: u.phone } });
+      const r = await chargeToken({ token: u.card_token!, expMMYY: u.card_exp ?? "", amount: total, uniqueId: `renew-${u.id}-${period}`, productName: "Duvdevani Platform · חידוש חודשי", customer: { name: u.full_name ?? "", email: u.email, phone: u.phone }, invoice: { name: u.invoice_name, taxId: u.invoice_tax_id, address: u.invoice_address, city: u.invoice_city } });
       if (r.ResponseCode !== 0) throw new Error(`${r.ResponseCode}: ${r.Description ?? ""}`);
       const next = new Date(Math.max(Date.now(), new Date(u.access_until).getTime()));
       next.setMonth(next.getMonth() + 1);
