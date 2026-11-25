@@ -36,6 +36,16 @@ export async function POST(req: Request) {
 
   const supabase = db();
   const { data: user } = await supabase.from("users").select("id, full_name, email").eq("phone", phone).maybeSingle();
+
+  // Removal request ("הסר" / "הסרה" / STOP), from the dedicated keyword flow (r=optout) or typed into any reply.
+  if (kind === "optout" || /^(הסר|הסרה|הסירו|להסרה|תסירו|stop|unsubscribe)[.!\s]*$/i.test(text) || /הסר(ה)?\s*(אותי|מרשימ)/.test(text)) {
+    const now = new Date().toISOString();
+    if (user) await supabase.from("users").update({ marketing_opt_out: true, unsubscribed_at: now }).eq("id", user.id);
+    const { data: ld } = await supabase.from("leads").select("id, user_id, full_name, phone, email").eq("phone", phone).order("created_at", { ascending: false }).limit(1).maybeSingle();
+    if (ld) await logActivity({ leadId: ld.id, userId: ld.user_id, adminId: null, kind: "note", body: "ביקש הסרה בוואטסאפ (\"הסר\"). הוסר מכל הדיוור השיווקי. לא לשלוח לו הודעות שיווקיות.", contact: { phone: ld.phone, full_name: ld.full_name, email: ld.email } });
+    await alert(`wa_optout:${phone}`, `בקשת הסרה מוואטסאפ: ${user?.full_name ?? ld?.full_name ?? phone}`, [`${phone}`, user ? "סומן כמוסר מדיוור בפלטפורמה." : "לא נמצא משתמש למספר הזה. לבדוק ידנית."], 30);
+    return Response.json({ ok: true, optout: true, user: !!user });
+  }
   let { data: lead } = await supabase.from("leads").select("id, user_id, full_name, phone, email, status, assigned_to").eq("phone", phone).order("created_at", { ascending: false }).limit(1).maybeSingle();
   if (!lead && user) {
     const { data } = await supabase.from("leads").select("id, user_id, full_name, phone, email, status, assigned_to").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
