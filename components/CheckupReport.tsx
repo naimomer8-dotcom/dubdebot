@@ -92,13 +92,13 @@ export default function CheckupReport({ token, loggedIn, name, profile, answers,
               {profile.revenue && <span>{profile.revenue}</span>}
               {profile.goal && <span><Icon name="target" size={14} /> {profile.goal}</span>}
             </div>
+            {(lk.total > 0 || pct !== null) && (
+              <div className="ck-r-facts">
+                {lk.total > 0 && <div className="ck-fact bad"><small>הדליפה המשוערת</small><b>{nis(lk.total)}</b><em>בחודש · {nis(lk.total * 12)} בשנה</em></div>}
+                {pct !== null && <div className="ck-fact"><small>מול {bench!.n} עסקים בתחום שלך</small><b>{pct}%</b><em>קיבלו ציון נמוך משלך · ממוצע {bench!.avg}</em></div>}
+              </div>
+            )}
           </div>
-          {(lk.total > 0 || pct !== null) && (
-            <div className="ck-r-facts">
-              {lk.total > 0 && <div className="ck-fact bad"><small>הדליפה המשוערת</small><b>{nis(lk.total)}</b><em>בחודש · {nis(lk.total * 12)} בשנה</em></div>}
-              {pct !== null && <div className="ck-fact"><small>מול {bench!.n} עסקים בתחום שלך</small><b>{pct}%</b><em>קיבלו ציון נמוך משלך · ממוצע {bench!.avg}</em></div>}
-            </div>
-          )}
           <div className="ck-r-ring"><ScoreRing value={shown} total={total} tone={g.tone} /></div>
         </section>
 

@@ -3314,7 +3314,7 @@ body:has(.pp) { background: #e9e5dd; }
 .ck-move-cost { margin: 0; color: #ffb3b3 !important; font-weight: 800; font-size: 14px; }
 .ck-move-btn { margin-top: 6px; display: inline-flex; align-items: center; gap: 8px; justify-self: start; padding: 11px 16px; border-radius: 999px; border: 0; background: var(--grad-gold); color: #16110a; font-weight: 800; cursor: pointer; }
 .ck-move-btn:disabled { opacity: .5; }
-.ck-reveal { position: fixed; inset: 0; z-index: 300; display: grid; place-items: center; align-content: center; gap: 6px; text-align: center; background: radial-gradient(60% 50% at 50% 45%, rgba(226,198,142,.18), #050506 70%); animation: ckRevOut .8s 3.4s var(--ease) forwards; overflow: hidden; }
+.ck-reveal { position: fixed; inset: 0; z-index: 300; display: grid; place-items: center; align-content: center; gap: 6px; text-align: center; background: radial-gradient(60% 50% at 50% 45%, rgba(226,198,142,.18), #050506 70%), #050506; animation: ckRevOut .8s 3.4s var(--ease) forwards; overflow: hidden; }
 .ck-reveal-rays { position: absolute; inset: -50%; background: repeating-conic-gradient(from 0deg, rgba(226,198,142,.08) 0deg 6deg, transparent 6deg 18deg); animation: cxSpin 30s linear infinite; mask-image: radial-gradient(closest-side, #000, transparent); -webkit-mask-image: radial-gradient(closest-side, #000, transparent); }
 .ck-reveal > *:not(.ck-reveal-rays) { position: relative; }
 .ck-reveal p { margin: 0; color: var(--gold); font-weight: 800; letter-spacing: .12em; }
