@@ -30,7 +30,8 @@ export default function CheckupReport({ token, loggedIn, name, profile, answers,
     const els = document.querySelectorAll(".ck-r .ck-rv");
     const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { threshold: 0.12 });
     els.forEach((el) => io.observe(el));
-    return () => io.disconnect();
+    const safety = setTimeout(() => els.forEach((el) => el.classList.add("in")), 4000);
+    return () => { io.disconnect(); clearTimeout(safety); };
   }, []);
   const g = grade(total);
   const [shown, setShown] = useState(0);

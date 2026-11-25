@@ -3282,3 +3282,4 @@ body:has(.pp) { background: #e9e5dd; }
 .cx-livechip { display: none; font-family: var(--display); font-size: 26px; line-height: 1; padding: 6px 10px; border-radius: 12px; border: 1px solid var(--hair-2); background: rgba(0,0,0,.4); }
 @media (max-width: 980px) { .cx-dash { display: none !important; } .cx-livechip { display: inline-block; } }
 @media (max-width: 640px) { .cx-top .brand span { display: none; } .cx-top { gap: 10px; } .cx-meter b { font-size: 20px; min-width: 40px; } .cx-big { font-size: 120px; } }
+.pp-page:last-of-type { page-break-after: auto; break-after: auto; }
