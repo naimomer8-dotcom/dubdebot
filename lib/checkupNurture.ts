@@ -4,7 +4,7 @@ import { alert } from "./alerts";
 import { noAstral } from "./journeys";
 import { isQuiet, isShabbat, render2 } from "./journeys2";
 import { emailLines } from "./dp2";
-import { STATIONS, leaks, nis, type Profile, type Report, type Scores } from "./checkup";
+import { leaks, nis, stationsIn, type Profile, type Report, type Scores } from "./checkup";
 
 /**
  * After the checkup: 4 messages that move a non-member from "I have a plan" to "I execute it with Nir"
@@ -46,13 +46,13 @@ export const nurtureOn = () => process.env.CHECKUP_NURTURE === "1" && !!process.
 type Row = { id: string; token: string; full_name: string | null; phone: string | null; email: string | null; profile: Profile; scores: Scores; total: number; report: Report; finished_at: string };
 
 function vars(r: Row) {
-  const weakest = [...STATIONS].sort((a, b) => r.scores[a.id] - r.scores[b.id])[0];
+  const weakest = stationsIn(r.scores).sort((a, b) => r.scores[a.id] - r.scores[b.id])[0];
   const lk = leaks(r.profile, r.scores);
   return {
     first_name: (r.full_name ?? "").split(" ")[0] || "היי",
     score: String(r.total),
-    weak: weakest.label,
-    leak: lk.per[weakest.id] ? `בערך ${nis(lk.per[weakest.id])} בחודש` : "כסף כל חודש",
+    weak: weakest?.label ?? "העסק",
+    leak: weakest && lk.per[weakest.id] ? `בערך ${nis(lk.per[weakest.id])} בחודש` : "כסף כל חודש",
     move: (r.report?.top3?.[0]?.action ?? "").replace(/[.\s]+$/, "").slice(0, 160) || "לבחור דבר אחד מהתוכנית ולהתחיל",
     link: `${app()}/checkup/r/${r.token}`,
     plans_url: `${app()}/plans?src=checkup`,

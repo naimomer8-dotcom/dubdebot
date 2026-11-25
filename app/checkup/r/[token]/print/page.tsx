@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { loadCheckup } from "@/lib/checkupData";
-import { QUESTIONS, STATIONS, answerScore, grade, leaks, nis, type Profile, type Report, type Scores } from "@/lib/checkup";
+import { QUESTIONS, answerScore, grade, leaks, nis, partScores, stationsIn, type Profile, type Report, type Scores } from "@/lib/checkup";
 import PrintButton from "./PrintButton";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "תוכנית עסקית 2027 | ניר דובדבני", robots: { index: false } };
+export const metadata: Metadata = { title: "תוכנית עסקית ואישית 2027 | ניר דובדבני", robots: { index: false } };
 
 const col = (s: number) => (s >= 8 ? "#2f9e6e" : s >= 6 ? "#b08a3e" : s >= 4 ? "#d07a2e" : "#c8102e");
 
@@ -19,6 +19,9 @@ export default async function CheckupPrint({ params }: { params: Promise<{ token
   const profile = (d.profile ?? {}) as Profile;
   const answers = (d.answers ?? {}) as Record<string, number>;
   const g = grade(total);
+  const ST = stationsIn(scores);
+  const hasMe = ST.some((s) => s.part === "me");
+  const ps = partScores(scores);
   const date = new Date(d.finished_at as string).toLocaleDateString("he-IL", { day: "numeric", month: "long", year: "numeric" });
 
   return (
@@ -28,10 +31,11 @@ export default async function CheckupPrint({ params }: { params: Promise<{ token
       <section className="pp-page pp-cover">
         <div className="pp-cover-top"><img src="/logo-duvdevani-white.png" alt="" /><span>{date}</span></div>
         <div className="pp-cover-mid">
-          <p className="pp-eyebrow">תוכנית עסקית אישית</p>
+          <p className="pp-eyebrow">{hasMe ? "תוכנית עסקית ואישית" : "תוכנית עסקית אישית"}</p>
           <h1>2027</h1>
           <h2>{profile.business || "העסק שלך"}{d.name ? ` · ${d.name}` : ""}</h2>
           <div className="pp-score"><b>{total.toFixed(1)}</b><span>/10</span><em style={{ color: col(total) }}>{g.word}</em></div>
+          {hasMe && <p className="pp-leak">ציון עסקי <b>{ps.biz}</b> · ציון אישי <b>{ps.me}</b></p>}
           {leaks(profile, scores).total > 0 && <p className="pp-leak">דליפה משוערת לפי המחזור שמסרת: <b>{nis(leaks(profile, scores).total)} בחודש</b> · {nis(leaks(profile, scores).total * 12)} בשנה</p>}
           <p className="pp-headline">{report.headline}</p>
         </div>
@@ -44,7 +48,7 @@ export default async function CheckupPrint({ params }: { params: Promise<{ token
         <table className="pp-table">
           <thead><tr><th>תחנה</th><th>פרמטרים</th><th>ציון</th></tr></thead>
           <tbody>
-            {STATIONS.map((s) => (
+            {ST.map((s) => (
               <tr key={s.id}>
                 <td><b>{s.n}. {s.label}</b></td>
                 <td>{QUESTIONS.filter((q) => q.station === s.id).map((q) => `${q.param} ${answerScore(q, answers[q.id]) ?? "-"}`).join(" · ")}</td>
@@ -63,7 +67,7 @@ export default async function CheckupPrint({ params }: { params: Promise<{ token
       <section className="pp-page">
         <h3 className="pp-h">המשוב של ניר, תחנה אחרי תחנה</h3>
         <div className="pp-fb">
-          {STATIONS.map((s) => (
+          {ST.filter((s) => report.feedback[s.id]).map((s) => (
             <div key={s.id}>
               <b>{s.label} <em style={{ color: col(scores[s.id]) }}>{scores[s.id]}/10</em></b>
               <p><span className="ok">מה טוב:</span> {report.feedback[s.id].good}</p>
@@ -91,6 +95,11 @@ export default async function CheckupPrint({ params }: { params: Promise<{ token
           <thead><tr><th>מדד</th><th>היום</th><th>יעד 2027</th></tr></thead>
           <tbody>{report.plan.kpis.map((k, i) => <tr key={i}><td>{k.name}</td><td>{k.now}</td><td><b>{k.target}</b></td></tr>)}</tbody>
         </table>
+        {report.plan.personal && <>
+          <h3 className="pp-h">התוכנית האישית ל-2027</h3>
+          <p>{report.plan.personal.goal}</p>
+          <ol className="pp-90">{report.plan.personal.steps.map((s, i) => <li key={i}>{s}</li>)}</ol>
+        </>}
         <h3 className="pp-h">תוכנית ההון והנדל״ן ל-10 שנים</h3>
         <p>{report.plan.capital.verdict}</p>
         <ol className="pp-90">{report.plan.capital.steps.map((s, i) => <li key={i}>{s}</li>)}</ol>

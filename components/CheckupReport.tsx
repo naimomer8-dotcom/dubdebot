@@ -6,13 +6,16 @@ import Icon from "./Icon";
 import { Brand } from "./BrandBar";
 import { CallPicker } from "./OnboardingCard";
 import Confetti from "./Confetti";
-import { QUESTIONS, STATIONS, answerScore, grade, leaks, nis, scoreTone, type Profile, type Report, type Scores } from "@/lib/checkup";
+import { PART_LABEL, QUESTIONS, STATIONS, answerScore, grade, leaks, nis, partScores, scoreTone, stationsIn, type Profile, type Report, type Scores } from "@/lib/checkup";
 import { renderCheckupCard } from "@/lib/checkupCard";
 
 type Props = { token: string; loggedIn: boolean; name: string; profile: Profile; answers: Record<string, number>; scores: Scores; total: number; report: Report; finishedAt: string; viewer: "owner" | "admin"; bench?: { n: number; avg: number; totals: number[] } | null };
 
 export default function CheckupReport({ token, loggedIn, name, profile, answers, scores, total, report, finishedAt, viewer, bench }: Props) {
   const lk = leaks(profile, scores);
+  const ST = stationsIn(scores);
+  const ps = partScores(scores);
+  const hasMe = ST.some((s) => s.part === "me");
   const pct = bench ? Math.round((bench.totals.filter((t) => t < total).length / bench.n) * 100) : null;
   const [intro, setIntro] = useState(false);
   const [asked, setAsked] = useState<Record<number, "busy" | "done">>({});
@@ -40,7 +43,7 @@ export default function CheckupReport({ token, loggedIn, name, profile, answers,
     if (!b) return;
     const f = new File([b], "checkup-2027.png", { type: "image/png" });
     const nav = navigator as Navigator & { canShare?: (d: unknown) => boolean };
-    if (nav.canShare?.({ files: [f] })) { try { await navigator.share({ files: [f], title: "הצ׳קאפ העסקי שלי" }); return; } catch {} }
+    if (nav.canShare?.({ files: [f] })) { try { await navigator.share({ files: [f], title: "הצ׳קאפ שלי ל-2027" }); return; } catch {} }
     setCard(URL.createObjectURL(b));
   }
   useEffect(() => {
@@ -66,7 +69,7 @@ export default function CheckupReport({ token, loggedIn, name, profile, answers,
     return () => cancelAnimationFrame(raf);
   }, [total]);
 
-  const sorted = [...STATIONS].sort((a, b) => scores[a.id] - scores[b.id]);
+  const sorted = [...ST].sort((a, b) => scores[a.id] - scores[b.id]);
   const date = new Date(finishedAt).toLocaleDateString("he-IL", { day: "numeric", month: "long", year: "numeric" });
 
   return (
@@ -83,8 +86,8 @@ export default function CheckupReport({ token, loggedIn, name, profile, answers,
         {/* ---------- hero score ---------- */}
         <section className="ck-r-hero">
           <div className="ck-r-hero-copy">
-            <p className="eyebrow">הצ׳קאפ העסקי · {profile.business || "העסק שלך"}{profile.field ? ` · ${profile.field}` : ""}</p>
-            <h1 className="h-display ck-r-h1">{name ? `${name}, ` : ""}העסק שלך<br /><span className={`ck-grade t-${g.tone}`}>{g.word}</span></h1>
+            <p className="eyebrow">{hasMe ? "הצ׳קאפ האישי והעסקי" : "הצ׳קאפ העסקי"} · {profile.business || "העסק שלך"}{profile.field ? ` · ${profile.field}` : ""}</p>
+            <h1 className="h-display ck-r-h1">{name ? `${name}, ` : ""}{hasMe ? "אתה והעסק" : "העסק שלך"}<br /><span className={`ck-grade t-${g.tone}`}>{g.word}</span></h1>
             <p className="ck-lede">{report.headline}</p>
             <div className="ck-meta">
               {profile.years && <span>{profile.years}</span>}
@@ -92,8 +95,9 @@ export default function CheckupReport({ token, loggedIn, name, profile, answers,
               {profile.revenue && <span>{profile.revenue}</span>}
               {profile.goal && <span><Icon name="target" size={14} /> {profile.goal}</span>}
             </div>
-            {(lk.total > 0 || pct !== null) && (
+            {(lk.total > 0 || pct !== null || hasMe) && (
               <div className="ck-r-facts">
+                {hasMe && <div className="ck-fact"><small>ציון עסקי · ציון אישי</small><b><span className={`t-${scoreTone(ps.biz)}`}>{ps.biz}</span> · <span className={`t-${scoreTone(ps.me)}`}>{ps.me}</span></b><em>{ps.me < ps.biz ? "העסק לפניך. הגיע הזמן שגם אתה תרוויח ממנו" : "אתה מסודר. עכשיו מאיצים את העסק"}</em></div>}
                 {lk.total > 0 && <div className="ck-fact bad"><small>הדליפה המשוערת</small><b>{nis(lk.total)}</b><em>בחודש · {nis(lk.total * 12)} בשנה</em></div>}
                 {pct !== null && <div className="ck-fact"><small>מול {bench!.n} עסקים בתחום שלך</small><b>{pct}%</b><em>קיבלו ציון נמוך משלך · ממוצע {bench!.avg}</em></div>}
               </div>
@@ -105,7 +109,7 @@ export default function CheckupReport({ token, loggedIn, name, profile, answers,
         <nav className="ck-actions ck-rv" aria-label="פעולות">
           <a className="ck-act" href={`/checkup/r/${token}/print`} target="_blank" rel="noopener"><Icon name="download" size={18} /><span>PDF של התוכנית</span></a>
           <button className="ck-act" onClick={makeCard} disabled={busy}><Icon name="image" size={18} /><span>{busy ? "מכין..." : "כרטיס לסטורי"}</span></button>
-          <a className="ck-act" href={`https://wa.me/?text=${encodeURIComponent(`עשיתי את הצ׳קאפ העסקי של ניר דובדבני ויצא לי ${total}/10. אתה עוקף אותי? בדוק כמה העסק שלך מוכן ל-2027: https://dubdebot.vercel.app/checkup?ref=${token}`)}`} target="_blank" rel="noopener"><Icon name="share" size={18} /><span>שתף בוואטסאפ</span></a>
+          <a className="ck-act" href={`https://wa.me/?text=${encodeURIComponent(`עשיתי את הצ׳קאפ האישי והעסקי של ניר דובדבני ויצא לי ${total}/10. אתה עוקף אותי? בדוק כמה אתה והעסק שלך מוכנים ל-2027: https://dubdebot.vercel.app/checkup?ref=${token}`)}`} target="_blank" rel="noopener"><Icon name="share" size={18} /><span>שתף בוואטסאפ</span></a>
           <button className="ck-act" onClick={async () => { try { await navigator.clipboard.writeText(link); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch {} }}><Icon name={copied ? "check" : "link"} size={18} /><span>{copied ? "הועתק" : "קישור לתוכנית"}</span></button>
         </nav>
         {card && (
@@ -122,17 +126,18 @@ export default function CheckupReport({ token, loggedIn, name, profile, answers,
         <section className="ck-r-grid ck-rv">
           <div className="ck-r-wheel glass edge">
             <p className="eyebrow">מפת האלפא שלך</p>
-            <AlphaWheel scores={scores} />
+            <AlphaWheel scores={scores} stations={ST} />
             <div className="ck-legend"><span className="t-bad">1–4 חירום</span><span className="t-warn">4–6 סיכון</span><span className="t-mid">6–8 דליפות</span><span className="t-ok">8–10 חזק</span></div>
           </div>
           <div className="ck-r-card glass edge">
             <p className="eyebrow">ציון לכל פרמטר</p>
             <ul className="ck-score-list">
-              {STATIONS.map((s) => {
+              {ST.map((s, i) => {
                 const qs = QUESTIONS.filter((q) => q.station === s.id);
                 const isOpen = open === s.id;
+                const head = hasMe && (i === 0 || ST[i - 1].part !== s.part);
                 return (
-                  <li key={s.id} className={isOpen ? "open" : ""}>
+                  <li key={s.id} className={`${isOpen ? "open" : ""}${head ? " ck-parthead" : ""}`} data-part={head ? `${PART_LABEL[s.part]} · ${s.part === "biz" ? ps.biz : ps.me}/10` : undefined}>
                     <button className="ck-score-row" onClick={() => setOpen(isOpen ? null : s.id)} aria-expanded={isOpen}>
                       <span className="ck-sn">{s.n}</span>
                       <span className="ck-sl">{s.label}</span>
@@ -145,8 +150,10 @@ export default function CheckupReport({ token, loggedIn, name, profile, answers,
                         <ul className="ck-params">
                           {qs.map((q) => { const v = answerScore(q, answers[q.id]) ?? 1; return <li key={q.id}><span>{q.param}</span><b className={`t-${scoreTone(v)}`}>{v}/10</b></li>; })}
                         </ul>
-                        <p className="ck-good"><Icon name="check" size={15} /> {report.feedback[s.id].good}</p>
-                        <p className="ck-fix"><Icon name="alert" size={15} /> {report.feedback[s.id].fix}</p>
+                        {report.feedback[s.id] && <>
+                          <p className="ck-good"><Icon name="check" size={15} /> {report.feedback[s.id].good}</p>
+                          <p className="ck-fix"><Icon name="alert" size={15} /> {report.feedback[s.id].fix}</p>
+                        </>}
                       </div>
                     )}
                   </li>
@@ -167,7 +174,7 @@ export default function CheckupReport({ token, loggedIn, name, profile, answers,
                 <h3>{m.title}</h3>
                 <p>{m.why}</p>
                 <p className="ck-move-act"><Icon name="arrowLeft" size={15} /> {m.action}</p>
-                {lk.per[(STATIONS.find((s) => s.label === m.title)?.id ?? "vision")] > 0 && <p className="ck-move-cost">שווה לך כ-{nis(lk.per[STATIONS.find((s) => s.label === m.title)!.id] * 12)} בשנה</p>}
+                {(lk.per[(STATIONS.find((s) => s.label === m.title)?.id ?? "vision")] ?? 0) > 0 && <p className="ck-move-cost">שווה לך כ-{nis(lk.per[STATIONS.find((s) => s.label === m.title)!.id] * 12)} בשנה</p>}
                 {viewer === "owner" && (asked[i] === "done"
                   ? <p className="ck-good"><Icon name="check" size={15} /> קיבלנו. יועץ יחזור אליך היום.</p>
                   : <button className="ck-move-btn" disabled={asked[i] === "busy"} onClick={() => askAdvisor(i, m.title)}>ליישם את זה עם יועץ <Icon name="arrowLeft" size={15} /></button>)}
@@ -179,7 +186,7 @@ export default function CheckupReport({ token, loggedIn, name, profile, answers,
         {/* ---------- the 2027 plan ---------- */}
         <section className="ck-plan ck-rv">
           <div className="ck-plan-head">
-            <p className="eyebrow">התוכנית העסקית שלך</p>
+            <p className="eyebrow">{hasMe ? "התוכנית העסקית והאישית שלך" : "התוכנית העסקית שלך"}</p>
             <h2 className="h-display ck-h2 ck-year">2027</h2>
             <p className="ck-plan-goal">{report.plan.goal}</p>
           </div>
@@ -213,6 +220,19 @@ export default function CheckupReport({ token, loggedIn, name, profile, answers,
               </div>
             </div>
           </div>
+
+          {report.plan.personal && (
+            <div className="ck-capital ck-personal glass edge">
+              <div className="ck-capital-ico"><Icon name="target" size={26} /></div>
+              <div>
+                <p className="eyebrow">התוכנית האישית · ציון אישי {ps.me}/10</p>
+                <h3>אתה, לא רק העסק: התוכנית שלך ל-2027</h3>
+                <p>{report.plan.personal.goal}</p>
+                <ol>{report.plan.personal.steps.map((s, i) => <li key={i}>{s}</li>)}</ol>
+                {(["household", "credit", "future"] as const).some((id) => (scores[id] ?? 10) < 6) && <p className="ck-move-cost">מומלץ: בדיקת משכנתא, אשראי ופנסיה עם יועץ מהצוות של ניר. לחיצה על ״ליישם עם יועץ״ במהלכים למעלה, או בשיחה עם הנציג.</p>}
+              </div>
+            </div>
+          )}
 
           <div className="ck-capital glass edge">
             <div className="ck-capital-ico"><Icon name="vault" size={26} /></div>
@@ -258,6 +278,7 @@ export default function CheckupReport({ token, loggedIn, name, profile, answers,
           <section className="ck-cta glass edge ck-rv">
             <div>
               <p className="eyebrow">לנציג · איך פותחים את השיחה</p>
+              {hasMe && <p><b>מסלול:</b> {sorted[0].part === "me" ? "אישי → בדיקת משכנתא / נדל״ן / כלכלת משפחה" : "עסקי → פלטפורמה / ליווי"} · עסקי {ps.biz} · אישי {ps.me}</p>}
               <p>״ראיתי את הצ׳קאפ שעשית. יצא לך {total}/10, והדליפה הכי גדולה אצלך היא {sorted[0].label}. בניתי לך בתוכנית צעד ראשון לזה: {report.top3[0]?.action}. בוא נראה איך מיישמים את זה, במסלול או בפגישה עם יועץ.״</p>
             </div>
           </section>
@@ -291,10 +312,10 @@ function ScoreRing({ value, total, tone }: { value: number; total: number; tone:
   );
 }
 
-/** 10 radial petals, one per station, length = score. */
-function AlphaWheel({ scores }: { scores: Scores }) {
+/** Radial petals, one per station, length = score. */
+function AlphaWheel({ scores, stations }: { scores: Scores; stations: typeof STATIONS }) {
   const cx = 160, cy = 160, r0 = 34, R = 128;
-  const n = STATIONS.length;
+  const n = stations.length;
   const col = (s: number) => (s >= 8 ? "#8fd9b4" : s >= 6 ? "#e2c68e" : s >= 4 ? "#f0a96a" : "#ff8d8d");
   const arc = (a0: number, a1: number, rr: number) => {
     const p = (a: number, rad: number) => `${cx + rad * Math.sin(a)},${cy - rad * Math.cos(a)}`;
@@ -303,7 +324,7 @@ function AlphaWheel({ scores }: { scores: Scores }) {
   return (
     <svg viewBox="0 0 320 320" className="ck-wheel" role="img" aria-label="ציונים לפי תחנה">
       {[2, 4, 6, 8, 10].map((v) => <circle key={v} cx={cx} cy={cy} r={r0 + ((R - r0) * v) / 10} fill="none" stroke="rgba(255,255,255,.06)" />)}
-      {STATIONS.map((s, i) => {
+      {stations.map((s, i) => {
         const a0 = (i / n) * 2 * Math.PI + 0.03, a1 = ((i + 1) / n) * 2 * Math.PI - 0.03;
         const rr = r0 + ((R - r0) * Math.max(0.6, scores[s.id])) / 10;
         const mid = (a0 + a1) / 2;
@@ -337,7 +358,7 @@ function Reveal({ total, word, leak }: { total: number; word: string; leak: numb
   return (
     <div className={`ck-reveal s${stage}`} aria-live="polite">
       <div className="ck-reveal-rays" aria-hidden />
-      <p>הציון של העסק שלך</p>
+      <p>הציון שלך ל-2027</p>
       <b>{n.toFixed(1)}</b>
       <h2 className={stage ? "on" : ""}>{word}</h2>
       {leak > 0 && <em className={stage ? "on" : ""}>דליפה משוערת: {nis(leak)} בחודש</em>}

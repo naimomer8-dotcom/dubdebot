@@ -5,18 +5,23 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Icon from "./Icon";
 import { Brand } from "./BrandBar";
-import { PROFILE, QUESTIONS, STATIONS, answerScore, grade, leaks, nis, reaction, type Profile, type Q, type StationId } from "@/lib/checkup";
+import { PART_LABEL, PROFILE, QUESTIONS, STATIONS, answerScore, grade, leaks, nis, partScores, reaction, type Profile, type Q, type StationId } from "@/lib/checkup";
+
+const NQ = QUESTIONS.length;
+const NS = STATIONS.length;
+/** last station of the business part: the midway save comes after it */
+const BIZ_END = STATIONS.filter((s) => s.part === "biz").length - 1;
 
 /* ============================================================================
-   הצ'קאפ העסקי של ניר דובדבני · 2027 — the experience
-   intro (particles → Alpha ring) → business profile → 10 stations on a living map
+   הצ'קאפ האישי והעסקי של ניר דובדבני · 2027 — the experience
+   intro (particles → Alpha ring) → business profile → 9 business + 5 personal stations on a living map
    (Nir opens each station, interactive answers, live dashboard) → unlock gate → plan
    ========================================================================== */
 
 type Phase = "intro" | "profile" | "station" | "ask" | "cleared" | "save" | "gate" | "build";
 type Saved = { token: string; step: number; profile: Profile; answers: Record<string, number> } | null;
 const LS = "dd_checkup_v2";
-const BUILD = ["קורא את 24 התשובות שלך", "מדרג כל פרמטר מ-1 עד 10", "מאתר את 3 הדליפות הגדולות", "בונה 4 רבעונים ל-2027", "מוסיף תוכנית הון ונדל״ן ל-10 שנים", "ניר חותם על התוכנית"];
+const BUILD = [`קורא את ${QUESTIONS.length} התשובות שלך`, "מדרג כל פרמטר מ-1 עד 10", "מאתר את 3 הדליפות הגדולות", "בונה 4 רבעונים ל-2027", "בונה תוכנית אישית: בית, משכנתא, נדל״ן ופרישה", "ניר חותם על התוכנית"];
 
 /* ---------- tiny sound + haptics (after a user gesture only) ---------- */
 let ac: AudioContext | null = null;
@@ -154,7 +159,7 @@ export default function CheckupClient({ loggedIn, source = "app" }: { loggedIn: 
   }
 
   function nextStation() {
-    if (sIdx === 4 && !saved && !loggedIn) { setSaved(true); setPhase("save"); return; }
+    if (sIdx === BIZ_END && !saved && !loggedIn) { setSaved(true); setPhase("save"); return; }
     if (sIdx + 1 < STATIONS.length) { setSIdx(sIdx + 1); setQIdx(0); setPhase("station"); }
     else { persist({ step: stepNo(), profile, answers }, true); setPhase("gate"); }
   }
@@ -238,7 +243,7 @@ export default function CheckupClient({ loggedIn, source = "app" }: { loggedIn: 
             <LiveGauge value={liveTotal} />
             {leak.total > 0 && <div className="cx-leak"><small>דליפה משוערת</small><b>{nis(leak.total)}</b><em>בחודש</em></div>}
             <ul>{STATIONS.map((s, i) => (
-              <li key={s.id} className={i === sIdx ? "on" : live[s.id] ? "done" : ""}>
+              <li key={s.id} className={`${i === sIdx ? "on" : live[s.id] ? "done" : ""}${i > 0 && STATIONS[i - 1].part !== s.part ? " cx-partstart" : ""}`} data-part={i === 0 || STATIONS[i - 1].part !== s.part ? PART_LABEL[s.part] : undefined}>
                 <span>{s.label}</span>
                 <i><b style={{ width: `${live[s.id] * 10}%`, background: scoreColor(live[s.id]) }} /></i>
                 <em>{live[s.id] ? live[s.id] : "–"}</em>
@@ -250,7 +255,7 @@ export default function CheckupClient({ loggedIn, source = "app" }: { loggedIn: 
             {phase === "station" && <StationIntro key={`s${sIdx}`} idx={sIdx} onGo={() => { tick(600); setPhase("ask"); }} />}
             {phase === "ask" && q && (
               <div className="cx-card cx-enter" key={q.id}>
-                <p className="cx-kicker">תחנה {station.n}/10 · {station.label} <span>· {q.param}</span></p>
+                <p className="cx-kicker">תחנה {station.n}/{NS} · {station.label} <span>· {q.param}</span></p>
                 <h2 className="cx-h2">{q.q}</h2>
                 {q.hint && <p className="cx-hint">{q.hint}</p>}
                 <Answer q={q} value={answers[q.id]} onAnswer={answer} />
@@ -279,7 +284,7 @@ export default function CheckupClient({ loggedIn, source = "app" }: { loggedIn: 
         <main className="cx-stage cx-buildwrap">
           <div className="cx-orb" aria-hidden><i /><i /><i /><span>{liveTotal.toFixed(1)}</span></div>
           <p className="cx-kicker">ניר עובד על זה</p>
-          <h1 className="cx-h1 sm">בונה לך את התוכנית העסקית ל-2027</h1>
+          <h1 className="cx-h1 sm">בונה לך את התוכנית האישית והעסקית ל-2027</h1>
           <ul className="cx-buildlines" aria-live="polite">
             {BUILD.map((l, i) => <li key={l} className={i < buildLine ? "done" : i === buildLine ? "on" : ""}><span>{i < buildLine ? <Icon name="check" size={13} /> : null}</span>{l}</li>)}
           </ul>
@@ -297,10 +302,10 @@ function Intro({ onStart, onResume, loggedIn }: { onStart: () => void; onResume:
       <div className="cx-intro-grid">
         <div className="cx-intro-copy">
           <p className="cx-badge"><Icon name="gem" size={14} /> במתנה מניר דובדבני</p>
-          <h1 className="cx-h1"><span className="cx-reveal" style={{ animationDelay: "120ms" }}>כמה העסק שלך</span><span className="cx-reveal cx-gold" style={{ animationDelay: "300ms" }}>מוכן ל-2027?</span></h1>
-          <p className="cx-lede cx-reveal" style={{ animationDelay: "520ms" }}>24 שאלות שאני שואל כשאני נכנס לעסק. ציון מ-1 עד 10 לכל פרמטר, משוב, ותוכנית עסקית מלאה לשנה הקרובה, שנבנית במיוחד בשבילך.</p>
+          <h1 className="cx-h1"><span className="cx-reveal" style={{ animationDelay: "120ms" }}>כמה אתה והעסק שלך</span><span className="cx-reveal cx-gold" style={{ animationDelay: "300ms" }}>מוכנים ל-2027?</span></h1>
+          <p className="cx-lede cx-reveal" style={{ animationDelay: "520ms" }}>צ׳קאפ אישי ועסקי: השאלות שאני שואל כשאני נכנס לעסק, ועל החיים של מי שמחזיק אותו. ציון מ-1 עד 10 לכל פרמטר, משוב, ותוכנית עסקית ואישית ל-2027, שנבנית במיוחד בשבילך.</p>
           <div className="cx-facts cx-reveal" style={{ animationDelay: "700ms" }}>
-            <span><b>7</b> דקות</span><span><b>10</b> תחנות</span><span><b>24</b> פרמטרים</span><span><b>1</b> תוכנית ל-2027</span>
+            <span><b>10</b> דקות</span><span><b>{NS}</b> תחנות</span><span><b>{NQ}</b> פרמטרים</span><span><b>2</b> תוכניות: אישית ועסקית</span>
           </div>
           <div className="cx-ctas cx-reveal" style={{ animationDelay: "860ms" }}>
             <button className="cx-cta" onClick={onStart}><span>מתחילים את הצ׳קאפ</span><Icon name="arrowLeft" size={20} /></button>
@@ -346,7 +351,7 @@ function TextAnswer({ placeholder, initial, onDone }: { placeholder?: string; in
 }
 
 /* ============================ map + dashboard ============================ */
-const MAP_PTS: [number, number][] = [[86, 82], [64, 86], [42, 78], [22, 64], [30, 46], [52, 52], [74, 44], [80, 24], [58, 14], [32, 18]];
+const MAP_PTS: [number, number][] = [[88, 88], [70, 92], [50, 86], [30, 82], [14, 70], [26, 58], [46, 62], [66, 60], [84, 52], [80, 34], [60, 38], [38, 34], [20, 22], [44, 10]];
 
 function AlphaMap({ current, live, phase }: { current: number; live: Record<StationId, number>; phase: Phase }) {
   const [cx, cy] = MAP_PTS[current];
@@ -402,7 +407,7 @@ function StationIntro({ idx, onGo }: { idx: number; onGo: () => void }) {
     <div className="cx-card cx-station cx-enter">
       <div className="cx-st-head">
         <span className="cx-st-num">{String(s.n).padStart(2, "0")}</span>
-        <div><p className="cx-kicker">תחנה {s.n} מתוך 10</p><h2 className="cx-h2 big">{s.label}</h2><p className="cx-tag">{s.tag}</p></div>
+        <div><p className="cx-kicker">{PART_LABEL[s.part]} · תחנה {s.n} מתוך {NS}</p><h2 className="cx-h2 big">{s.label}</h2><p className="cx-tag">{s.tag}</p></div>
       </div>
       <div className="cx-nir">
         <div className="cx-nir-media">
@@ -578,10 +583,10 @@ function SaveProgress({ leakTotal, onSave, onSkip }: { leakTotal: number; onSave
   return (
     <main className="cx-stage cx-gate">
       <section className="cx-gate-score cx-enter">
-        <p className="cx-kicker">חצי דרך · 5 מתוך 10 תחנות</p>
-        <h2 className="cx-h2 big">אתה באמצע.</h2>
-        <p className="cx-lede sm">עוד 5 תחנות ואתה מקבל את התוכנית המלאה ל-2027. שמור את ההתקדמות, ואם משהו יקטע אותך, נחזור אליך להשלים ביחד.</p>
-        {leakTotal > 0 && <div className="cx-leakbig sm"><small>הדליפה שמצאנו עד עכשיו</small><b>{nis(leakTotal)}</b><em>בחודש, ורק בחצי מהעסק</em></div>}
+        <p className="cx-kicker">החלק העסקי הושלם · {BIZ_END + 1} מתוך {NS} תחנות</p>
+        <h2 className="cx-h2 big">עכשיו, עליך.</h2>
+        <p className="cx-lede sm">עוד {NS - BIZ_END - 1} תחנות אישיות קצרות: הבית, המשכנתא, הנדל״ן והפרישה. בסופן מקבלים תוכנית עסקית ואישית מלאה ל-2027. שמור את ההתקדמות, ואם משהו יקטע אותך, נחזור אליך להשלים ביחד.</p>
+        {leakTotal > 0 && <div className="cx-leakbig sm"><small>הדליפה שמצאנו בעסק</small><b>{nis(leakTotal)}</b><em>בחודש</em></div>}
       </section>
       <form className="cx-card cx-gate-form cx-enter" onSubmit={async (e) => { e.preventDefault(); setBusy(true); setBad(false); const ok = await onSave({ name, phone }); setBusy(false); if (!ok) setBad(true); }}>
         <h3>לשמור את ההתקדמות?</h3>
@@ -602,23 +607,25 @@ function Gate({ pre, total, live, leakTotal, loggedIn, err, onSubmit }: { pre: {
   const [email, setEmail] = useState("");
   const [consent, setConsent] = useState(false);
   const g = grade(total);
-  const weakest = [...STATIONS].sort((a, b) => live[a.id] - live[b.id])[0];
+  const weakest = STATIONS.filter((s) => live[s.id] > 0).sort((a, b) => live[a.id] - live[b.id])[0] ?? STATIONS[0];
+  const ps = partScores(live);
   return (
     <main className="cx-stage cx-gate">
       <Sparks />
       <section className="cx-gate-score cx-enter">
-        <p className="cx-kicker">הציון של העסק שלך</p>
+        <p className="cx-kicker">הציון שלך</p>
         <div className="cx-big xl" style={{ color: scoreColor(total) }}>{total.toFixed(1)}<small>/10</small></div>
         <h2 className="cx-h2">{g.word}</h2>
-        <p className="cx-lede sm">{g.line} הדליפה הכי גדולה אצלך: <b>{weakest.label}</b>.</p>
+        <div className="cx-parts"><span>עסקי <b style={{ color: scoreColor(ps.biz) }}>{ps.biz}</b></span><span>אישי <b style={{ color: scoreColor(ps.me) }}>{ps.me}</b></span></div>
+        <p className="cx-lede sm">{g.line} החולשה הכי גדולה אצלך: <b>{weakest.label}</b>.</p>
         {leakTotal > 0 && <div className="cx-leakbig"><small>לפי המחזור שמסרת, העסק מדליף בערך</small><b>{nis(leakTotal)}</b><em>בחודש · {nis(leakTotal * 12)} בשנה</em></div>}
         <div className="cx-locked" aria-hidden>
-          {["משוב על 24 פרמטרים", "3 המהלכים שיזיזו לך את 2027", "תוכנית רבעונית מלאה", "90 הימים הראשונים", "תוכנית הון ונדל״ן ל-10 שנים"].map((t) => <span key={t}><Icon name="lock" size={14} />{t}</span>)}
+          {[`משוב על ${NQ} פרמטרים`, "3 המהלכים שיזיזו לך את 2027", "תוכנית עסקית רבעונית", "תוכנית אישית: בית, משכנתא, נדל״ן ופרישה", "90 הימים הראשונים"].map((t) => <span key={t}><Icon name="lock" size={14} />{t}</span>)}
         </div>
       </section>
       <form className="cx-card cx-gate-form cx-enter" style={{ animationDelay: "160ms" }} onSubmit={(e) => { e.preventDefault(); onSubmit({ name, phone, email, consent }); }}>
         <h3>כמעט שם. למי התוכנית?</h3>
-        <p>ניר בונה לך עכשיו תוכנית עסקית אישית ל-2027. היא תיפתח כאן, עם PDF להורדה.</p>
+        <p>ניר בונה לך עכשיו תוכנית עסקית ואישית ל-2027. היא תיפתח כאן, עם PDF להורדה.</p>
         {!loggedIn && <>
           <label><span>שם מלא</span><input required value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" /></label>
           <label><span>טלפון נייד</span><input required inputMode="tel" dir="ltr" value={phone} onChange={(e) => setPhone(e.target.value)} autoComplete="tel" placeholder="05X-XXXXXXX" /></label>

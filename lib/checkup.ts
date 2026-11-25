@@ -1,26 +1,34 @@
 /**
- * הצ'קאפ העסקי של ניר דובדבני · 2027.
- * 24 questions across 10 stations of Nir's method (Alpha map + money + capital), scored 1–10,
- * plus a short business profile. The report (feedback + a 2027 business plan) is written by Gemini
- * from these scores; buildFallbackReport() covers the case where the model is unavailable.
+ * הצ'קאפ האישי והעסקי של ניר דובדבני · 2027.
+ * Two parts: the business (9 stations of Nir's Alpha map) and the personal (5 stations: personal vision,
+ * household money, mortgage & credit, real estate & capital, retirement). Every question is scored 1–10.
+ * The report (feedback + a business plan and a personal plan for 2027) is written by Gemini from the
+ * scores; buildFallbackReport() covers the case where the model is unavailable.
+ * Personal weakness → real-estate / mortgage conversation (Nir's CRM); business weakness → the platform.
  */
 
-export type StationId = "vision" | "brand" | "products" | "marketing" | "digital" | "sales" | "system" | "team" | "money" | "capital";
+export type StationId = "vision" | "brand" | "products" | "marketing" | "digital" | "sales" | "system" | "team" | "money" | "me_vision" | "household" | "credit" | "capital" | "future";
+export type Part = "biz" | "me";
+export const PART_LABEL: Record<Part, string> = { biz: "הצ׳קאפ העסקי", me: "הצ׳קאפ האישי" };
 
-export type Station = { id: StationId; n: number; label: string; tag: string; icon: string; pose: string; line: string; video?: string };
+export type Station = { id: StationId; part: Part; n: number; label: string; tag: string; icon: string; pose: string; line: string; video?: string };
 
 /** pose = Nir cutout in /public/nir; line = what Nir says when you arrive; video = optional clip in /public/checkup. */
 export const STATIONS: Station[] = [
-  { id: "vision", n: 1, label: "חזון ויעד", tag: "לאן העסק הולך", icon: "target", pose: "wheel", line: "בלי יעד כתוב, כל החלטה נעשית מהבטן. בוא נבדוק לאן אתה הולך." },
-  { id: "brand", n: 2, label: "ערכים ובידול", tag: "למה דווקא אתה", icon: "gem", pose: "suit-point", line: "אם אין לך תשובה ל״למה אתה״, נשאר לך רק להתחרות על מחיר." },
-  { id: "products", n: 3, label: "מוצרים ותמחור", tag: "מה אתה מוכר ובכמה", icon: "layers", pose: "box", line: "עסק שמוכר רק את המוצר הגדול משאיר כסף על השולחן." },
-  { id: "marketing", n: 4, label: "שיווק ולידים", tag: "איך מגיעים לקוחות", icon: "spark", pose: "leads", line: "שיווק בלי מדידה הוא הימור. בוא נראה מה המספרים אומרים." },
-  { id: "digital", n: 5, label: "נוכחות דיגיטלית", tag: "איך רואים אותך ברשת", icon: "image", pose: "point-down", line: "הלקוח בודק אותך בנייד לפני שהוא מתקשר. מה הוא רואה?" },
-  { id: "sales", n: 6, label: "מכירות", tag: "איך פנייה הופכת לכסף", icon: "phone", pose: "alarm", line: "כל פנייה שלא נסגרה, כבר שילמת עליה בשיווק." },
-  { id: "system", n: 7, label: "שיטה ותהליכים", tag: "SOP, SLA ומדדים", icon: "check", pose: "book", line: "כשהכל בראש שלך, העסק לא יכול לגדול." },
-  { id: "team", n: 8, label: "צוות ומנהיגות", tag: "מי מחזיק את העסק", icon: "user", pose: "welcome", line: "אם העסק נעצר כשאתה לא שם, אין לך עסק. יש לך עבודה." },
-  { id: "money", n: 9, label: "כסף ותזרים", tag: "רווח והפסד ומזומנים", icon: "coin", pose: "hourglass", line: "עסקים לא נסגרים בגלל הפסד. הם נסגרים בגלל תזרים." },
-  { id: "capital", n: 10, label: "נדל״ן והון", tag: "מה נשאר לך ביד", icon: "vault", pose: "celebrate", line: "עסק שלא בונה הון משאיר אותך במשוואת זמן = כסף." },
+  { id: "vision", part: "biz", n: 1, label: "חזון ויעד", tag: "לאן העסק הולך", icon: "target", pose: "wheel", line: "בלי יעד כתוב, כל החלטה נעשית מהבטן. בוא נבדוק לאן אתה הולך." },
+  { id: "brand", part: "biz", n: 2, label: "ערכים ובידול", tag: "למה דווקא אתה", icon: "gem", pose: "suit-point", line: "אם אין לך תשובה ל״למה אתה״, נשאר לך רק להתחרות על מחיר." },
+  { id: "products", part: "biz", n: 3, label: "מוצרים ותמחור", tag: "מה אתה מוכר ובכמה", icon: "layers", pose: "box", line: "עסק שמוכר רק את המוצר הגדול משאיר כסף על השולחן." },
+  { id: "marketing", part: "biz", n: 4, label: "שיווק ולידים", tag: "איך מגיעים לקוחות", icon: "spark", pose: "leads", line: "שיווק בלי מדידה הוא הימור. בוא נראה מה המספרים אומרים." },
+  { id: "digital", part: "biz", n: 5, label: "נוכחות דיגיטלית", tag: "איך רואים אותך ברשת", icon: "image", pose: "point-down", line: "הלקוח בודק אותך בנייד לפני שהוא מתקשר. מה הוא רואה?" },
+  { id: "sales", part: "biz", n: 6, label: "מכירות", tag: "איך פנייה הופכת לכסף", icon: "phone", pose: "alarm", line: "כל פנייה שלא נסגרה, כבר שילמת עליה בשיווק." },
+  { id: "system", part: "biz", n: 7, label: "שיטה ותהליכים", tag: "SOP, SLA ומדדים", icon: "check", pose: "book", line: "כשהכל בראש שלך, העסק לא יכול לגדול." },
+  { id: "team", part: "biz", n: 8, label: "צוות ומנהיגות", tag: "מי מחזיק את העסק", icon: "user", pose: "welcome", line: "אם העסק נעצר כשאתה לא שם, אין לך עסק. יש לך עבודה." },
+  { id: "money", part: "biz", n: 9, label: "כסף ותזרים", tag: "רווח והפסד ומזומנים", icon: "coin", pose: "hourglass", line: "עסקים לא נסגרים בגלל הפסד. הם נסגרים בגלל תזרים." },
+  { id: "me_vision", part: "me", n: 10, label: "חזון אישי", tag: "מה אתה רוצה מהחיים", icon: "target", pose: "thanks", line: "עד עכשיו דיברנו על העסק. עכשיו עליך. העסק הוא כלי, המטרה היא החיים שלך." },
+  { id: "household", part: "me", n: 11, label: "כלכלת הבית", tag: "לאן הולך הכסף בבית", icon: "coin", pose: "point-down", line: "בעל עסק שמרוויח יפה ונשאר בלי כלום בבית. זה הסיפור הכי נפוץ שאני רואה." },
+  { id: "credit", part: "me", n: 12, label: "משכנתא ואשראי", tag: "כמה עולה לך הכסף", icon: "layers", pose: "alarm", line: "ריבית לא נכונה על משכנתא יכולה לעלות לך שנים של עבודה. בוא נבדוק." },
+  { id: "capital", part: "me", n: 13, label: "נדל״ן והון", tag: "מה נשאר לך ביד", icon: "vault", pose: "celebrate", line: "מי שלא בונה הון נשאר במשוואת זמן = כסף. נדל״ן הוא הדרך לצאת ממנה." },
+  { id: "future", part: "me", n: 14, label: "פרישה וביטחון", tag: "מה יהיה בעוד 20 שנה", icon: "check", pose: "wheel", line: "רוב בעלי העסקים לא יודעים מה יש להם בפנסיה. אל תהיה אחד מהם." },
 ];
 
 /** How a question is answered. Every kind resolves to a score 1–10. */
@@ -65,8 +73,17 @@ export const QUESTIONS: Q[] = [
   { id: "f1", station: "money", param: "רווח והפסד (P&L)", kind: "choice", q: "אתה רואה דוח רווח והפסד?", options: ["רק כשרואה החשבון שולח", "פעם בשנה", "מדי פעם", "כל חודש, מבין כל שורה"] },
   { id: "f2", station: "money", param: "תזרים מזומנים", kind: "slider", q: "כמה ברור לך מה יהיה בבנק בעוד 90 יום?", low: "מגלה כשזה מגיע", high: "תזרים שבועי מעודכן" },
   { id: "f3", station: "money", param: "משכורת לבעלים", kind: "swipe", q: "אני מושך לעצמי משכורת קבועה ומלאה, ורווח נשאר בעסק.", yes: "נכון", no: "לא" },
+  { id: "a1", station: "me_vision", param: "יעד אישי ל-2027", kind: "choice", q: "יש לך יעד אישי כתוב לשנה הקרובה? כסף, זמן, משפחה.", options: ["אין, אני חי את העסק", "יש חלום", "יש יעד בראש", "יעד כתוב, מחולק לצעדים"] },
+  { id: "a2", station: "me_vision", param: "זמן למשפחה ולעצמך", kind: "slider", q: "כמה זמן איכות יש לך בשבוע, עם המשפחה ולעצמך?", low: "כמעט אין", high: "כמה שאני רוצה" },
+  { id: "h1", station: "household", param: "תקציב הבית", kind: "choice", q: "יש תקציב חודשי לבית, ואתה יודע לאן הולך כל שקל?", options: ["אין לי מושג", "בערך", "יש תקציב, לא תמיד עומד בו", "תקציב קבוע ומדוד"] },
+  { id: "h2", station: "household", param: "חיסכון חודשי", kind: "dial", q: "כמה אחוז מההכנסה של הבית נחסך כל חודש?", unit: "%", max: 40, scale: [1, 3, 5, 7, 10, 12, 15, 20, 25] },
+  { id: "h3", station: "household", param: "קרן חירום", kind: "swipe", q: "יש לי קרן חירום שמחזיקה את הבית 6 חודשים בלי הכנסה.", yes: "יש", no: "אין" },
+  { id: "k1", station: "credit", param: "משכנתא והלוואות", kind: "choice", q: "המשכנתא וההלוואות שלך:", hint: "אין לך? בחר את האפשרות האחרונה.", options: ["יש חובות שמכבידים עליי", "יש הלוואות, לא בדקתי תנאים", "משכנתא שבדקתי פעם", "בדקתי ומיחזרתי לאחרונה / אין חובות"] },
+  { id: "k2", station: "credit", param: "ריבית ועלות הכסף", kind: "swipe", q: "אני יודע בדיוק כמה ריבית אני משלם החודש, על כל הלוואה.", yes: "יודע", no: "לא יודע" },
   { id: "c1", station: "capital", param: "תוכנית נדל״ן", kind: "choice", q: "תוכנית נדל״ן להכנסה פסיבית ל-10 השנים הקרובות?", options: ["אין, לא חשבתי", "חולם על זה", "יש כיוון, בלי תוכנית", "תוכנית כתובה, מתקדם"] },
   { id: "c2", station: "capital", param: "רווח שהופך לנכסים", kind: "dial", q: "כמה אחוז מהרווח החודשי הופך לנכסים?", hint: "חיסכון, השקעות, נדל״ן.", unit: "%", max: 50, scale: [1, 3, 5, 8, 10, 15, 20, 25, 30] },
+  { id: "r1", station: "future", param: "פנסיה והשתלמות", kind: "choice", q: "הפנסיה וקרן ההשתלמות שלך:", options: ["לא יודע מה יש לי", "יש, לא בדקתי שנים", "בדקתי בשנה האחרונה", "מנוהל, דמי ניהול נמוכים, יש תוכנית"] },
+  { id: "r2", station: "future", param: "הכנסה בפרישה", kind: "slider", q: "כמה ברור לך מה תהיה ההכנסה החודשית שלך בפרישה?", low: "אין לי מושג", high: "יודע עד השקל" },
 ];
 
 /** The 1–10 score of one raw answer (answers store choice index / slider value / swipe score / dial value). */
@@ -107,8 +124,18 @@ export function scoreCheckup(answers: Record<string, number>): { scores: Scores;
     cnt[q.station] = (cnt[q.station] ?? 0) + 1;
   }
   const scores = Object.fromEntries(STATIONS.map((st) => [st.id, cnt[st.id] ? r1(sum[st.id] / cnt[st.id]) : 0])) as Scores;
-  const total = r1(STATIONS.reduce((s, st) => s + scores[st.id], 0) / STATIONS.length);
+  const done = STATIONS.filter((st) => cnt[st.id]);
+  const total = done.length ? r1(done.reduce((s, st) => s + scores[st.id], 0) / done.length) : 0;
   return { scores, params, total };
+}
+
+/** Stations that exist in a saved result (older checkups have no personal part). */
+export function stationsIn(scores: Partial<Record<StationId, number>>) { return STATIONS.filter((s) => typeof scores[s.id] === "number" && (scores[s.id] as number) > 0); }
+
+/** Average score of each part (0 when a part has no answers). */
+export function partScores(scores: Partial<Record<StationId, number>>) {
+  const avg = (part: Part) => { const xs = STATIONS.filter((s) => s.part === part && (scores[s.id] ?? 0) > 0).map((s) => scores[s.id] as number); return xs.length ? r1(xs.reduce((a, b) => a + b, 0) / xs.length) : 0; };
+  return { biz: avg("biz"), me: avg("me") };
 }
 
 export function grade(total: number) {
@@ -132,6 +159,7 @@ export type Report = {
     first90: { when: string; task: string }[];
     kpis: { name: string; now: string; target: string }[];
     capital: { verdict: string; steps: string[] };
+    personal: { goal: string; steps: string[] };
   };
 };
 
@@ -145,12 +173,16 @@ const ACTION: Record<StationId, { good: string; fix: string; move: string }> = {
   system: { good: "העסק רץ על נהלים ומדדים.", fix: "כשהכל בראש שלך, העסק לא יכול לגדול. כותבים נהלים, מגדירים זמני שירות ולוח מדדים שבועי.", move: "לכתוב 3 נהלים קריטיים ולוח מדדים שבועי" },
   team: { good: "העסק לא תלוי רק בך.", fix: "אם העסק נעצר כשאתה לא שם, אין לך עסק, יש לך עבודה. מעבירים אחריות עם יעדים ותגמול.", move: "להעביר תחום אחד לאחריות מלאה של מישהו אחר, עם יעד ותגמול" },
   money: { good: "אתה שולט במספרים.", fix: "רוב העסקים לא נסגרים בגלל הפסד, אלא בגלל תזרים. דוח רווח והפסד חודשי ותזרים ל-90 יום, ומשכורת קבועה לבעלים.", move: "לבנות תזרים ל-90 יום ולקבוע לעצמך משכורת קבועה" },
-  capital: { good: "הרווח הופך אצלך לנכסים.", fix: "עסק שלא בונה הון משאיר אותך במשוואת זמן = כסף. קובעים אחוז קבוע מהרווח לנכסים, ותוכנית נדל״ן ל-10 שנים.", move: "לקבוע אחוז קבוע מהרווח לנכסים ולבנות תוכנית נדל״ן ל-10 שנים" },
+  me_vision: { good: "אתה יודע מה אתה רוצה מהחיים, לא רק מהעסק.", fix: "בלי יעד אישי, העסק בולע את כל השאר. כותבים יעד אישי ל-2027: כסף, זמן ומשפחה, ושמים אותו ביומן.", move: "לכתוב יעד אישי ל-2027 ולקבוע זמן קבוע בשבוע למשפחה ולעצמך" },
+  household: { good: "הבית מנוהל כמו עסק טוב.", fix: "עסק מרוויח ובית בלי תקציב זה כסף שנעלם. בונים תקציב בית, חיסכון אוטומטי וקרן חירום ל-6 חודשים.", move: "לבנות תקציב בית חודשי ולהפעיל חיסכון אוטומטי וקרן חירום" },
+  credit: { good: "הכסף שאתה לוקח לא עולה לך יותר מדי.", fix: "ריבית לא נכונה על משכנתא או הלוואה שוחקת שנים של עבודה. עושים בדיקת משכנתא ואשראי, ושוקלים מיחזור.", move: "לעשות בדיקת משכנתא ואשראי ולבחון מיחזור" },
+  capital: { good: "הרווח הופך אצלך לנכסים.", fix: "מי שלא בונה הון נשאר במשוואת זמן = כסף. קובעים אחוז קבוע מהרווח לנכסים, ותוכנית נדל״ן ל-10 שנים.", move: "לקבוע אחוז קבוע מהרווח לנכסים ולבנות תוכנית נדל״ן ל-10 שנים" },
+  future: { good: "אתה יודע מה מחכה לך בפרישה.", fix: "רוב בעלי העסקים לא יודעים מה יש להם בפנסיה. בודקים פנסיה, השתלמות ודמי ניהול, ומגדירים הכנסת יעד לפרישה.", move: "לבדוק פנסיה, השתלמות ודמי ניהול ולהגדיר הכנסת יעד לפרישה" },
 };
 
 /** Deterministic report, used when Gemini is unavailable (budget, outage). */
 export function buildFallbackReport(profile: Profile, scores: Scores, total: number): Report {
-  const sorted = [...STATIONS].sort((a, b) => scores[a.id] - scores[b.id]);
+  const sorted = stationsIn(scores).sort((a, b) => scores[a.id] - scores[b.id]);
   const weak = sorted.slice(0, 3);
   const g = grade(total);
   const name = profile.business || "העסק שלך";
@@ -179,6 +211,10 @@ export function buildFallbackReport(profile: Profile, scores: Scores, total: num
       ],
       kpis: weak.map((s) => ({ name: s.label, now: `${scores[s.id]}/10`, target: `${Math.min(10, scores[s.id] + 3)}/10` })),
       capital: { verdict: ACTION.capital.fix, steps: ["לקבוע אחוז קבוע מהרווח לנכסים", "לבנות תוכנית נדל״ן ל-10 שנים", "לבדוק כל עסקה לפני שחותמים"] },
+      personal: {
+        goal: "ב-2027 העסק עובד בשבילך, לא אתה בשבילו: בית מנוהל, הון שגדל, וזמן למשפחה.",
+        steps: (["me_vision", "household", "credit", "capital", "future"] as StationId[]).filter((id) => scores[id] !== undefined).sort((a, b) => (scores[a] ?? 0) - (scores[b] ?? 0)).slice(0, 4).map((id) => ACTION[id].move),
+      },
     },
   };
 }
@@ -186,28 +222,32 @@ export function buildFallbackReport(profile: Profile, scores: Scores, total: num
 /** Prompt for the report. Kept short: the model gets only the profile and the scores. */
 export function reportPrompt(profile: Profile, params: ParamScore[], scores: Scores, total: number) {
   const st = STATIONS.map((s) => `${s.label}: ${scores[s.id]}/10 (${params.filter((p) => p.station === s.id).map((p) => `${p.param} ${p.score}`).join(", ")})`).join("\n");
-  return `אתה ניר דובדבני, מלווה עסקים 22 שנה. כתוב לבעל העסק את תוצאות הצ'קאפ העסקי שלו ותוכנית עסקית לשנת 2027.
+  const ps = partScores(scores);
+  return `אתה ניר דובדבני, מלווה עסקים 22 שנה. כתוב לבעל העסק את תוצאות הצ'קאפ האישי והעסקי שלו, ותוכנית עסקית ואישית לשנת 2027.
+החלק העסקי (תחנות 1–9) הוא העסק. החלק האישי (תחנות 10–14) הוא החיים של בעל העסק: יעד אישי, כלכלת הבית, משכנתא ואשראי, נדל״ן והון, פרישה. העסק הוא כלי, המטרה היא החיים שלו.
 הקול: גוף ראשון, ישיר, חם, חד, משפטים קצרים. עברית. בלי "מובטח", בלי הבטחות הכנסה, בלי המילה "כיס", בלי אימוג'י.
 התוכנית חייבת להיות ספציפית לתחום ולגודל העסק, מעשית, עם צעדים שאפשר לבצע. אם הציון בתחנה גבוה (8+), אל תמציא בעיה.
 
 פרופיל העסק:
 שם: ${profile.business || "לא צוין"} · תחום: ${profile.field || "-"} · ותק: ${profile.years || "-"} · צוות: ${profile.team || "-"} · מחזור חודשי: ${profile.revenue || "-"} · המטרה ל-2027: ${profile.goal || "-"}
 
-ציון כולל: ${total}/10
+ציון כולל: ${total}/10 · ציון עסקי: ${ps.biz}/10 · ציון אישי: ${ps.me}/10
 ציונים לפי תחנה (1–10):
 ${st}
 
 החזר JSON בלבד במבנה הזה:
 {"headline": "משפט אחד: האבחנה שלי על העסק",
  "nir_note": "2–3 משפטים אישיים ממני לבעל העסק",
- "top3": [{"title": "שם המהלך", "why": "למה זה הכי חשוב עכשיו", "action": "מה עושים, צעד ראשון"}] (בדיוק 3, לפי החולשות),
- "feedback": {"vision": {"good": "מה טוב", "fix": "מה לתקן ואיך"}, ...לכל 10 התחנות: vision, brand, products, marketing, digital, sales, system, team, money, capital},
+ "top3": [{"title": "שם התחנה בדיוק כמו ברשימה", "why": "למה זה הכי חשוב עכשיו", "action": "מה עושים, צעד ראשון"}] (בדיוק 3, לפי החולשות, אישיות או עסקיות),
+ "feedback": {"vision": {"good": "מה טוב", "fix": "מה לתקן ואיך"}, ...לכל 14 התחנות: vision, brand, products, marketing, digital, sales, system, team, money, me_vision, household, credit, capital, future},
  "plan": {"goal": "המטרה ל-2027 במשפט, עם מספר אם אפשר",
    "north_star": [{"label": "...", "value": "..."}] (3 מדדי צפון),
    "quarters": [{"q": "רבעון 1", "theme": "...", "actions": ["...", "...", "..."]}] (4 רבעונים, 3 פעולות בכל אחד),
    "first90": [{"when": "שבועות 1–2", "task": "..."}] (6 צעדים ל-90 הימים הראשונים),
    "kpis": [{"name": "...", "now": "...", "target": "..."}] (5 מדדים),
-   "capital": {"verdict": "משפט על ההון והנדל״ן", "steps": ["...", "...", "..."]}}}`;
+   "capital": {"verdict": "משפט על ההון והנדל״ן", "steps": ["...", "...", "..."]},
+   "personal": {"goal": "היעד האישי ל-2027 במשפט: כסף, זמן, משפחה", "steps": ["...", "...", "...", "..."] (4 צעדים: כלכלת הבית, משכנתא ואשראי, נדל״ן, פרישה, לפי החולשות)}}}
+ה-quarters וה-first90 משלבים צעדים עסקיים ואישיים.`;
 }
 
 /** Keep only well-formed fields from the model; fill gaps from the fallback. */
@@ -221,6 +261,7 @@ export function sanitizeReport(raw: unknown, fallback: Report): Report {
   const fb = (o.feedback && typeof o.feedback === "object" ? o.feedback : {}) as Record<string, Record<string, unknown>>;
   const p = (o.plan && typeof o.plan === "object" ? o.plan : {}) as Record<string, unknown>;
   const cap = (p.capital && typeof p.capital === "object" ? p.capital : {}) as Record<string, unknown>;
+  const per = (p.personal && typeof p.personal === "object" ? p.personal : {}) as Record<string, unknown>;
   return {
     headline: s(o.headline, fallback.headline, 240),
     nir_note: s(o.nir_note, fallback.nir_note, 600),
@@ -233,6 +274,7 @@ export function sanitizeReport(raw: unknown, fallback: Report): Report {
       first90: arr(p.first90, (x) => (x.task ? { when: s(x.when, "", 30), task: s(x.task, "", 220) } : null), fallback.plan.first90, 6),
       kpis: arr(p.kpis, (x) => (x.name ? { name: s(x.name, "", 60), now: s(x.now, "-", 40), target: s(x.target, "-", 40) } : null), fallback.plan.kpis, 5),
       capital: { verdict: s(cap.verdict, fallback.plan.capital.verdict, 300), steps: Array.isArray(cap.steps) ? (cap.steps as unknown[]).filter((a): a is string => typeof a === "string").slice(0, 4).map((a) => a.slice(0, 200)) : fallback.plan.capital.steps },
+      personal: { goal: s(per.goal, fallback.plan.personal.goal, 260), steps: Array.isArray(per.steps) && per.steps.length ? (per.steps as unknown[]).filter((a): a is string => typeof a === "string").slice(0, 5).map((a) => a.slice(0, 220)) : fallback.plan.personal.steps },
     },
   };
 }
@@ -240,7 +282,7 @@ export function sanitizeReport(raw: unknown, fallback: Report): Report {
 /* ---------------- money: what each weakness costs (an estimate from the stated revenue) ---------------- */
 const REVENUE_MID: Record<string, number> = { "עד ₪30 אלף": 20000, "₪30–100 אלף": 60000, "₪100–300 אלף": 180000, "יותר מ-₪300 אלף": 400000 };
 /** Share of monthly revenue a station leaks at score 1 (scales down linearly to 0 at score 10). */
-const LEAK_RATE: Record<StationId, number> = { vision: 0.04, brand: 0.05, products: 0.06, marketing: 0.07, digital: 0.04, sales: 0.08, system: 0.04, team: 0.05, money: 0.05, capital: 0.03 };
+const LEAK_RATE: Record<StationId, number> = { vision: 0.04, brand: 0.05, products: 0.06, marketing: 0.07, digital: 0.04, sales: 0.08, system: 0.04, team: 0.05, money: 0.05, me_vision: 0, household: 0.02, credit: 0.03, capital: 0.03, future: 0.02 };
 
 export function monthlyRevenue(p: Profile) { return p.revenue ? REVENUE_MID[p.revenue] ?? 0 : 0; }
 
@@ -248,7 +290,7 @@ export function monthlyRevenue(p: Profile) { return p.revenue ? REVENUE_MID[p.re
 export function leaks(p: Profile, scores: Partial<Record<StationId, number>>) {
   const rev = monthlyRevenue(p);
   const per = Object.fromEntries(STATIONS.map((s) => {
-    const sc = scores[s.id];
+    const sc = scores[s.id] ?? 0;
     const v = rev && sc ? Math.round((rev * LEAK_RATE[s.id] * (10 - sc)) / 9 / 100) * 100 : 0;
     return [s.id, v];
   })) as Record<StationId, number>;
@@ -268,6 +310,10 @@ const REACT: Record<StationId, [string, string, string]> = {
   system: ["הכל בראש שלך? אז העסק מוגבל לגודל של הראש שלך.", "יש התחלה של שיטה. צריך לסגור אותה.", "עסק שרץ על שיטה. ככה גדלים."],
   team: ["אם תיעלם, העסק נעצר. זו עבודה, לא עסק.", "יש מי שמחזיק, חלקית. נעביר עוד אחריות.", "העסק לא תלוי רק בך. זה החופש האמיתי."],
   money: ["עסקים נסגרים בגלל תזרים, לא בגלל הפסד. זה דחוף.", "אתה מכיר את המספרים, בערך. בערך זה יקר.", "שליטה במספרים. ככה מנהלים עסק."],
+  me_vision: ["העסק בולע אותך. בתוכנית נחזיר לך את החיים.", "יש כיוון אישי. צריך להכניס אותו ליומן.", "אתה יודע מה אתה רוצה. זה נדיר אצל בעלי עסקים."],
+  household: ["עסק מרוויח ובית בלי תקציב? הכסף נעלם בדרך.", "יש סדר, חלקית. חיסכון אוטומטי ישנה את התמונה.", "בית מנוהל כמו עסק. ככה בונים שקט."],
+  credit: ["ריבית שלא בדקת היא כסף שאתה נותן לבנק. נבדוק.", "בדקת פעם. השוק זז, כדאי לבדוק שוב.", "אתה שולט בעלות הכסף. יפה מאוד."],
   capital: ["כל הכסף נבלע? אז אתה עדיין במשוואת זמן = כסף.", "יש כוונה. צריך תוכנית הון כתובה.", "הרווח הופך לנכסים. ככה בונים עושר."],
+  future: ["לא יודע מה יש לך בפנסיה? זה הדבר הראשון לבדוק.", "יש בסיס. צריך לוודא שדמי הניהול לא אוכלים אותו.", "אתה יודע מה מחכה לך. זה ביטחון אמיתי."],
 };
 export function reaction(st: StationId, score: number) { return REACT[st][score >= 8 ? 2 : score >= 5 ? 1 : 0]; }

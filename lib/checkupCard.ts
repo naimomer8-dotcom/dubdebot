@@ -1,5 +1,5 @@
 "use client";
-import { STATIONS, grade, type Scores } from "./checkup";
+import { grade, stationsIn, type Scores } from "./checkup";
 
 const col = (s: number) => (s >= 8 ? "#8fd9b4" : s >= 6 ? "#e2c68e" : s >= 4 ? "#f0a96a" : "#ff8d8d");
 
@@ -36,13 +36,14 @@ export async function renderCheckupCard(o: { total: number; scores: Scores; busi
   x.fillStyle = col(o.total); x.font = '700 120px "Karantina"'; x.fillText(gw.word, W / 2, 1150);
 
   // bars
-  const top = 1240, rowH = 50;
-  STATIONS.forEach((s, i) => {
+  const ST = stationsIn(o.scores);
+  const top = 1230, rowH = Math.min(50, Math.floor(520 / Math.max(1, ST.length)));
+  ST.forEach((s, i) => {
     const y = top + i * rowH;
-    x.textAlign = "right"; x.fillStyle = "#c2b9a8"; x.font = '400 32px "Assistant"'; x.fillText(s.label, W - 120, y + 12);
+    x.textAlign = "right"; x.fillStyle = "#c2b9a8"; x.font = `400 ${Math.min(32, rowH - 8)}px "Assistant"`; x.fillText(s.label, W - 120, y + 12);
     x.fillStyle = "rgba(255,255,255,0.07)"; x.fillRect(150, y - 6, 560, 16);
     x.fillStyle = col(o.scores[s.id]); x.fillRect(150 + 560 * (1 - o.scores[s.id] / 10), y - 6, 560 * (o.scores[s.id] / 10), 16);
-    x.textAlign = "left"; x.fillStyle = "#f4eee3"; x.font = '700 34px "Assistant"'; x.fillText(String(o.scores[s.id]), 100, y + 12);
+    x.textAlign = "left"; x.fillStyle = "#f4eee3"; x.font = `700 ${Math.min(34, rowH - 6)}px "Assistant"`; x.fillText(String(o.scores[s.id]), 100, y + 12);
   });
   x.textAlign = "center"; x.fillStyle = "#e2c68e"; x.font = '700 46px "Assistant"';
   x.fillText("קיבלתי " + o.total.toFixed(1) + ". אתה עוקף אותי?", W / 2, H - 130);

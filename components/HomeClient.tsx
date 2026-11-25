@@ -98,12 +98,12 @@ export default function HomeClient({ user, conversations, steps, xrayScore, quot
 
           <OnboardingCard />
 
-          <Link className="home-card ck-home" href="/checkup" aria-label="צ׳קאפ עסקי ותוכנית עסקית ל-2027">
+          <Link className="home-card ck-home" href="/checkup" aria-label="צ׳קאפ אישי ועסקי ותוכנית ל-2027">
             <span className="ck-home-ring" aria-hidden>?<small>/10</small></span>
             <span className="ck-home-txt">
-              <small>במתנה מניר · כ-7 דקות</small>
-              <b>הצ׳קאפ העסקי שלך + תוכנית עסקית ל-2027</b>
-              <span className="muted">ציון מ-1 עד 10 לכל פרמטר, משוב, ותוכנית מפורטת לשנה הקרובה.</span>
+              <small>במתנה מניר · כ-10 דקות</small>
+              <b>הצ׳קאפ האישי והעסקי + תוכנית ל-2027</b>
+              <span className="muted">ציון לעסק וציון לך: בית, משכנתא, נדל״ן ופרישה. ותוכנית מפורטת לשנה הקרובה.</span>
             </span>
             <Icon name="arrowLeft" size={20} className="ico-move" />
           </Link>

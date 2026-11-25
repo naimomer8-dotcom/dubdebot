@@ -7,7 +7,7 @@ import { logActivity, openOnboardingLead } from "@/lib/crm";
 import { alert } from "@/lib/alerts";
 import { clientIp, hit, limited } from "@/lib/ratelimit";
 import { cleanName, isEmail, normalizeIsraeliPhone } from "@/lib/validation";
-import { PROFILE, QUESTIONS, STATIONS, answerScore, leaks, nis, buildFallbackReport, grade, reportPrompt, sanitizeReport, scoreCheckup, type Profile } from "@/lib/checkup";
+import { PROFILE, QUESTIONS, answerScore, leaks, nis, buildFallbackReport, grade, partScores, reportPrompt, sanitizeReport, scoreCheckup, stationsIn, type Profile } from "@/lib/checkup";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -108,8 +108,8 @@ export async function POST(req: Request) {
     if (!name || !phone) return NextResponse.json({ error: "contact", errors: { name: !name, phone: !phone } }, { status: 400 });
     await supabase.from("checkup_results").update({ full_name: name, phone }).eq("id", row.id);
     const contact = { full_name: name, phone, email: null };
-    const leadId = await ensureLead(row.id, row.lead_id, userId, contact, source, "באמצע הצ׳קאפ העסקי 2027. אם לא יסיים: להתקשר, לעזור להשלים (רבע שעה עם יועץ).");
-    if (leadId) await logActivity({ leadId, userId, adminId: null, kind: "note", body: `התחיל צ׳קאפ עסקי 2027 ושמר התקדמות (שלב ${step}). אם לא יסיים תוך יום: להתקשר ולהשלים איתו.`, contact, sync: "onboarding_opened", status: "new" });
+    const leadId = await ensureLead(row.id, row.lead_id, userId, contact, source, "באמצע הצ׳קאפ האישי והעסקי 2027. אם לא יסיים: להתקשר, לעזור להשלים (רבע שעה עם יועץ).");
+    if (leadId) await logActivity({ leadId, userId, adminId: null, kind: "note", body: `התחיל צ׳קאפ אישי ועסקי 2027 ושמר התקדמות (שלב ${step}). אם לא יסיים תוך יום: להתקשר ולהשלים איתו.`, contact, sync: "onboarding_opened", status: "new" });
     return NextResponse.json({ ok: true, token });
   }
 
@@ -119,7 +119,7 @@ export async function POST(req: Request) {
     const move = String(body.move ?? "").slice(0, 160);
     const { data: r2 } = await supabase.from("checkup_results").select("full_name, phone, email, total, lead_id").eq("id", row.id).single();
     const contact = { full_name: (r2?.full_name as string) ?? null, phone: (r2?.phone as string) ?? null, email: (r2?.email as string) ?? null };
-    const leadId = (r2?.lead_id as string) ?? (await ensureLead(row.id, null, userId, contact, source, "ביקש יועץ מתוך הצ׳קאפ העסקי 2027."));
+    const leadId = (r2?.lead_id as string) ?? (await ensureLead(row.id, null, userId, contact, source, "ביקש יועץ מתוך הצ׳קאפ האישי והעסקי 2027."));
     if (leadId) {
       await supabase.from("leads").update({ status: "callback", next_call_at: now, updated_at: now }).eq("id", leadId);
       await logActivity({ leadId, userId, adminId: null, kind: "note", body: `ליד חם מהצ׳קאפ (${r2?.total}/10): ביקש יועץ ליישום המהלך "${move}". להתקשר היום ולהציע פגישת יועץ (₪279) או מסלול.\nהתוכנית: ${APP}/checkup/r/${token}`, contact, status: "callback" });
@@ -170,16 +170,19 @@ export async function POST(req: Request) {
 
   // CRM: the member's onboarding lead, or a new "checkup" lead
   const { data: rl } = await supabase.from("checkup_results").select("lead_id").eq("id", row.id).single();
-  const leadId = await ensureLead(row.id, (rl?.lead_id as string) ?? row.lead_id, userId, contact, source, "מילא צ׳קאפ עסקי 2027 וקיבל תוכנית עסקית. להתקשר, לפתוח מהתוכנית, להציע יישום במסלול או בפגישת יועץ.");
-  const weak = [...STATIONS].sort((a, b) => scores[a.id] - scores[b.id]).slice(0, 3);
+  const leadId = await ensureLead(row.id, (rl?.lead_id as string) ?? row.lead_id, userId, contact, source, "מילא צ׳קאפ אישי ועסקי 2027 וקיבל תוכנית. להתקשר, לפתוח מהתוכנית, להציע יישום במסלול או בפגישת יועץ.");
+  const weak = stationsIn(scores).sort((a, b) => scores[a.id] - scores[b.id]).slice(0, 3);
   const g = grade(total);
+  const ps = partScores(scores);
+  // route: the weakest station decides the first conversation (personal → real estate / mortgage, business → platform)
+  const track = weak[0]?.part === "me" ? "אישי → בדיקת משכנתא / נדל״ן / כלכלת משפחה" : "עסקי → פלטפורמה / ליווי עסקי";
   const link = `${APP}/checkup/r/${token}`;
   if (leadId) {
-    const line = `סיים צ׳קאפ עסקי: ${total}/10 (${g.word}). ${allProfile.business ? `${allProfile.business} · ` : ""}${allProfile.field ?? ""}${allProfile.revenue ? ` · ${allProfile.revenue}` : ""}. החולשות: ${weak.map((w) => `${w.label} ${scores[w.id]}`).join(", ")}.${leaks(allProfile, scores).total ? ` דליפה משוערת: ${nis(leaks(allProfile, scores).total)} בחודש.` : ""} המטרה ל-2027: ${allProfile.goal ?? "-"}.\nהתוכנית המלאה: ${link}\nלשיחה: לפתוח מהתוכנית, להציע ליישם אותה במסלול או בפגישת יועץ (₪279).`;
+    const line = `סיים צ׳קאפ אישי ועסקי: ${total}/10 (${g.word}) · עסקי ${ps.biz} · אישי ${ps.me}.\nמסלול מומלץ: ${track}.\n ${allProfile.business ? `${allProfile.business} · ` : ""}${allProfile.field ?? ""}${allProfile.revenue ? ` · ${allProfile.revenue}` : ""}. החולשות: ${weak.map((w) => `${w.label} ${scores[w.id]}`).join(", ")}.${leaks(allProfile, scores).total ? ` דליפה משוערת: ${nis(leaks(allProfile, scores).total)} בחודש.` : ""} המטרה ל-2027: ${allProfile.goal ?? "-"}.\nהתוכנית המלאה: ${link}\nלשיחה: לפתוח מהתוכנית, להציע ליישם אותה במסלול או בפגישת יועץ (₪279).`;
     await logActivity({ leadId, userId, adminId: null, kind: "note", body: line, contact, meta: { checkup_token: token, total }, sync: "onboarding_opened", status: "new" });
-    await supabase.from("leads").update({ summary: `צ׳קאפ 2027: ${total}/10 · ${report.headline}\nמהלך 1: ${report.top3[0]?.title ?? ""} · מהלך 2: ${report.top3[1]?.title ?? ""} · מהלך 3: ${report.top3[2]?.title ?? ""}\n${link}`, updated_at: now }).eq("id", leadId);
+    await supabase.from("leads").update({ summary: `צ׳קאפ 2027: ${total}/10 (עסקי ${ps.biz} · אישי ${ps.me}) · מסלול: ${track} · ${report.headline}\nמהלך 1: ${report.top3[0]?.title ?? ""} · מהלך 2: ${report.top3[1]?.title ?? ""} · מהלך 3: ${report.top3[2]?.title ?? ""}\n${link}`, updated_at: now }).eq("id", leadId);
   }
-  await alert(`checkup:${token}`, `צ׳קאפ עסקי חדש: ${contact.full_name ?? ""} · ${total}/10`, [`${contact.full_name ?? ""} · ${contact.phone ?? ""}`, `${g.word}. חולשות: ${weak.map((w) => w.label).join(", ")}`, link], 1).catch(() => {});
+  await alert(`checkup:${token}`, `צ׳קאפ חדש: ${contact.full_name ?? ""} · ${total}/10`, [`${contact.full_name ?? ""} · ${contact.phone ?? ""}`, `${g.word}. עסקי ${ps.biz} · אישי ${ps.me}. חולשות: ${weak.map((w) => w.label).join(", ")}`, `מסלול: ${track}`, link], 1).catch(() => {});
 
   return NextResponse.json({ ok: true, token, total });
 }

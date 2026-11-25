@@ -7,9 +7,9 @@ import { getSessionUserId } from "@/lib/session";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "כמה העסק שלך מוכן ל-2027? צ׳קאפ עסקי במתנה | ניר דובדבני",
-  description: "24 שאלות שניר דובדבני שואל כשהוא נכנס לעסק. ציון מ-1 עד 10 לכל פרמטר, משוב, ותוכנית עסקית מפורטת ל-2027 שנבנית לעסק שלך. במתנה.",
-  openGraph: { title: "כמה העסק שלך מוכן ל-2027?", description: "צ׳קאפ עסקי + תוכנית עסקית ל-2027 מניר דובדבני. במתנה.", locale: "he_IL" },
+  title: "כמה אתה והעסק שלך מוכנים ל-2027? צ׳קאפ אישי ועסקי במתנה | ניר דובדבני",
+  description: "הצ׳קאפ האישי והעסקי של ניר דובדבני: ציון מ-1 עד 10 לעסק ולחיים שלך (בית, משכנתא, נדל״ן, פרישה), ותוכנית עסקית ואישית ל-2027. במתנה.",
+  openGraph: { title: "כמה אתה והעסק שלך מוכנים ל-2027?", description: "צ׳קאפ אישי ועסקי + תוכנית ל-2027 מניר דובדבני. במתנה.", locale: "he_IL" },
 };
 
 export default async function CheckupPage({ searchParams }: { searchParams: Promise<{ src?: string; ref?: string }> }) {
