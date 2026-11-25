@@ -600,7 +600,7 @@ function Gate({ pre, total, live, leakTotal, loggedIn, err, onSubmit }: { pre: {
   const [name, setName] = useState(pre.name);
   const [phone, setPhone] = useState(pre.phone);
   const [email, setEmail] = useState("");
-  const [consent, setConsent] = useState(true);
+  const [consent, setConsent] = useState(false);
   const g = grade(total);
   const weakest = [...STATIONS].sort((a, b) => live[a.id] - live[b.id])[0];
   return (
@@ -617,13 +617,13 @@ function Gate({ pre, total, live, leakTotal, loggedIn, err, onSubmit }: { pre: {
         </div>
       </section>
       <form className="cx-card cx-gate-form cx-enter" style={{ animationDelay: "160ms" }} onSubmit={(e) => { e.preventDefault(); onSubmit({ name, phone, email, consent }); }}>
-        <h3>לאן לשלוח לך את התוכנית?</h3>
-        <p>ניר בונה לך עכשיו תוכנית עסקית אישית ל-2027. היא תיפתח כאן, ותישלח אליך גם לוואטסאפ ולמייל.</p>
+        <h3>כמעט שם. למי התוכנית?</h3>
+        <p>ניר בונה לך עכשיו תוכנית עסקית אישית ל-2027. היא תיפתח כאן, עם PDF להורדה.</p>
         {!loggedIn && <>
           <label><span>שם מלא</span><input required value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" /></label>
           <label><span>טלפון נייד</span><input required inputMode="tel" dir="ltr" value={phone} onChange={(e) => setPhone(e.target.value)} autoComplete="tel" placeholder="05X-XXXXXXX" /></label>
           <label><span>מייל</span><input type="email" dir="ltr" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" /></label>
-          <label className="cx-check"><input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} /><span>אני מאשר/ת לקבל מניר דובדבני את התוכנית ותכנים עסקיים בוואטסאפ ובמייל. אפשר להסיר בכל רגע.</span></label>
+          <label className="cx-check"><input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} /><span>אני מאשר/ת לקבל מניר דובדבני תכנים והצעות בוואטסאפ ובמייל. אפשר להסיר בכל רגע.</span></label>
         </>}
         {err && <p className="cx-err" role="alert">{err}</p>}
         <button className="cx-cta"><span>תבנה לי את התוכנית</span><Icon name="spark" size={18} /></button>

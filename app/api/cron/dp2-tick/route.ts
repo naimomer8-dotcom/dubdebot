@@ -2,6 +2,7 @@ import { db } from "@/lib/supabase";
 import { alert } from "@/lib/alerts";
 import { dp2Live, dp2On, meetingWhen, sendDp2 } from "@/lib/dp2";
 import { dueDayStage, ilParts, isQuiet, isShabbat } from "@/lib/journeys2";
+import { checkupNurtureTick } from "@/lib/checkupNurture";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -169,6 +170,8 @@ export async function GET(req: Request) {
       ], 60 * 20);
     }
   }
+  // checkup 2027 nurture (non-members who finished the checkup)
+  try { out.checkup = await checkupNurtureTick(dry); } catch (e) { out.checkup = { error: (e as Error).message }; }
   return Response.json({ ok: true, dry, ...out });
 }
 

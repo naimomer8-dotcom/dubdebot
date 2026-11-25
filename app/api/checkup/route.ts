@@ -165,7 +165,7 @@ export async function POST(req: Request) {
     contact = { full_name: contact.full_name ?? (u?.full_name as string) ?? null, phone: contact.phone ?? (u?.phone as string) ?? null, email: contact.email ?? (u?.email as string) ?? null };
   }
 
-  await supabase.from("checkup_results").update({ status: "done", step, profile: allProfile, answers: allAnswers, scores, total, report, full_name: contact.full_name, phone: contact.phone, email: contact.email, updated_at: now, finished_at: now }).eq("id", row.id);
+  await supabase.from("checkup_results").update({ status: "done", step, profile: allProfile, answers: allAnswers, scores, total, report, full_name: contact.full_name, phone: contact.phone, email: contact.email, consent: userId ? true : c.consent === true, updated_at: now, finished_at: now }).eq("id", row.id);
   if (userId) await supabase.from("events").insert({ user_id: userId, type: "checkup_completed", meta: { total } });
 
   // CRM: the member's onboarding lead, or a new "checkup" lead
@@ -181,10 +181,5 @@ export async function POST(req: Request) {
   }
   await alert(`checkup:${token}`, `צ׳קאפ עסקי חדש: ${contact.full_name ?? ""} · ${total}/10`, [`${contact.full_name ?? ""} · ${contact.phone ?? ""}`, `${g.word}. חולשות: ${weak.map((w) => w.label).join(", ")}`, link], 1).catch(() => {});
 
-  // deliver the plan (WhatsApp + email) through the platform's Make scenario
-  const hook = process.env.CHECKUP_WEBHOOK_URL;
-  if (hook && contact.phone && c.consent !== false) {
-    void fetch(hook, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ event: "checkup_done", contact: { first_name: (contact.full_name ?? "").split(" ")[0], phone: contact.phone, email: contact.email }, data: { total, grade: g.word, link, weak: weak.map((w) => w.label) } }) }).catch(() => {});
-  }
   return NextResponse.json({ ok: true, token, total });
 }
