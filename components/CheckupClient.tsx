@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Icon from "./Icon";
 import { Brand } from "./BrandBar";
-import { PROFILE, QUESTIONS, STATIONS, answerScore, grade, type Profile, type Q, type StationId } from "@/lib/checkup";
+import { PROFILE, QUESTIONS, STATIONS, answerScore, grade, leaks, nis, reaction, type Profile, type Q, type StationId } from "@/lib/checkup";
 
 /* ============================================================================
    הצ'קאפ העסקי של ניר דובדבני · 2027 — the experience
@@ -13,7 +13,7 @@ import { PROFILE, QUESTIONS, STATIONS, answerScore, grade, type Profile, type Q,
    (Nir opens each station, interactive answers, live dashboard) → unlock gate → plan
    ========================================================================== */
 
-type Phase = "intro" | "profile" | "station" | "ask" | "cleared" | "gate" | "build";
+type Phase = "intro" | "profile" | "station" | "ask" | "cleared" | "save" | "gate" | "build";
 type Saved = { token: string; step: number; profile: Profile; answers: Record<string, number> } | null;
 const LS = "dd_checkup_v2";
 const BUILD = ["קורא את 24 התשובות שלך", "מדרג כל פרמטר מ-1 עד 10", "מאתר את 3 הדליפות הגדולות", "בונה 4 רבעונים ל-2027", "מוסיף תוכנית הון ונדל״ן ל-10 שנים", "ניר חותם על התוכנית"];
@@ -32,6 +32,22 @@ function tick(freq = 660, dur = 0.06, vol = 0.04) {
 const buzz = (ms = 12) => { try { navigator.vibrate?.(ms); } catch {} };
 const chime = () => { tick(523, 0.12, 0.05); setTimeout(() => tick(659, 0.12, 0.05), 90); setTimeout(() => tick(988, 0.25, 0.05), 180); };
 
+/* ambient drone: two detuned sines + slow filter, toggled by the user */
+let amb: { stop: () => void } | null = null;
+function ambient(on: boolean) {
+  try {
+    if (!on) { amb?.stop(); amb = null; return; }
+    if (amb) return;
+    ac = ac ?? new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+    const g = ac.createGain(); g.gain.value = 0; g.gain.linearRampToValueAtTime(0.035, ac.currentTime + 2);
+    const f = ac.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 420;
+    const lfo = ac.createOscillator(), lg = ac.createGain(); lfo.frequency.value = 0.07; lg.gain.value = 180; lfo.connect(lg).connect(f.frequency);
+    const os = [110, 110.6, 164.8].map((fr) => { const o = ac!.createOscillator(); o.type = "sawtooth"; o.frequency.value = fr; o.connect(f); o.start(); return o; });
+    f.connect(g).connect(ac.destination); lfo.start();
+    amb = { stop: () => { const t = ac!.currentTime; g.gain.linearRampToValueAtTime(0, t + 0.8); setTimeout(() => { os.forEach((o) => o.stop()); lfo.stop(); }, 900); } };
+  } catch {}
+}
+
 const scoreColor = (s: number) => (s >= 8 ? "#8fd9b4" : s >= 6 ? "#e2c68e" : s >= 4 ? "#f0a96a" : "#ff8d8d");
 
 export default function CheckupClient({ loggedIn, source = "app" }: { loggedIn: boolean; source?: string }) {
@@ -47,13 +63,17 @@ export default function CheckupClient({ loggedIn, source = "app" }: { loggedIn: 
   const [burst, setBurst] = useState(0);
   const [buildLine, setBuildLine] = useState(0);
   const [err, setErr] = useState("");
+  const [react, setReact] = useState<{ text: string; score: number } | null>(null);
+  const [saved, setSaved] = useState(false);
+  const [music, setMusic] = useState(false);
+  const [pre, setPre] = useState<{ name: string; phone: string }>({ name: "", phone: "" });
   const saveT = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const station = STATIONS[sIdx];
   const sQs = useMemo(() => QUESTIONS.filter((q) => q.station === station.id), [station.id]);
   const q = sQs[qIdx];
   const answered = Object.keys(answers).length;
-  const progress = Math.round(((pIdx + (phase === "profile" ? 0 : PROFILE.length) + answered) / (PROFILE.length + QUESTIONS.length)) * 100);
+  const progress = Math.min(100, Math.round((((phase === "profile" ? pIdx : PROFILE.length) + answered) / (PROFILE.length + QUESTIONS.length)) * 100));
 
   const live = useMemo(() => {
     const out: Record<string, number> = {};
@@ -63,6 +83,7 @@ export default function CheckupClient({ loggedIn, source = "app" }: { loggedIn: 
     }
     return out as Record<StationId, number>;
   }, [answers]);
+  const leak = useMemo(() => leaks(profile, live), [profile, live]);
   const liveTotal = useMemo(() => {
     const done = STATIONS.filter((s) => live[s.id] > 0);
     return done.length ? Math.round((done.reduce((a, s) => a + live[s.id], 0) / done.length) * 10) / 10 : 0;
@@ -119,18 +140,34 @@ export default function CheckupClient({ loggedIn, source = "app" }: { loggedIn: 
   }
 
   function answer(v: number) {
+    if (react) return;
     const a = { ...answers, [q.id]: v };
-    setAnswers(a); buzz(); tick(780 + (answerScore(q, v) ?? 5) * 30);
+    const sc = answerScore(q, v) ?? 5;
+    setAnswers(a); buzz(); tick(780 + sc * 30);
+    setReact({ text: reaction(q.station, sc), score: sc });
     persist({ step: stepNo() + 1, profile, answers: a });
     setTimeout(() => {
+      setReact(null);
       if (qIdx + 1 < sQs.length) setQIdx(qIdx + 1);
       else { setPhase("cleared"); setBurst((b) => b + 1); chime(); buzz(40); }
-    }, 380);
+    }, 1700);
   }
 
   function nextStation() {
+    if (sIdx === 4 && !saved && !loggedIn) { setSaved(true); setPhase("save"); return; }
     if (sIdx + 1 < STATIONS.length) { setSIdx(sIdx + 1); setQIdx(0); setPhase("station"); }
     else { persist({ step: stepNo(), profile, answers }, true); setPhase("gate"); }
+  }
+
+  async function saveContact(c: { name: string; phone: string }) {
+    try {
+      const r = await fetch("/api/checkup", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "contact", token, source, step: stepNo(), profile, answers, contact: c }) });
+      if (!r.ok) return false;
+      setPre(c);
+      chime();
+      setSIdx(sIdx + 1); setQIdx(0); setPhase("station");
+      return true;
+    } catch { return false; }
   }
 
   async function finish(contact: { name: string; phone: string; email: string; consent: boolean }) {
@@ -167,6 +204,7 @@ export default function CheckupClient({ loggedIn, source = "app" }: { loggedIn: 
             <b>{progress}%</b>
           </div>
           {liveTotal > 0 && <span className="cx-livechip" style={{ color: scoreColor(liveTotal) }} aria-label="ציון חי">{liveTotal.toFixed(1)}</span>}
+          <button className={`cx-x cx-music ${music ? "on" : ""}`} aria-label={music ? "כבה מוזיקה" : "הפעל מוזיקה"} onClick={() => { ambient(!music); setMusic(!music); }}><Icon name={music ? "sound" : "mute"} size={16} /></button>
           <Link href={loggedIn ? "/home" : "/"} className="cx-x" aria-label="יציאה" onClick={() => persist({ step: stepNo(), profile, answers }, true)}><Icon name="close" size={18} /></Link>
         </header>
       )}
@@ -198,6 +236,7 @@ export default function CheckupClient({ loggedIn, source = "app" }: { loggedIn: 
           <AlphaMap current={sIdx} live={live} phase={phase} />
           <aside className="cx-dash">
             <LiveGauge value={liveTotal} />
+            {leak.total > 0 && <div className="cx-leak"><small>דליפה משוערת</small><b>{nis(leak.total)}</b><em>בחודש</em></div>}
             <ul>{STATIONS.map((s, i) => (
               <li key={s.id} className={i === sIdx ? "on" : live[s.id] ? "done" : ""}>
                 <span>{s.label}</span>
@@ -215,6 +254,12 @@ export default function CheckupClient({ loggedIn, source = "app" }: { loggedIn: 
                 <h2 className="cx-h2">{q.q}</h2>
                 {q.hint && <p className="cx-hint">{q.hint}</p>}
                 <Answer q={q} value={answers[q.id]} onAnswer={answer} />
+                {react && (
+                  <div className="cx-react" role="status">
+                    <img src="/nir-face.jpg" alt="" />
+                    <p><b style={{ color: scoreColor(react.score) }}>{react.score}/10</b> {react.text}</p>
+                  </div>
+                )}
                 <div className="cx-qnav">
                   <span className="cx-dots">{sQs.map((x, i) => <i key={x.id} className={i < qIdx ? "done" : i === qIdx ? "on" : ""} />)}</span>
                   {qIdx > 0 && <button className="cx-back" onClick={() => setQIdx(qIdx - 1)}><Icon name="arrow" size={15} /> הקודמת</button>}
@@ -227,7 +272,8 @@ export default function CheckupClient({ loggedIn, source = "app" }: { loggedIn: 
         </main>
       )}
 
-      {phase === "gate" && <Gate total={liveTotal} live={live} loggedIn={loggedIn} err={err} onSubmit={finish} />}
+      {phase === "save" && <SaveProgress leakTotal={leak.total} onSave={saveContact} onSkip={() => { setSIdx(sIdx + 1); setQIdx(0); setPhase("station"); }} />}
+      {phase === "gate" && <Gate pre={pre} total={liveTotal} live={live} leakTotal={leak.total} loggedIn={loggedIn} err={err} onSubmit={finish} />}
 
       {phase === "build" && (
         <main className="cx-stage cx-buildwrap">
@@ -523,10 +569,36 @@ function Dial({ unit, max, scale, initial, onDone }: { unit: string; max: number
   );
 }
 
-/* ============================ gate ============================ */
-function Gate({ total, live, loggedIn, err, onSubmit }: { total: number; live: Record<StationId, number>; loggedIn: boolean; err: string; onSubmit: (c: { name: string; phone: string; email: string; consent: boolean }) => void }) {
+/* ============================ save progress (midway) ============================ */
+function SaveProgress({ leakTotal, onSave, onSkip }: { leakTotal: number; onSave: (c: { name: string; phone: string }) => Promise<boolean>; onSkip: () => void }) {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [bad, setBad] = useState(false);
+  return (
+    <main className="cx-stage cx-gate">
+      <section className="cx-gate-score cx-enter">
+        <p className="cx-kicker">חצי דרך · 5 מתוך 10 תחנות</p>
+        <h2 className="cx-h2 big">אתה באמצע.</h2>
+        <p className="cx-lede sm">עוד 5 תחנות ואתה מקבל את התוכנית המלאה ל-2027. שמור את ההתקדמות, ואם משהו יקטע אותך, נחזור אליך להשלים ביחד.</p>
+        {leakTotal > 0 && <div className="cx-leakbig sm"><small>הדליפה שמצאנו עד עכשיו</small><b>{nis(leakTotal)}</b><em>בחודש, ורק בחצי מהעסק</em></div>}
+      </section>
+      <form className="cx-card cx-gate-form cx-enter" onSubmit={async (e) => { e.preventDefault(); setBusy(true); setBad(false); const ok = await onSave({ name, phone }); setBusy(false); if (!ok) setBad(true); }}>
+        <h3>לשמור את ההתקדמות?</h3>
+        <label><span>שם</span><input required value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" /></label>
+        <label><span>טלפון נייד</span><input required inputMode="tel" dir="ltr" value={phone} onChange={(e) => setPhone(e.target.value)} autoComplete="tel" placeholder="05X-XXXXXXX" /></label>
+        {bad && <p className="cx-err">צריך שם וטלפון נייד תקין.</p>}
+        <button className="cx-cta" disabled={busy}><span>{busy ? "שומר..." : "שמור והמשך"}</span><Icon name="arrowLeft" size={18} /></button>
+        <button type="button" className="cx-back" onClick={onSkip}>להמשיך בלי לשמור</button>
+      </form>
+    </main>
+  );
+}
+
+/* ============================ gate ============================ */
+function Gate({ pre, total, live, leakTotal, loggedIn, err, onSubmit }: { pre: { name: string; phone: string }; total: number; live: Record<StationId, number>; leakTotal: number; loggedIn: boolean; err: string; onSubmit: (c: { name: string; phone: string; email: string; consent: boolean }) => void }) {
+  const [name, setName] = useState(pre.name);
+  const [phone, setPhone] = useState(pre.phone);
   const [email, setEmail] = useState("");
   const [consent, setConsent] = useState(true);
   const g = grade(total);
@@ -539,6 +611,7 @@ function Gate({ total, live, loggedIn, err, onSubmit }: { total: number; live: R
         <div className="cx-big xl" style={{ color: scoreColor(total) }}>{total.toFixed(1)}<small>/10</small></div>
         <h2 className="cx-h2">{g.word}</h2>
         <p className="cx-lede sm">{g.line} הדליפה הכי גדולה אצלך: <b>{weakest.label}</b>.</p>
+        {leakTotal > 0 && <div className="cx-leakbig"><small>לפי המחזור שמסרת, העסק מדליף בערך</small><b>{nis(leakTotal)}</b><em>בחודש · {nis(leakTotal * 12)} בשנה</em></div>}
         <div className="cx-locked" aria-hidden>
           {["משוב על 24 פרמטרים", "3 המהלכים שיזיזו לך את 2027", "תוכנית רבעונית מלאה", "90 הימים הראשונים", "תוכנית הון ונדל״ן ל-10 שנים"].map((t) => <span key={t}><Icon name="lock" size={14} />{t}</span>)}
         </div>

@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import CheckupReport from "@/components/CheckupReport";
 import { getAdmin } from "@/lib/adminAuth";
 import { getSessionUserId } from "@/lib/session";
-import { loadCheckup } from "@/lib/checkupData";
+import { benchmark, loadCheckup } from "@/lib/checkupData";
 import type { Profile, Report, Scores } from "@/lib/checkup";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +13,7 @@ export default async function CheckupResult({ params }: { params: Promise<{ toke
   const { token } = await params;
   const d = await loadCheckup(token);
   if (!d) notFound();
-  const [userId, admin] = await Promise.all([getSessionUserId(), getAdmin()]);
+  const [userId, admin, bench] = await Promise.all([getSessionUserId(), getAdmin(), benchmark(((d.profile ?? {}) as Profile).field)]);
   return (
     <CheckupReport
       token={token}
@@ -26,6 +26,7 @@ export default async function CheckupResult({ params }: { params: Promise<{ toke
       finishedAt={d.finished_at as string}
       viewer={admin && d.user_id !== userId ? "admin" : "owner"}
       loggedIn={!!userId}
+      bench={bench}
     />
   );
 }

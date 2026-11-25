@@ -7,7 +7,7 @@ import { logActivity, openOnboardingLead } from "@/lib/crm";
 import { alert } from "@/lib/alerts";
 import { clientIp, hit, limited } from "@/lib/ratelimit";
 import { cleanName, isEmail, normalizeIsraeliPhone } from "@/lib/validation";
-import { PROFILE, QUESTIONS, STATIONS, answerScore, buildFallbackReport, grade, reportPrompt, sanitizeReport, scoreCheckup, type Profile } from "@/lib/checkup";
+import { PROFILE, QUESTIONS, STATIONS, answerScore, leaks, nis, buildFallbackReport, grade, reportPrompt, sanitizeReport, scoreCheckup, type Profile } from "@/lib/checkup";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -35,6 +35,19 @@ function cleanProfile(raw: unknown): Profile {
   }
   return out;
 }
+async function ensureLead(rowId: string, leadId: string | null, userId: string | null, contact: { full_name: string | null; phone: string | null; email: string | null }, source: string | null, note: string) {
+  const supabase = db();
+  if (leadId || !contact.phone) return leadId;
+  const { data: ex } = await supabase.from("leads").select("id").eq("phone", contact.phone).in("meeting_type", ["checkup", "onboarding"]).order("created_at", { ascending: false }).limit(1).maybeSingle();
+  let id = (ex?.id as string) ?? null;
+  if (!id) {
+    const { data: l } = await supabase.from("leads").insert({ user_id: userId, meeting_type: "checkup", full_name: contact.full_name ?? "", phone: contact.phone, email: contact.email, status: "new", trigger: source ? `checkup:${source}` : "checkup", note }).select("id").single();
+    id = (l?.id as string) ?? null;
+  }
+  if (id) await supabase.from("checkup_results").update({ lead_id: id }).eq("id", rowId);
+  return id;
+}
+
 const okToken = (t: unknown): t is string => typeof t === "string" && /^[a-zA-Z0-9_-]{16,40}$/.test(t);
 
 /** Resume a checkup by its token. */
@@ -87,6 +100,34 @@ export async function POST(req: Request) {
     await supabase.from("checkup_results").update({ step, profile, answers, updated_at: now, ...(userId && !row.user_id ? { user_id: userId } : {}) }).eq("id", row.id);
   }
 
+  // midway: "save my progress" (name + phone) → a lead the rep can call if they don't finish
+  if (body.action === "contact") {
+    const c = (body.contact ?? {}) as Record<string, unknown>;
+    const name = cleanName(String(c.name ?? ""));
+    const phone = normalizeIsraeliPhone(String(c.phone ?? ""));
+    if (!name || !phone) return NextResponse.json({ error: "contact", errors: { name: !name, phone: !phone } }, { status: 400 });
+    await supabase.from("checkup_results").update({ full_name: name, phone }).eq("id", row.id);
+    const contact = { full_name: name, phone, email: null };
+    const leadId = await ensureLead(row.id, row.lead_id, userId, contact, source, "באמצע הצ׳קאפ העסקי 2027. אם לא יסיים: להתקשר, לעזור להשלים (רבע שעה עם יועץ).");
+    if (leadId) await logActivity({ leadId, userId, adminId: null, kind: "note", body: `התחיל צ׳קאפ עסקי 2027 ושמר התקדמות (שלב ${step}). אם לא יסיים תוך יום: להתקשר ולהשלים איתו.`, contact, sync: "onboarding_opened", status: "new" });
+    return NextResponse.json({ ok: true, token });
+  }
+
+  // from the report: "implement this move with an advisor"
+  if (body.action === "callback") {
+    if (row.status !== "done") return NextResponse.json({ error: "not done" }, { status: 400 });
+    const move = String(body.move ?? "").slice(0, 160);
+    const { data: r2 } = await supabase.from("checkup_results").select("full_name, phone, email, total, lead_id").eq("id", row.id).single();
+    const contact = { full_name: (r2?.full_name as string) ?? null, phone: (r2?.phone as string) ?? null, email: (r2?.email as string) ?? null };
+    const leadId = (r2?.lead_id as string) ?? (await ensureLead(row.id, null, userId, contact, source, "ביקש יועץ מתוך הצ׳קאפ העסקי 2027."));
+    if (leadId) {
+      await supabase.from("leads").update({ status: "callback", next_call_at: now, updated_at: now }).eq("id", leadId);
+      await logActivity({ leadId, userId, adminId: null, kind: "note", body: `ליד חם מהצ׳קאפ (${r2?.total}/10): ביקש יועץ ליישום המהלך "${move}". להתקשר היום ולהציע פגישת יועץ (₪279) או מסלול.\nהתוכנית: ${APP}/checkup/r/${token}`, contact, status: "callback" });
+    }
+    await alert(`checkup_cb:${token}`, `ליד חם מהצ׳קאפ: ${contact.full_name ?? ""} רוצה יועץ`, [`${contact.full_name ?? ""} · ${contact.phone ?? ""}`, `מהלך: ${move}`, `${APP}/checkup/r/${token}`], 5).catch(() => {});
+    return NextResponse.json({ ok: true });
+  }
+
   if (body.action !== "finish") return NextResponse.json({ ok: true, token });
   if (row.status === "done") return NextResponse.json({ ok: true, token, done: true });
 
@@ -128,21 +169,13 @@ export async function POST(req: Request) {
   if (userId) await supabase.from("events").insert({ user_id: userId, type: "checkup_completed", meta: { total } });
 
   // CRM: the member's onboarding lead, or a new "checkup" lead
-  let leadId = row.lead_id;
-  if (!leadId && contact.phone) {
-    const { data: ex } = await supabase.from("leads").select("id").eq("phone", contact.phone).in("meeting_type", ["checkup", "onboarding"]).order("created_at", { ascending: false }).limit(1).maybeSingle();
-    leadId = (ex?.id as string) ?? null;
-    if (!leadId) {
-      const { data: l } = await supabase.from("leads").insert({ user_id: userId, meeting_type: "checkup", full_name: contact.full_name ?? "", phone: contact.phone, email: contact.email, status: "new", trigger: source ? `checkup:${source}` : "checkup", note: "מילא צ׳קאפ עסקי 2027 וקיבל תוכנית עסקית. להתקשר, לפתוח מהתוכנית, להציע יישום במסלול או בפגישת יועץ." }).select("id").single();
-      leadId = (l?.id as string) ?? null;
-    }
-    if (leadId) await supabase.from("checkup_results").update({ lead_id: leadId }).eq("id", row.id);
-  }
+  const { data: rl } = await supabase.from("checkup_results").select("lead_id").eq("id", row.id).single();
+  const leadId = await ensureLead(row.id, (rl?.lead_id as string) ?? row.lead_id, userId, contact, source, "מילא צ׳קאפ עסקי 2027 וקיבל תוכנית עסקית. להתקשר, לפתוח מהתוכנית, להציע יישום במסלול או בפגישת יועץ.");
   const weak = [...STATIONS].sort((a, b) => scores[a.id] - scores[b.id]).slice(0, 3);
   const g = grade(total);
   const link = `${APP}/checkup/r/${token}`;
   if (leadId) {
-    const line = `סיים צ׳קאפ עסקי: ${total}/10 (${g.word}). ${allProfile.business ? `${allProfile.business} · ` : ""}${allProfile.field ?? ""}${allProfile.revenue ? ` · ${allProfile.revenue}` : ""}. החולשות: ${weak.map((w) => `${w.label} ${scores[w.id]}`).join(", ")}. המטרה ל-2027: ${allProfile.goal ?? "-"}.\nהתוכנית המלאה: ${link}\nלשיחה: לפתוח מהתוכנית, להציע ליישם אותה במסלול או בפגישת יועץ (₪279).`;
+    const line = `סיים צ׳קאפ עסקי: ${total}/10 (${g.word}). ${allProfile.business ? `${allProfile.business} · ` : ""}${allProfile.field ?? ""}${allProfile.revenue ? ` · ${allProfile.revenue}` : ""}. החולשות: ${weak.map((w) => `${w.label} ${scores[w.id]}`).join(", ")}.${leaks(allProfile, scores).total ? ` דליפה משוערת: ${nis(leaks(allProfile, scores).total)} בחודש.` : ""} המטרה ל-2027: ${allProfile.goal ?? "-"}.\nהתוכנית המלאה: ${link}\nלשיחה: לפתוח מהתוכנית, להציע ליישם אותה במסלול או בפגישת יועץ (₪279).`;
     await logActivity({ leadId, userId, adminId: null, kind: "note", body: line, contact, meta: { checkup_token: token, total }, sync: "onboarding_opened", status: "new" });
     await supabase.from("leads").update({ summary: `צ׳קאפ 2027: ${total}/10 · ${report.headline}\nמהלך 1: ${report.top3[0]?.title ?? ""} · מהלך 2: ${report.top3[1]?.title ?? ""} · מהלך 3: ${report.top3[2]?.title ?? ""}\n${link}`, updated_at: now }).eq("id", leadId);
   }

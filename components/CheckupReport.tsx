@@ -6,12 +6,29 @@ import Icon from "./Icon";
 import { Brand } from "./BrandBar";
 import { CallPicker } from "./OnboardingCard";
 import Confetti from "./Confetti";
-import { QUESTIONS, STATIONS, answerScore, grade, scoreTone, type Profile, type Report, type Scores } from "@/lib/checkup";
+import { QUESTIONS, STATIONS, answerScore, grade, leaks, nis, scoreTone, type Profile, type Report, type Scores } from "@/lib/checkup";
 import { renderCheckupCard } from "@/lib/checkupCard";
 
-type Props = { token: string; loggedIn: boolean; name: string; profile: Profile; answers: Record<string, number>; scores: Scores; total: number; report: Report; finishedAt: string; viewer: "owner" | "admin" };
+type Props = { token: string; loggedIn: boolean; name: string; profile: Profile; answers: Record<string, number>; scores: Scores; total: number; report: Report; finishedAt: string; viewer: "owner" | "admin"; bench?: { n: number; avg: number; totals: number[] } | null };
 
-export default function CheckupReport({ token, loggedIn, name, profile, answers, scores, total, report, finishedAt, viewer }: Props) {
+export default function CheckupReport({ token, loggedIn, name, profile, answers, scores, total, report, finishedAt, viewer, bench }: Props) {
+  const lk = leaks(profile, scores);
+  const pct = bench ? Math.round((bench.totals.filter((t) => t < total).length / bench.n) * 100) : null;
+  const [intro, setIntro] = useState(false);
+  const [asked, setAsked] = useState<Record<number, "busy" | "done">>({});
+  useEffect(() => {
+    if (viewer === "owner" && new URLSearchParams(window.location.search).get("new") === "1") {
+      setIntro(true);
+      const t = setTimeout(() => setIntro(false), 4200);
+      window.history.replaceState(null, "", window.location.pathname);
+      return () => clearTimeout(t);
+    }
+  }, [viewer]);
+  async function askAdvisor(i: number, move: string) {
+    setAsked((a) => ({ ...a, [i]: "busy" }));
+    try { await fetch("/api/checkup", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "callback", token, move }) }); } catch {}
+    setAsked((a) => ({ ...a, [i]: "done" }));
+  }
   const [card, setCard] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -54,7 +71,8 @@ export default function CheckupReport({ token, loggedIn, name, profile, answers,
 
   return (
     <div className="ck ck-report">
-      {viewer === "owner" && <Confetti />}
+      {intro && <Reveal total={total} word={g.word} leak={lk.total} />}
+      {viewer === "owner" && !intro && <Confetti />}
       <header className="ck-top">
         <Brand sub={false} size={34} />
         <span className="ck-date">{viewer === "admin" ? "תצוגת נציג · " : ""}{date}</span>
@@ -75,13 +93,19 @@ export default function CheckupReport({ token, loggedIn, name, profile, answers,
               {profile.goal && <span><Icon name="target" size={14} /> {profile.goal}</span>}
             </div>
           </div>
+          {(lk.total > 0 || pct !== null) && (
+            <div className="ck-r-facts">
+              {lk.total > 0 && <div className="ck-fact bad"><small>הדליפה המשוערת</small><b>{nis(lk.total)}</b><em>בחודש · {nis(lk.total * 12)} בשנה</em></div>}
+              {pct !== null && <div className="ck-fact"><small>מול {bench!.n} עסקים בתחום שלך</small><b>{pct}%</b><em>קיבלו ציון נמוך משלך · ממוצע {bench!.avg}</em></div>}
+            </div>
+          )}
           <div className="ck-r-ring"><ScoreRing value={shown} total={total} tone={g.tone} /></div>
         </section>
 
         <nav className="ck-actions ck-rv" aria-label="פעולות">
           <a className="ck-act" href={`/checkup/r/${token}/print`} target="_blank" rel="noopener"><Icon name="download" size={18} /><span>PDF של התוכנית</span></a>
           <button className="ck-act" onClick={makeCard} disabled={busy}><Icon name="image" size={18} /><span>{busy ? "מכין..." : "כרטיס לסטורי"}</span></button>
-          <a className="ck-act" href={`https://wa.me/?text=${encodeURIComponent(`עשיתי את הצ׳קאפ העסקי של ניר דובדבני ויצא לי ${total}/10. בדוק כמה העסק שלך מוכן ל-2027: https://dubdebot.vercel.app/checkup?src=share`)}`} target="_blank" rel="noopener"><Icon name="share" size={18} /><span>שתף בוואטסאפ</span></a>
+          <a className="ck-act" href={`https://wa.me/?text=${encodeURIComponent(`עשיתי את הצ׳קאפ העסקי של ניר דובדבני ויצא לי ${total}/10. אתה עוקף אותי? בדוק כמה העסק שלך מוכן ל-2027: https://dubdebot.vercel.app/checkup?ref=${token}`)}`} target="_blank" rel="noopener"><Icon name="share" size={18} /><span>שתף בוואטסאפ</span></a>
           <button className="ck-act" onClick={async () => { try { await navigator.clipboard.writeText(link); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch {} }}><Icon name={copied ? "check" : "link"} size={18} /><span>{copied ? "הועתק" : "קישור לתוכנית"}</span></button>
         </nav>
         {card && (
@@ -143,6 +167,10 @@ export default function CheckupReport({ token, loggedIn, name, profile, answers,
                 <h3>{m.title}</h3>
                 <p>{m.why}</p>
                 <p className="ck-move-act"><Icon name="arrowLeft" size={15} /> {m.action}</p>
+                {lk.per[(STATIONS.find((s) => s.label === m.title)?.id ?? "vision")] > 0 && <p className="ck-move-cost">שווה לך כ-{nis(lk.per[STATIONS.find((s) => s.label === m.title)!.id] * 12)} בשנה</p>}
+                {viewer === "owner" && (asked[i] === "done"
+                  ? <p className="ck-good"><Icon name="check" size={15} /> קיבלנו. יועץ יחזור אליך היום.</p>
+                  : <button className="ck-move-btn" disabled={asked[i] === "busy"} onClick={() => askAdvisor(i, m.title)}>ליישם את זה עם יועץ <Icon name="arrowLeft" size={15} /></button>)}
               </article>
             ))}
           </div>
@@ -291,5 +319,29 @@ function AlphaWheel({ scores }: { scores: Scores }) {
       <circle cx={cx} cy={cy} r={r0 - 4} fill="#0c0c0e" stroke="rgba(226,198,142,.35)" />
       <text x={cx} y={cy + 6} textAnchor="middle" fontSize="18" fontWeight="700" fill="#e2c68e" fontFamily="Karantina, sans-serif">ALPHA</text>
     </svg>
+  );
+}
+
+
+/** Full-screen climax when the plan opens for the first time. */
+function Reveal({ total, word, leak }: { total: number; word: string; leak: number }) {
+  const [n, setN] = useState(0);
+  const [stage, setStage] = useState(0);
+  useEffect(() => {
+    let raf = 0; const t0 = performance.now() + 500;
+    const f = (t: number) => { const p = Math.max(0, Math.min(1, (t - t0) / 1600)); setN(Math.round(total * (1 - Math.pow(1 - p, 4)) * 10) / 10); if (p < 1) raf = requestAnimationFrame(f); else setStage(1); };
+    raf = requestAnimationFrame(f);
+    const t2 = setTimeout(() => setStage(2), 3200);
+    return () => { cancelAnimationFrame(raf); clearTimeout(t2); };
+  }, [total]);
+  return (
+    <div className={`ck-reveal s${stage}`} aria-live="polite">
+      <div className="ck-reveal-rays" aria-hidden />
+      <p>הציון של העסק שלך</p>
+      <b>{n.toFixed(1)}</b>
+      <h2 className={stage ? "on" : ""}>{word}</h2>
+      {leak > 0 && <em className={stage ? "on" : ""}>דליפה משוערת: {nis(leak)} בחודש</em>}
+      <small className={stage ? "on" : ""}>התוכנית שלך ל-2027 נפתחת...</small>
+    </div>
   );
 }

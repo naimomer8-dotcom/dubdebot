@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { loadCheckup } from "@/lib/checkupData";
-import { QUESTIONS, STATIONS, answerScore, grade, type Profile, type Report, type Scores } from "@/lib/checkup";
+import { QUESTIONS, STATIONS, answerScore, grade, leaks, nis, type Profile, type Report, type Scores } from "@/lib/checkup";
 import PrintButton from "./PrintButton";
 
 export const dynamic = "force-dynamic";
@@ -32,6 +32,7 @@ export default async function CheckupPrint({ params }: { params: Promise<{ token
           <h1>2027</h1>
           <h2>{profile.business || "העסק שלך"}{d.name ? ` · ${d.name}` : ""}</h2>
           <div className="pp-score"><b>{total.toFixed(1)}</b><span>/10</span><em style={{ color: col(total) }}>{g.word}</em></div>
+          {leaks(profile, scores).total > 0 && <p className="pp-leak">דליפה משוערת לפי המחזור שמסרת: <b>{nis(leaks(profile, scores).total)} בחודש</b> · {nis(leaks(profile, scores).total * 12)} בשנה</p>}
           <p className="pp-headline">{report.headline}</p>
         </div>
         <div className="pp-cover-bot"><img src="/nir/home-suit.webp" alt="" /><div><b>ניר דובדבני</b><span>22 שנה של ליווי עסקים · הבית להצלחה בחיים ובעסקים</span></div></div>

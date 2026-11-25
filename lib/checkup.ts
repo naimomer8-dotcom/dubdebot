@@ -236,3 +236,38 @@ export function sanitizeReport(raw: unknown, fallback: Report): Report {
     },
   };
 }
+
+/* ---------------- money: what each weakness costs (an estimate from the stated revenue) ---------------- */
+const REVENUE_MID: Record<string, number> = { "עד ₪30 אלף": 20000, "₪30–100 אלף": 60000, "₪100–300 אלף": 180000, "יותר מ-₪300 אלף": 400000 };
+/** Share of monthly revenue a station leaks at score 1 (scales down linearly to 0 at score 10). */
+const LEAK_RATE: Record<StationId, number> = { vision: 0.04, brand: 0.05, products: 0.06, marketing: 0.07, digital: 0.04, sales: 0.08, system: 0.04, team: 0.05, money: 0.05, capital: 0.03 };
+
+export function monthlyRevenue(p: Profile) { return p.revenue ? REVENUE_MID[p.revenue] ?? 0 : 0; }
+
+/** Estimated monthly ₪ leak per station + total. 0 when the revenue bracket is unknown. */
+export function leaks(p: Profile, scores: Partial<Record<StationId, number>>) {
+  const rev = monthlyRevenue(p);
+  const per = Object.fromEntries(STATIONS.map((s) => {
+    const sc = scores[s.id];
+    const v = rev && sc ? Math.round((rev * LEAK_RATE[s.id] * (10 - sc)) / 9 / 100) * 100 : 0;
+    return [s.id, v];
+  })) as Record<StationId, number>;
+  const total = Object.values(per).reduce((a, b) => a + b, 0);
+  return { per, total, rev };
+}
+export const nis = (n: number) => `₪${Math.round(n).toLocaleString("he-IL")}`;
+
+/* ---------------- Nir reacts to every answer ---------------- */
+const REACT: Record<StationId, [string, string, string]> = {
+  vision: ["בלי יעד אתה רץ מהר לשום מקום. נתקן את זה בתוכנית.", "יש כיוון. עכשיו צריך להפוך אותו למספרים.", "זה כבר עסק שיודע לאן הוא הולך. יפה."],
+  brand: ["אם אתה לא יודע למה אתה, גם הלקוח לא יודע.", "יש בסיס. צריך לחדד אותו עד שהוא חותך.", "בידול חד. זה מה שמאפשר לך לגבות יותר."],
+  products: ["פה יש כסף שנשאר על השולחן. נבנה את זה.", "חצי דרך. עוד מוצר אחד נכון ישנה את התמונה.", "סל מוצרים של עסק שמרוויח. כל הכבוד."],
+  marketing: ["שיווק בלי מספרים זה הימור. נמדוד.", "יש תנועה. עכשיו צריך לדעת מה באמת מביא כסף.", "מנוע לידים מדוד. זה נכס."],
+  digital: ["הלקוח בודק אותך בנייד. כרגע הוא לא מתרשם.", "נוכחות סבירה. אפשר להפוך אותה למכונת פניות.", "רואים אותך ברשת, וזה עובד בשבילך."],
+  sales: ["כל פנייה שלא נסגרת, שילמת עליה פעמיים.", "סוגר, אבל משאיר כסף. תסריט ופולואפ יעשו הבדל.", "אחוז סגירה של מקצוענים. תשמור על זה."],
+  system: ["הכל בראש שלך? אז העסק מוגבל לגודל של הראש שלך.", "יש התחלה של שיטה. צריך לסגור אותה.", "עסק שרץ על שיטה. ככה גדלים."],
+  team: ["אם תיעלם, העסק נעצר. זו עבודה, לא עסק.", "יש מי שמחזיק, חלקית. נעביר עוד אחריות.", "העסק לא תלוי רק בך. זה החופש האמיתי."],
+  money: ["עסקים נסגרים בגלל תזרים, לא בגלל הפסד. זה דחוף.", "אתה מכיר את המספרים, בערך. בערך זה יקר.", "שליטה במספרים. ככה מנהלים עסק."],
+  capital: ["כל הכסף נבלע? אז אתה עדיין במשוואת זמן = כסף.", "יש כוונה. צריך תוכנית הון כתובה.", "הרווח הופך לנכסים. ככה בונים עושר."],
+};
+export function reaction(st: StationId, score: number) { return REACT[st][score >= 8 ? 2 : score >= 5 ? 1 : 0]; }

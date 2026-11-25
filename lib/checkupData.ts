@@ -13,3 +13,14 @@ export async function loadCheckup(token: string) {
   return { ...data, name: name.split(" ")[0] };
 }
 
+
+/** Average score of finished checkups in the same field (only when there are at least 10). */
+export async function benchmark(field: string | undefined) {
+  if (!field) return null;
+  const { data } = await db().from("checkup_results").select("total").eq("status", "done").neq("source", "qa").filter("profile->>field", "eq", field).limit(2000);
+  const n = data?.length ?? 0;
+  if (n < 10) return null;
+  const avg = Math.round(((data ?? []).reduce((a, r) => a + Number(r.total), 0) / n) * 10) / 10;
+  const totals = (data ?? []).map((r) => Number(r.total));
+  return { n, avg, totals };
+}

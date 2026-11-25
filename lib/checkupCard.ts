@@ -45,7 +45,7 @@ export async function renderCheckupCard(o: { total: number; scores: Scores; busi
     x.textAlign = "left"; x.fillStyle = "#f4eee3"; x.font = '700 34px "Assistant"'; x.fillText(String(o.scores[s.id]), 100, y + 12);
   });
   x.textAlign = "center"; x.fillStyle = "#e2c68e"; x.font = '700 46px "Assistant"';
-  x.fillText("כמה העסק שלך מוכן ל-2027? בדוק במתנה", W / 2, H - 130);
+  x.fillText("קיבלתי " + o.total.toFixed(1) + ". אתה עוקף אותי?", W / 2, H - 130);
   x.fillStyle = "#857e72"; x.font = '400 36px "Assistant"'; x.fillText("dubdebot.vercel.app/checkup", W / 2, H - 75);
   return new Promise((res) => c.toBlob((b) => res(b), "image/png"));
 }

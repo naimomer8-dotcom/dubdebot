@@ -12,9 +12,9 @@ export const metadata: Metadata = {
   openGraph: { title: "כמה העסק שלך מוכן ל-2027?", description: "צ׳קאפ עסקי + תוכנית עסקית ל-2027 מניר דובדבני. במתנה.", locale: "he_IL" },
 };
 
-export default async function CheckupPage({ searchParams }: { searchParams: Promise<{ src?: string }> }) {
-  const { src } = await searchParams;
+export default async function CheckupPage({ searchParams }: { searchParams: Promise<{ src?: string; ref?: string }> }) {
+  const { src, ref } = await searchParams;
   const userId = await getSessionUserId();
   if (await consentPending(userId)) return <ConsentGate />;
-  return <CheckupClient loggedIn={!!userId} source={(src ?? (userId ? "app" : "web")).replace(/[^a-z0-9_-]/gi, "").slice(0, 30)} />;
+  return <CheckupClient loggedIn={!!userId} source={(src ?? (ref ? `ref-${ref}` : userId ? "app" : "web")).replace(/[^a-z0-9_-]/gi, "").slice(0, 40)} />;
 }
