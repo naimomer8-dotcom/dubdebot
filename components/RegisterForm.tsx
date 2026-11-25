@@ -110,8 +110,8 @@ export default function RegisterForm() {
       // came from a plan page: go straight back to that plan's checkout, with the campaign params
       const back = planReturn();
       if (back) return router.push(back);
-      // came from the business checkup: straight back into it
-      if (new URLSearchParams(window.location.search).get("from") === "checkup") return router.push("/checkup?go=1");
+      // came from the business checkup report: straight into the platform
+      if (new URLSearchParams(window.location.search).get("from") === "checkup") return router.push("/home");
       // otherwise: thank-you screen with the workshop gift, then into the platform
       router.prefetch("/chat");
       setLoading(false);
@@ -274,6 +274,6 @@ function planReturn(): string | null {
   return checkoutPath(plan as Tier, sp.get("billing") === "installments" ? "installments" : "onetime", carried(sp));
 }
 function loginNext(): string {
-  const p = planReturn() ?? (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("from") === "checkup" ? "/checkup?go=1" : null);
+  const p = planReturn() ?? (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("from") === "checkup" ? "/home" : null);
   return p ? `&next=${encodeURIComponent(p)}` : "";
 }

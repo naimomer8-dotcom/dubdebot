@@ -6,11 +6,32 @@ import Icon from "./Icon";
 import { Brand } from "./BrandBar";
 import { CallPicker } from "./OnboardingCard";
 import Confetti from "./Confetti";
-import { OPTION_SCORE, QUESTIONS, STATIONS, grade, scoreTone, type Profile, type Report, type Scores } from "@/lib/checkup";
+import { QUESTIONS, STATIONS, answerScore, grade, scoreTone, type Profile, type Report, type Scores } from "@/lib/checkup";
+import { renderCheckupCard } from "@/lib/checkupCard";
 
-type Props = { id: string; name: string; profile: Profile; answers: Record<string, number>; scores: Scores; total: number; report: Report; finishedAt: string; viewer: "owner" | "admin" };
+type Props = { token: string; loggedIn: boolean; name: string; profile: Profile; answers: Record<string, number>; scores: Scores; total: number; report: Report; finishedAt: string; viewer: "owner" | "admin" };
 
-export default function CheckupReport({ name, profile, answers, scores, total, report, finishedAt, viewer }: Props) {
+export default function CheckupReport({ token, loggedIn, name, profile, answers, scores, total, report, finishedAt, viewer }: Props) {
+  const [card, setCard] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const link = typeof window !== "undefined" ? `${window.location.origin}/checkup/r/${token}` : "";
+  async function makeCard() {
+    setBusy(true);
+    const b = await renderCheckupCard({ total, scores, business: profile.business });
+    setBusy(false);
+    if (!b) return;
+    const f = new File([b], "checkup-2027.png", { type: "image/png" });
+    const nav = navigator as Navigator & { canShare?: (d: unknown) => boolean };
+    if (nav.canShare?.({ files: [f] })) { try { await navigator.share({ files: [f], title: "הצ׳קאפ העסקי שלי" }); return; } catch {} }
+    setCard(URL.createObjectURL(b));
+  }
+  useEffect(() => {
+    const els = document.querySelectorAll(".ck-r .ck-rv");
+    const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { threshold: 0.12 });
+    els.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, []);
   const g = grade(total);
   const [shown, setShown] = useState(0);
   const [open, setOpen] = useState<string | null>(null);
@@ -32,11 +53,11 @@ export default function CheckupReport({ name, profile, answers, scores, total, r
 
   return (
     <div className="ck ck-report">
-      {viewer === "owner" && total >= 6 && <Confetti />}
+      {viewer === "owner" && <Confetti />}
       <header className="ck-top">
         <Brand sub={false} size={34} />
         <span className="ck-date">{viewer === "admin" ? "תצוגת נציג · " : ""}{date}</span>
-        <Link href={viewer === "admin" ? "/admin" : "/home"} className="btn btn-ghost btn-sm">{viewer === "admin" ? "ל-CRM" : "לבית"}</Link>
+        <Link href={viewer === "admin" ? "/admin" : loggedIn ? "/home" : "/"} className="btn btn-ghost btn-sm">{viewer === "admin" ? "ל-CRM" : "לבית"}</Link>
       </header>
 
       <main className="ck-r">
@@ -56,8 +77,24 @@ export default function CheckupReport({ name, profile, answers, scores, total, r
           <div className="ck-r-ring"><ScoreRing value={shown} total={total} tone={g.tone} /></div>
         </section>
 
+        <nav className="ck-actions ck-rv" aria-label="פעולות">
+          <a className="ck-act" href={`/checkup/r/${token}/print`} target="_blank" rel="noopener"><Icon name="download" size={18} /><span>PDF של התוכנית</span></a>
+          <button className="ck-act" onClick={makeCard} disabled={busy}><Icon name="image" size={18} /><span>{busy ? "מכין..." : "כרטיס לסטורי"}</span></button>
+          <a className="ck-act" href={`https://wa.me/?text=${encodeURIComponent(`עשיתי את הצ׳קאפ העסקי של ניר דובדבני ויצא לי ${total}/10. בדוק כמה העסק שלך מוכן ל-2027: https://dubdebot.vercel.app/checkup?src=share`)}`} target="_blank" rel="noopener"><Icon name="share" size={18} /><span>שתף בוואטסאפ</span></a>
+          <button className="ck-act" onClick={async () => { try { await navigator.clipboard.writeText(link); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch {} }}><Icon name={copied ? "check" : "link"} size={18} /><span>{copied ? "הועתק" : "קישור לתוכנית"}</span></button>
+        </nav>
+        {card && (
+          <div className="ck-cardmodal" onClick={() => setCard(null)}>
+            <div onClick={(e) => e.stopPropagation()}>
+              <img src={card} alt="כרטיס הציון" />
+              <a className="btn btn-primary" href={card} download="checkup-2027.png">שמור תמונה</a>
+              <button className="btn btn-ghost btn-sm" onClick={() => setCard(null)}>סגור</button>
+            </div>
+          </div>
+        )}
+
         {/* ---------- alpha wheel + scorecard ---------- */}
-        <section className="ck-r-grid">
+        <section className="ck-r-grid ck-rv">
           <div className="ck-r-wheel glass edge">
             <p className="eyebrow">מפת האלפא שלך</p>
             <AlphaWheel scores={scores} />
@@ -81,7 +118,7 @@ export default function CheckupReport({ name, profile, answers, scores, total, r
                     {isOpen && (
                       <div className="ck-score-more">
                         <ul className="ck-params">
-                          {qs.map((q) => { const v = OPTION_SCORE[answers[q.id] ?? 0]; return <li key={q.id}><span>{q.param}</span><b className={`t-${scoreTone(v)}`}>{v}/10</b></li>; })}
+                          {qs.map((q) => { const v = answerScore(q, answers[q.id]) ?? 1; return <li key={q.id}><span>{q.param}</span><b className={`t-${scoreTone(v)}`}>{v}/10</b></li>; })}
                         </ul>
                         <p className="ck-good"><Icon name="check" size={15} /> {report.feedback[s.id].good}</p>
                         <p className="ck-fix"><Icon name="alert" size={15} /> {report.feedback[s.id].fix}</p>
@@ -95,7 +132,7 @@ export default function CheckupReport({ name, profile, answers, scores, total, r
         </section>
 
         {/* ---------- top 3 ---------- */}
-        <section className="ck-r-sec">
+        <section className="ck-r-sec ck-rv">
           <p className="eyebrow">3 המהלכים שיזיזו לך את 2027</p>
           <h2 className="h-display ck-h2">מתחילים מהדליפות הגדולות</h2>
           <div className="ck-top3">
@@ -111,7 +148,7 @@ export default function CheckupReport({ name, profile, answers, scores, total, r
         </section>
 
         {/* ---------- the 2027 plan ---------- */}
-        <section className="ck-plan">
+        <section className="ck-plan ck-rv">
           <div className="ck-plan-head">
             <p className="eyebrow">התוכנית העסקית שלך</p>
             <h2 className="h-display ck-h2 ck-year">2027</h2>
@@ -132,7 +169,7 @@ export default function CheckupReport({ name, profile, answers, scores, total, r
             ))}
           </div>
 
-          <div className="ck-r-grid">
+          <div className="ck-r-grid ck-rv">
             <div className="ck-r-card glass edge">
               <p className="eyebrow">90 הימים הראשונים</p>
               <ol className="ck-90">{report.plan.first90.map((f, i) => <li key={i}><Check90 /><span><small>{f.when}</small>{f.task}</span></li>)}</ol>
@@ -160,7 +197,7 @@ export default function CheckupReport({ name, profile, answers, scores, total, r
         </section>
 
         {/* ---------- Nir's note ---------- */}
-        <section className="ck-note">
+        <section className="ck-note ck-rv">
           <img src="/nir/home-yes.webp" alt="ניר דובדבני" />
           <blockquote>
             <p>״{report.nir_note}״</p>
@@ -170,21 +207,26 @@ export default function CheckupReport({ name, profile, answers, scores, total, r
 
         {/* ---------- CTA ---------- */}
         {viewer === "owner" ? (
-          <section className="ck-cta glass edge">
+          <section className="ck-cta glass edge ck-rv">
             <div>
               <p className="eyebrow">עכשיו, ביצוע</p>
               <h2 className="h-display ck-h2">תוכנית בלי יישום נשארת על הנייר</h2>
               <p>יועץ מהצוות שלי יעבור איתך על התוכנית ויראה לך איך מיישמים אותה. רבע שעה, במתנה. בחר מתי נוח שנתקשר:</p>
-              {called ? <p className="ck-good"><Icon name="check" size={16} /> נקבע. נתקשר אליך בזמן שבחרת.</p> : <CallPicker onPicked={() => setCalled(true)} />}
+              {!loggedIn ? <p className="ck-good"><Icon name="phone" size={16} /> יועץ מהצוות של ניר יתקשר אליך בימים הקרובים כדי לעבור איתך על התוכנית.</p> : called ? <p className="ck-good"><Icon name="check" size={16} /> נקבע. נתקשר אליך בזמן שבחרת.</p> : <CallPicker onPicked={() => setCalled(true)} />}
             </div>
             <div className="ck-cta-side">
               <small>מעדיף ליישם לבד, עם השיטה שלי 24/6?</small>
-              <Link className="btn btn-primary" href="/plans">למסלולים <Icon name="arrowLeft" size={16} /></Link>
-              <Link className="btn btn-glass" href="/chat">לעבוד על מהלך 1 עם הבוט</Link>
+              {loggedIn ? <>
+                <Link className="btn btn-primary" href="/plans">למסלולים <Icon name="arrowLeft" size={16} /></Link>
+                <Link className="btn btn-glass" href="/chat">לעבוד על מהלך 1 עם הבוט</Link>
+              </> : <>
+                <Link className="btn btn-primary" href="/?from=checkup#signup">30 יום ייעוץ עסקי במתנה <Icon name="arrowLeft" size={16} /></Link>
+                <small>הבוט של ניר יעבוד איתך על התוכנית הזאת, צעד אחרי צעד.</small>
+              </>}
             </div>
           </section>
         ) : (
-          <section className="ck-cta glass edge">
+          <section className="ck-cta glass edge ck-rv">
             <div>
               <p className="eyebrow">לנציג · איך פותחים את השיחה</p>
               <p>״ראיתי את הצ׳קאפ שעשית. יצא לך {total}/10, והדליפה הכי גדולה אצלך היא {sorted[0].label}. בניתי לך בתוכנית צעד ראשון לזה: {report.top3[0]?.action}. בוא נראה איך מיישמים את זה, במסלול או בפגישה עם יועץ.״</p>

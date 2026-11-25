@@ -15,6 +15,7 @@ export const isCrmStatus = (s: unknown): s is CrmStatus => CRM_STATUSES.some((x)
 
 export const MEETING_LABEL: Record<string, string> = {
   onboarding: "שיחת הסבר (רבע שעה במתנה)",
+  checkup: "צ׳קאפ עסקי 2027",
   advisor: "פגישת יועץ",
   nir: "פגישה עם ניר",
   renewal: "חידוש / מנוי",

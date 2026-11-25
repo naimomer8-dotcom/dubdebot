@@ -7,52 +7,76 @@
 
 export type StationId = "vision" | "brand" | "products" | "marketing" | "digital" | "sales" | "system" | "team" | "money" | "capital";
 
-export type Station = { id: StationId; n: number; label: string; tag: string; icon: string };
+export type Station = { id: StationId; n: number; label: string; tag: string; icon: string; pose: string; line: string; video?: string };
 
+/** pose = Nir cutout in /public/nir; line = what Nir says when you arrive; video = optional clip in /public/checkup. */
 export const STATIONS: Station[] = [
-  { id: "vision", n: 1, label: "חזון ויעד", tag: "לאן העסק הולך", icon: "target" },
-  { id: "brand", n: 2, label: "ערכים ובידול", tag: "למה דווקא אתה", icon: "star" },
-  { id: "products", n: 3, label: "מוצרים ותמחור", tag: "מה אתה מוכר ובכמה", icon: "coin" },
-  { id: "marketing", n: 4, label: "שיווק ולידים", tag: "איך מגיעים לקוחות", icon: "spark" },
-  { id: "digital", n: 5, label: "נוכחות דיגיטלית", tag: "איך רואים אותך ברשת", icon: "image" },
-  { id: "sales", n: 6, label: "מכירות", tag: "איך פנייה הופכת לכסף", icon: "phone" },
-  { id: "system", n: 7, label: "שיטה ותהליכים", tag: "SOP, SLA ומדדים", icon: "check" },
-  { id: "team", n: 8, label: "צוות ומנהיגות", tag: "מי מחזיק את העסק", icon: "users" },
-  { id: "money", n: 9, label: "כסף ותזרים", tag: "רווח והפסד ומזומנים", icon: "coin" },
-  { id: "capital", n: 10, label: "נדל״ן והון", tag: "מה נשאר לך ביד", icon: "vault" },
+  { id: "vision", n: 1, label: "חזון ויעד", tag: "לאן העסק הולך", icon: "target", pose: "wheel", line: "בלי יעד כתוב, כל החלטה נעשית מהבטן. בוא נבדוק לאן אתה הולך." },
+  { id: "brand", n: 2, label: "ערכים ובידול", tag: "למה דווקא אתה", icon: "gem", pose: "suit-point", line: "אם אין לך תשובה ל״למה אתה״, נשאר לך רק להתחרות על מחיר." },
+  { id: "products", n: 3, label: "מוצרים ותמחור", tag: "מה אתה מוכר ובכמה", icon: "layers", pose: "box", line: "עסק שמוכר רק את המוצר הגדול משאיר כסף על השולחן." },
+  { id: "marketing", n: 4, label: "שיווק ולידים", tag: "איך מגיעים לקוחות", icon: "spark", pose: "leads", line: "שיווק בלי מדידה הוא הימור. בוא נראה מה המספרים אומרים." },
+  { id: "digital", n: 5, label: "נוכחות דיגיטלית", tag: "איך רואים אותך ברשת", icon: "image", pose: "point-down", line: "הלקוח בודק אותך בנייד לפני שהוא מתקשר. מה הוא רואה?" },
+  { id: "sales", n: 6, label: "מכירות", tag: "איך פנייה הופכת לכסף", icon: "phone", pose: "alarm", line: "כל פנייה שלא נסגרה, כבר שילמת עליה בשיווק." },
+  { id: "system", n: 7, label: "שיטה ותהליכים", tag: "SOP, SLA ומדדים", icon: "check", pose: "book", line: "כשהכל בראש שלך, העסק לא יכול לגדול." },
+  { id: "team", n: 8, label: "צוות ומנהיגות", tag: "מי מחזיק את העסק", icon: "user", pose: "welcome", line: "אם העסק נעצר כשאתה לא שם, אין לך עסק. יש לך עבודה." },
+  { id: "money", n: 9, label: "כסף ותזרים", tag: "רווח והפסד ומזומנים", icon: "coin", pose: "hourglass", line: "עסקים לא נסגרים בגלל הפסד. הם נסגרים בגלל תזרים." },
+  { id: "capital", n: 10, label: "נדל״ן והון", tag: "מה נשאר לך ביד", icon: "vault", pose: "celebrate", line: "עסק שלא בונה הון משאיר אותך במשוואת זמן = כסף." },
 ];
 
-export type Q = { id: string; station: StationId; param: string; q: string; hint?: string; options: [string, string, string, string] };
+/** How a question is answered. Every kind resolves to a score 1–10. */
+export type Kind =
+  | { kind: "choice"; options: [string, string, string, string] } // → 1 / 4 / 7 / 10
+  | { kind: "slider"; low: string; high: string } // drag 1–10
+  | { kind: "swipe"; yes: string; no: string } // swipe/tap: yes 9 · partly 5 · no 2
+  | { kind: "dial"; unit: string; max: number; scale: number[] }; // pick a number, mapped by scale thresholds
+
+export type Q = { id: string; station: StationId; param: string; q: string; hint?: string } & Kind;
 
 /** Option index 0..3 → score 1 / 4 / 7 / 10. */
 export const OPTION_SCORE = [1, 4, 7, 10] as const;
 
+/** dial value → score: scale = [t1,t2,...,t9] ascending thresholds; value >= t_k gives score k+1. */
+export function dialScore(v: number, scale: number[]) {
+  let s = 1;
+  scale.forEach((t, i) => { if (v >= t) s = i + 2; });
+  return Math.min(10, s);
+}
+
 export const QUESTIONS: Q[] = [
-  { id: "v1", station: "vision", param: "יעד כתוב ל-2027", q: "יש לך יעד כתוב לשנה הקרובה, במספרים?", hint: "הכנסות, רווח, לקוחות. משהו שאפשר למדוד.", options: ["אין, אני חי מחודש לחודש", "יש תחושה בראש", "יש יעד כתוב, בלי תוכנית", "יעד כתוב, ותוכנית רבעונית שאני בודק"] },
-  { id: "v2", station: "vision", param: "עבודה על העסק", q: "כמה זמן בשבוע אתה עובד על העסק, ולא בתוכו?", options: ["כמעט אפס", "שעה-שעתיים", "חצי יום", "יום שלם ויותר"] },
-  { id: "b1", station: "brand", param: "בידול", q: "לקוח שואל: למה דווקא אתה? יש לך תשובה בשורה אחת?", options: ["אני הכי זול / הכי זמין", "אני מתלבט כל פעם מחדש", "יש משפט, לא תמיד חד", "משפט חד שכל הצוות אומר"] },
-  { id: "b2", station: "brand", param: "ערכים", q: "הערכים של העסק כתובים, והעובדים חיים לפיהם?", options: ["לא חשבתי על זה", "בראש שלי בלבד", "כתובים, לא מיושמים", "כתובים, מדוברים ומתוגמלים"] },
-  { id: "p1", station: "products", param: "מוצר חדירה", q: "יש לך מוצר חדירה: משהו קטן שמכניס לקוח חדש בקלות?", hint: "בדיקה, ייעוץ קצר, מוצר היכרות.", options: ["אין, רק המוצר הגדול", "יש, לא מתומחר נכון", "יש ועובד חלקית", "יש, והוא מזין את המוצר הגדול"] },
-  { id: "p2", station: "products", param: "מוצר תוכן", q: "יש לך מוצר תוכן (קורס, סדנה, הרצאה, ספר) שמוכר אותך גם כשאתה ישן?", options: ["אין", "יש רעיון", "יש, לא נמכר קבוע", "יש, ומכניס כסף כל חודש"] },
-  { id: "p3", station: "products", param: "רווח גולמי ותמחור", q: "אתה יודע מה הרווח הגולמי על כל מוצר, ומתי העלית מחיר לאחרונה?", options: ["לא יודע, ולא העליתי שנים", "בערך, בראש", "על העיקריים, העליתי לאחרונה", "עד השקל, ואני מעדכן כל שנה"] },
-  { id: "m1", station: "marketing", param: "קמפיינים", q: "איך נראה השיווק שלך היום?", options: ["רק מפה לאוזן", "פוסטים פה ושם", "קמפיין קבוע בערוץ אחד", "כמה ערוצים, מדודים, עם תקציב קבוע"] },
-  { id: "m2", station: "marketing", param: "לידים", q: "אתה יודע כמה לידים נכנסים בחודש, ומה עולה ליד?", options: ["לא יודע", "בערך כמה", "יודע כמה, לא כמה עולה", "יודע כמה, כמה עולה ומאיפה"] },
-  { id: "m3", station: "marketing", param: "החזר על פרסום (ROAS)", q: "על כל שקל בפרסום, אתה יודע כמה חוזר?", options: ["לא מפרסם / לא יודע", "יש לי ניחוש", "מודד לפעמים", "מודד קבוע, ומגדיל את מה שעובד"] },
-  { id: "d1", station: "digital", param: "אתר ודף נחיתה", q: "האתר שלך היום:", options: ["אין אתר", "יש, ישן ולא מותאם לנייד", "מותאם לנייד, לא מביא פניות", "מהיר, מותאם לנייד ומביא פניות"] },
-  { id: "d2", station: "digital", param: "תוכן ברשתות", q: "כמה תוכן אתה מעלה לרשתות?", options: ["כמעט כלום", "פעם בכמה שבועות", "כל שבוע", "כמה פעמים בשבוע, לפי תוכנית"] },
-  { id: "s1", station: "sales", param: "אחוז סגירה", q: "מתוך 10 פניות רציניות, כמה נסגרות?", options: ["פחות מ-2", "2–3", "4–5", "6 ומעלה"] },
-  { id: "s2", station: "sales", param: "תסריט ופולואפ", q: "יש תסריט שיחה ותהליך פולואפ קבוע?", options: ["מאלתר כל פעם", "בראש, לא כתוב", "כתוב, לא תמיד מבוצע", "כתוב, מתורגל ונמדד"] },
-  { id: "y1", station: "system", param: "נהלי עבודה (SOP)", q: "התהליכים בעסק כתובים: שירות, מכירה, קליטת לקוח?", options: ["הכל אצלי בראש", "חלק קטן", "רובם, לא מעודכנים", "כתובים, מעודכנים, עם אחראים"] },
-  { id: "y2", station: "system", param: "זמני שירות (SLA)", q: "יש זמני תגובה ושירות מוגדרים ללקוח?", hint: "תוך כמה זמן עונים לפנייה, מתי מספקים, מה מבטיחים.", options: ["אין", "לפי הזמן הפנוי", "יש, לא נמדד", "מוגדר, נמדד ונאכף"] },
-  { id: "y3", station: "system", param: "מדדים (KPI)", q: "יש לוח מדדים שאתה מסתכל עליו כל שבוע?", options: ["אין", "מסתכל על הבנק", "כמה מספרים, לא קבוע", "לוח קבוע, כל שבוע"] },
-  { id: "t1", station: "team", param: "תלות בך", q: "אם תיעלם לשבועיים, מה קורה לעסק?", options: ["נעצר", "נפגע קשה", "מתפקד חלקית", "ממשיך לרוץ"] },
-  { id: "t2", station: "team", param: "תגמול ויעדים", q: "הצוות (או אתה, אם אתה לבד) עובד עם יעדים ותגמול?", options: ["אין יעדים", "יעדים בעל פה", "יעדים כתובים, בלי תגמול", "יעדים כתובים ותגמול לפי ביצוע"] },
-  { id: "f1", station: "money", param: "רווח והפסד (P&L)", q: "אתה רואה דוח רווח והפסד כל חודש?", options: ["רק כשרואה החשבון שולח", "פעם בשנה", "מדי פעם", "כל חודש, ואני מבין כל שורה"] },
-  { id: "f2", station: "money", param: "תזרים מזומנים", q: "אתה יודע מה יהיה המצב בבנק בעוד 90 יום?", options: ["מגלה כשזה מגיע", "יש לי תחושה", "אקסל, לפעמים", "תזרים מעודכן כל שבוע"] },
-  { id: "f3", station: "money", param: "משכורת לבעלים", q: "אתה מושך לעצמך משכורת קבועה?", options: ["לא / לא קבוע", "מה שנשאר בסוף החודש", "קבועה, נמוכה מהשוק", "קבועה ומלאה, ורווח נשאר בעסק"] },
-  { id: "c1", station: "capital", param: "תוכנית נדל״ן", q: "יש לך תוכנית נדל״ן להכנסה פסיבית ל-10 השנים הקרובות?", options: ["אין, לא חשבתי", "חולם על זה", "יש כיוון, בלי תוכנית", "תוכנית כתובה, ואני מתקדם בה"] },
-  { id: "c2", station: "capital", param: "רווח שהופך לנכסים", q: "כמה מהרווח של העסק הופך לנכסים (חיסכון, השקעות, נדל״ן)?", options: ["כלום, הכל נבלע", "מעט ולא קבוע", "סכום קבוע, קטן", "אחוז קבוע מכל חודש"] },
+  { id: "v1", station: "vision", param: "יעד כתוב ל-2027", kind: "choice", q: "יש לך יעד כתוב לשנה הקרובה, במספרים?", hint: "הכנסות, רווח, לקוחות. משהו שאפשר למדוד.", options: ["אין, אני חי מחודש לחודש", "יש תחושה בראש", "יש יעד כתוב, בלי תוכנית", "יעד כתוב + תוכנית רבעונית"] },
+  { id: "v2", station: "vision", param: "עבודה על העסק", kind: "slider", q: "כמה מהשבוע שלך הולך לעבודה על העסק, ולא בתוכו?", low: "כמעט כלום", high: "יום שלם ויותר" },
+  { id: "b1", station: "brand", param: "בידול", kind: "choice", q: "לקוח שואל: למה דווקא אתה? מה התשובה?", options: ["אני הכי זול / הכי זמין", "מתלבט כל פעם מחדש", "יש משפט, לא תמיד חד", "משפט חד שכל הצוות אומר"] },
+  { id: "b2", station: "brand", param: "ערכים", kind: "swipe", q: "הערכים של העסק כתובים, והעובדים חיים לפיהם.", yes: "נכון אצלי", no: "ממש לא" },
+  { id: "p1", station: "products", param: "מוצר חדירה", kind: "swipe", q: "יש לי מוצר חדירה קטן שמכניס לקוחות חדשים בקלות.", hint: "בדיקה, ייעוץ קצר, מוצר היכרות.", yes: "יש", no: "אין" },
+  { id: "p2", station: "products", param: "מוצר תוכן", kind: "choice", q: "מוצר תוכן (קורס, סדנה, הרצאה, ספר) שמוכר אותך גם כשאתה ישן?", options: ["אין", "יש רעיון", "יש, לא נמכר קבוע", "יש, ומכניס כל חודש"] },
+  { id: "p3", station: "products", param: "רווח גולמי ותמחור", kind: "slider", q: "כמה טוב אתה מכיר את הרווח הגולמי על כל מוצר?", low: "לא יודע בכלל", high: "עד השקל" },
+  { id: "m1", station: "marketing", param: "קמפיינים", kind: "choice", q: "איך נראה השיווק שלך היום?", options: ["רק מפה לאוזן", "פוסטים פה ושם", "קמפיין קבוע בערוץ אחד", "כמה ערוצים, מדודים, תקציב קבוע"] },
+  { id: "m2", station: "marketing", param: "לידים", kind: "swipe", q: "אני יודע כמה לידים נכנסים בחודש, ומה עולה כל ליד.", yes: "יודע", no: "לא יודע" },
+  { id: "m3", station: "marketing", param: "החזר על פרסום (ROAS)", kind: "dial", q: "על כל ₪1 בפרסום, כמה חוזר אליך?", hint: "לא מפרסם או לא יודע? תשאיר על 0.", unit: "₪", max: 10, scale: [0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 7] },
+  { id: "d1", station: "digital", param: "אתר ודף נחיתה", kind: "choice", q: "האתר שלך היום:", options: ["אין אתר", "ישן, לא מותאם לנייד", "מותאם לנייד, לא מביא פניות", "מהיר ומביא פניות"] },
+  { id: "d2", station: "digital", param: "תוכן ברשתות", kind: "dial", q: "כמה פוסטים / סרטונים אתה מעלה בשבוע?", unit: "בשבוע", max: 14, scale: [1, 1, 2, 2, 3, 4, 5, 7, 10] },
+  { id: "s1", station: "sales", param: "אחוז סגירה", kind: "dial", q: "מתוך 10 פניות רציניות, כמה נסגרות?", unit: "מתוך 10", max: 10, scale: [1, 2, 3, 3, 4, 5, 6, 7, 8] },
+  { id: "s2", station: "sales", param: "תסריט ופולואפ", kind: "choice", q: "יש תסריט שיחה ותהליך פולואפ קבוע?", options: ["מאלתר כל פעם", "בראש, לא כתוב", "כתוב, לא תמיד מבוצע", "כתוב, מתורגל ונמדד"] },
+  { id: "y1", station: "system", param: "נהלי עבודה (SOP)", kind: "slider", q: "כמה מהתהליכים בעסק כתובים, עם אחראים?", low: "הכל בראש שלי", high: "הכל כתוב" },
+  { id: "y2", station: "system", param: "זמני שירות (SLA)", kind: "swipe", q: "יש זמני תגובה ושירות מוגדרים ללקוח, ואני מודד אותם.", hint: "תוך כמה זמן עונים לפנייה, מתי מספקים.", yes: "יש", no: "אין" },
+  { id: "y3", station: "system", param: "מדדים (KPI)", kind: "choice", q: "יש לוח מדדים שאתה מסתכל עליו כל שבוע?", options: ["אין", "מסתכל על הבנק", "כמה מספרים, לא קבוע", "לוח קבוע, כל שבוע"] },
+  { id: "t1", station: "team", param: "תלות בך", kind: "slider", q: "אם תיעלם לשבועיים, כמה מהעסק ממשיך לרוץ?", low: "הכל נעצר", high: "רץ בלעדיי" },
+  { id: "t2", station: "team", param: "תגמול ויעדים", kind: "swipe", q: "הצוות (או אני, אם אני לבד) עובד עם יעדים כתובים ותגמול לפי ביצוע.", yes: "נכון", no: "לא" },
+  { id: "f1", station: "money", param: "רווח והפסד (P&L)", kind: "choice", q: "אתה רואה דוח רווח והפסד?", options: ["רק כשרואה החשבון שולח", "פעם בשנה", "מדי פעם", "כל חודש, מבין כל שורה"] },
+  { id: "f2", station: "money", param: "תזרים מזומנים", kind: "slider", q: "כמה ברור לך מה יהיה בבנק בעוד 90 יום?", low: "מגלה כשזה מגיע", high: "תזרים שבועי מעודכן" },
+  { id: "f3", station: "money", param: "משכורת לבעלים", kind: "swipe", q: "אני מושך לעצמי משכורת קבועה ומלאה, ורווח נשאר בעסק.", yes: "נכון", no: "לא" },
+  { id: "c1", station: "capital", param: "תוכנית נדל״ן", kind: "choice", q: "תוכנית נדל״ן להכנסה פסיבית ל-10 השנים הקרובות?", options: ["אין, לא חשבתי", "חולם על זה", "יש כיוון, בלי תוכנית", "תוכנית כתובה, מתקדם"] },
+  { id: "c2", station: "capital", param: "רווח שהופך לנכסים", kind: "dial", q: "כמה אחוז מהרווח החודשי הופך לנכסים?", hint: "חיסכון, השקעות, נדל״ן.", unit: "%", max: 50, scale: [1, 3, 5, 8, 10, 15, 20, 25, 30] },
 ];
+
+/** The 1–10 score of one raw answer (answers store choice index / slider value / swipe score / dial value). */
+export function answerScore(q: Q, raw: number): number | null {
+  if (!Number.isFinite(raw)) return null;
+  if (q.kind === "choice") return Number.isInteger(raw) && raw >= 0 && raw <= 3 ? OPTION_SCORE[raw] : null;
+  if (q.kind === "slider") return raw >= 1 && raw <= 10 ? Math.round(raw) : null;
+  if (q.kind === "swipe") return [2, 5, 9].includes(raw) ? raw : null;
+  return raw >= 0 && raw <= q.max ? dialScore(raw, q.scale) : null;
+}
 
 export type ProfileField = { id: keyof Profile; q: string; options?: string[]; text?: boolean; placeholder?: string };
 export type Profile = { business?: string; field?: string; years?: string; team?: string; revenue?: string; goal?: string };
@@ -76,11 +100,10 @@ export function scoreCheckup(answers: Record<string, number>): { scores: Scores;
   const sum: Record<string, number> = {};
   const cnt: Record<string, number> = {};
   for (const q of QUESTIONS) {
-    const v = answers[q.id];
-    if (!Number.isInteger(v) || v < 0 || v > 3) continue;
-    const s = OPTION_SCORE[v];
-    params.push({ id: q.id, station: q.station, param: q.param, score: s });
-    sum[q.station] = (sum[q.station] ?? 0) + s;
+    const sc = answerScore(q, Number(answers[q.id]));
+    if (sc === null) continue;
+    params.push({ id: q.id, station: q.station, param: q.param, score: sc });
+    sum[q.station] = (sum[q.station] ?? 0) + sc;
     cnt[q.station] = (cnt[q.station] ?? 0) + 1;
   }
   const scores = Object.fromEntries(STATIONS.map((st) => [st.id, cnt[st.id] ? r1(sum[st.id] / cnt[st.id]) : 0])) as Scores;
