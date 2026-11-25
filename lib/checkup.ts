@@ -96,7 +96,7 @@ export function answerScore(q: Q, raw: number): number | null {
 }
 
 export type ProfileField = { id: keyof Profile; q: string; options?: string[]; text?: boolean; placeholder?: string };
-export type Profile = { business?: string; field?: string; years?: string; team?: string; revenue?: string; goal?: string };
+export type Profile = { business?: string; field?: string; years?: string; team?: string; revenue?: string; home?: string; goal?: string };
 
 export const PROFILE: ProfileField[] = [
   { id: "business", q: "איך קוראים לעסק שלך?", text: true, placeholder: "לדוגמה: מספרת רונית" },
@@ -104,6 +104,7 @@ export const PROFILE: ProfileField[] = [
   { id: "years", q: "כמה זמן העסק קיים?", options: ["פחות משנה", "1–3 שנים", "3–10 שנים", "יותר מ-10 שנים"] },
   { id: "team", q: "כמה אנשים עובדים בעסק?", options: ["רק אני", "2–5", "6–20", "יותר מ-20"] },
   { id: "revenue", q: "מחזור חודשי, בערך:", options: ["עד ₪30 אלף", "₪30–100 אלף", "₪100–300 אלף", "יותר מ-₪300 אלף"] },
+  { id: "home", q: "הכנסה חודשית נטו של הבית (כולל בן/בת הזוג), בערך:", options: ["עד ₪15 אלף", "₪15–25 אלף", "₪25–40 אלף", "יותר מ-₪40 אלף", "מעדיף לא לציין"] },
   { id: "goal", q: "מה הדבר הכי חשוב לך ב-2027?", options: ["להכפיל הכנסות", "יותר רווח מאותו מחזור", "פחות שעות, יותר שקט", "לגדול: צוות וסניפים", "לעבור את השנה בשלום"] },
 ];
 
@@ -229,7 +230,7 @@ export function reportPrompt(profile: Profile, params: ParamScore[], scores: Sco
 התוכנית חייבת להיות ספציפית לתחום ולגודל העסק, מעשית, עם צעדים שאפשר לבצע. אם הציון בתחנה גבוה (8+), אל תמציא בעיה.
 
 פרופיל העסק:
-שם: ${profile.business || "לא צוין"} · תחום: ${profile.field || "-"} · ותק: ${profile.years || "-"} · צוות: ${profile.team || "-"} · מחזור חודשי: ${profile.revenue || "-"} · המטרה ל-2027: ${profile.goal || "-"}
+שם: ${profile.business || "לא צוין"} · תחום: ${profile.field || "-"} · ותק: ${profile.years || "-"} · צוות: ${profile.team || "-"} · מחזור חודשי: ${profile.revenue || "-"} · הכנסת הבית נטו: ${profile.home || "-"} · המטרה ל-2027: ${profile.goal || "-"}
 
 ציון כולל: ${total}/10 · ציון עסקי: ${ps.biz}/10 · ציון אישי: ${ps.me}/10
 ציונים לפי תחנה (1–10):
@@ -282,16 +283,20 @@ export function sanitizeReport(raw: unknown, fallback: Report): Report {
 /* ---------------- money: what each weakness costs (an estimate from the stated revenue) ---------------- */
 const REVENUE_MID: Record<string, number> = { "עד ₪30 אלף": 20000, "₪30–100 אלף": 60000, "₪100–300 אלף": 180000, "יותר מ-₪300 אלף": 400000 };
 /** Share of monthly revenue a station leaks at score 1 (scales down linearly to 0 at score 10). */
-const LEAK_RATE: Record<StationId, number> = { vision: 0.04, brand: 0.05, products: 0.06, marketing: 0.07, digital: 0.04, sales: 0.08, system: 0.04, team: 0.05, money: 0.05, me_vision: 0, household: 0.02, credit: 0.03, capital: 0.03, future: 0.02 };
+const HOME_MID: Record<string, number> = { "עד ₪15 אלף": 11000, "₪15–25 אלף": 20000, "₪25–40 אלף": 32000, "יותר מ-₪40 אלף": 50000 };
+/** Business stations leak a share of business revenue; personal stations leak a share of net household income. */
+const LEAK_RATE: Record<StationId, number> = { vision: 0.04, brand: 0.05, products: 0.06, marketing: 0.07, digital: 0.04, sales: 0.08, system: 0.04, team: 0.05, money: 0.05, me_vision: 0, household: 0.08, credit: 0.06, capital: 0.05, future: 0.04 };
 
 export function monthlyRevenue(p: Profile) { return p.revenue ? REVENUE_MID[p.revenue] ?? 0 : 0; }
+export function monthlyHome(p: Profile) { return p.home ? HOME_MID[p.home] ?? 0 : 0; }
 
 /** Estimated monthly ₪ leak per station + total. 0 when the revenue bracket is unknown. */
 export function leaks(p: Profile, scores: Partial<Record<StationId, number>>) {
-  const rev = monthlyRevenue(p);
+  const rev = monthlyRevenue(p), home = monthlyHome(p);
   const per = Object.fromEntries(STATIONS.map((s) => {
     const sc = scores[s.id] ?? 0;
-    const v = rev && sc ? Math.round((rev * LEAK_RATE[s.id] * (10 - sc)) / 9 / 100) * 100 : 0;
+    const base = s.part === "me" ? home : rev;
+    const v = base && sc ? Math.round((base * LEAK_RATE[s.id] * (10 - sc)) / 9 / 100) * 100 : 0;
     return [s.id, v];
   })) as Record<StationId, number>;
   const total = Object.values(per).reduce((a, b) => a + b, 0);

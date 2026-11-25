@@ -330,7 +330,7 @@ function Intro({ onStart, onResume, loggedIn }: { onStart: () => void; onResume:
 
 /* ============================ profile ============================ */
 function BizCard({ profile }: { profile: Profile }) {
-  const rows: [string, string | undefined][] = [["תחום", profile.field], ["ותק", profile.years], ["צוות", profile.team], ["מחזור", profile.revenue], ["2027", profile.goal]];
+  const rows: [string, string | undefined][] = [["תחום", profile.field], ["ותק", profile.years], ["צוות", profile.team], ["מחזור", profile.revenue], ["בית", profile.home], ["2027", profile.goal]];
   return (
     <aside className="cx-biz">
       <small>כרטיס העסק</small>

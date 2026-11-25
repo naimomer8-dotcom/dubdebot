@@ -93,6 +93,7 @@ export default function CheckupReport({ token, loggedIn, name, profile, answers,
               {profile.years && <span>{profile.years}</span>}
               {profile.team && <span>צוות: {profile.team}</span>}
               {profile.revenue && <span>{profile.revenue}</span>}
+              {profile.home && profile.home !== "מעדיף לא לציין" && <span>בית: {profile.home}</span>}
               {profile.goal && <span><Icon name="target" size={14} /> {profile.goal}</span>}
             </div>
             {(lk.total > 0 || pct !== null || hasMe) && (
