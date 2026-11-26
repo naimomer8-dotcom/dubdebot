@@ -1,5 +1,5 @@
 import { db } from "./supabase";
-import type { Offers } from "./plans";
+import { type Offers, BLACK_FRIDAY_END, blackFridayLive } from "./plans";
 import { referrerOf } from "./referral";
 import { giftFromCookie } from "./webinarGift";
 import { offerFromCookie } from "./offerLink";
@@ -12,6 +12,7 @@ const H = 3600_000;
  * - privateHalf: in the gift month (not paid yet) → Platform Private add-on ₪295 instead of ₪590, until access ends
  * - installmentsAtOnetime: 72h after the "l_d33_rep" win-back message → 12 installments at ₪229 instead of ₪299
  * - friendHalf: signed up through a member's personal link → 50% off the first annual subscription
+ * - blackFriday: Black Friday sale for everyone not yet paid → 50% off the first annual subscription, until BLACK_FRIDAY_END
  * - webinarHalf: stayed to the end of the live webinar (gift QR on the last slide) → Platform Private at 50%, until Tuesday 23:59 after it
  */
 export async function offersFor(userId: string): Promise<Offers> {
@@ -23,6 +24,7 @@ export async function offersFor(userId: string): Promise<Offers> {
   const out: Offers = {};
   if (!u || u.plan === "paid") return out;
   const now = Date.now();
+  if (blackFridayLive(now)) out.blackFriday = BLACK_FRIDAY_END;
   if (u.access_until && new Date(u.access_until).getTime() > now) out.privateHalf = u.access_until;
   if (await referrerOf(userId).catch(() => null)) out.friendHalf = "first-year";
   const gift = await webinarGiftFor(userId, now);
@@ -39,6 +41,7 @@ export async function offersFor(userId: string): Promise<Offers> {
 /** Offers for a visitor who is not signed in: the webinar gift and the /o link offer held by this browser. */
 export async function guestOffers(): Promise<Offers> {
   const out: Offers = {};
+  if (blackFridayLive()) out.blackFriday = BLACK_FRIDAY_END;
   const gift = await webinarGiftFor(null);
   if (gift) out.webinarHalf = gift;
   const link = await offerFromCookie();

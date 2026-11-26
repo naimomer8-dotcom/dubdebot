@@ -87,7 +87,11 @@ export const TIER_RANK: Record<Tier, number> = { basic: 1, private: 2, upgrade: 
 /** Time-limited offers a person currently holds (see lib/offers.ts). Values are ISO expiry times. */
 /** friendHalf: joined through a member's link → 50% off the first annual subscription (any tier, best price wins over the other offers). */
 /** webinarHalf: the live-webinar gift → Platform Private at 50% off the first year. */
-export type Offers = { privateHalf?: string; installmentsAtOnetime?: string; friendHalf?: string; webinarHalf?: string };
+/** blackFriday: site-wide Black Friday sale → 50% off the first annual subscription, every tier, until BLACK_FRIDAY_END. */
+export type Offers = { privateHalf?: string; installmentsAtOnetime?: string; friendHalf?: string; webinarHalf?: string; blackFriday?: string };
+/** Black Friday 2026: 50% off every package, through Monday 30.11 23:59 (Israel). */
+export const BLACK_FRIDAY_END = "2026-11-30T23:59:59+02:00";
+export const blackFridayLive = (now = Date.now()) => now < Date.parse(BLACK_FRIDAY_END);
 export const FRIEND_DISCOUNT = 0.5;
 export const PRIVATE_HALF_EXTRA = 295;
 
@@ -98,7 +102,7 @@ export function priceOf(tier: Tier, billing: Billing, offers?: Offers | null) {
   // trial bonus: Alpha Private add-on at half price
   const extra = tier === "private" && offers?.privateHalf ? PRIVATE_HALF_EXTRA : p.extra;
   let net = p.flat ? p.flat[billing] : base + extra;
-  if (offers?.friendHalf) {
+  if (offers?.friendHalf || offers?.blackFriday) {
     const full = p.flat ? p.flat[billing] : BASIC[billing] + p.extra;
     net = Math.min(net, Math.round(full * (1 - FRIEND_DISCOUNT)));
   }
